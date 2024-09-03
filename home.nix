@@ -87,8 +87,8 @@
       enable = true;
       userName  = "jdguillot";
       userEmail = "cyberfighter@gmail.com";
-      programs.git.configExtra = {
-        init.defaultBranch = main
+      extraConfig = {
+        init.defaultBranch = "main";
       };
     };
     programs.vscode = {
