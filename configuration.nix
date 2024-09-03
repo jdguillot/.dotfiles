@@ -123,6 +123,12 @@ in
     #media-session.enable = true;
   };
 
+  ## Tailscale
+  services.tailscale = {
+    enable = true;
+    useRoutingFeatures = "client";
+  };
+
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
 
