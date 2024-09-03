@@ -78,85 +78,113 @@
     PIP_REQUIRE_VIRTUALENV = "true";
   };
 
+  home.shellAliases = {
+      ls="exa --icons -F -H --group-directories-first --git -1";
+  };
+
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
 
-    nixpkgs.config.allowUnfree = true;
-    programs.git = {
-      enable = true;
-      userName  = "jdguillot";
-      userEmail = "cyberfighter@gmail.com";
-      extraConfig = {
-        init.defaultBranch = "main";
-      };
-    };
-    programs.vscode = {
-      enable = true;
-      extensions = with pkgs.vscode-extensions; [
-        bbenoist.nix
-        ms-python.python
-        ms-azuretools.vscode-docker
-        ms-vscode-remote.remote-ssh
-        ms-vscode-remote.remote-containers
-        esbenp.prettier-vscode
-        ritwickdey.liveserver
-        eamodio.gitlens
-        visualstudioexptteam.intellicode-api-usage-examples
-        github.vscode-pull-request-github
-        redhat.vscode-yaml
-        yzhang.markdown-all-in-one
-        mhutchie.git-graph
-        zhuangtongfa.material-theme
-      ]; 
-    };
-
-    ###### Fish Shell
-    programs.fish = {
-      enable = true;
-      # interactiveShellInit = ''
-      #   set fish_greeting # Disable greeting
-      # '';
-      # defaultShell = true;
-      # Initialize Starship in Fish shell
-      shellInit = ''
-        eval (starship init fish)
-      '';
-      plugins = [
-        # Enable a plugin (here grc for colorized command output) from nixpkgs
-        { name = "grc"; src = pkgs.fishPlugins.grc.src; }
-        { name = "done"; src = pkgs.fishPlugins.done; }
-        { name = "fzf-fish"; src = pkgs.fishPlugins.fzf-fish; }
-        { name = "forgit"; src = pkgs.fishPlugins.forgit; }
-        # Manually packaging and enable a plugin
-        # {
-        #   name = "z";
-        #   src = pkgs.fetchFromGitHub {
-        #     owner = "jethrokuan";
-        #     repo = "z";
-        #     rev = "e0e1b9dfdba362f8ab1ae8c1afc7ccf62b89f7eb";
-        #     sha256 = "0dbnir6jbwjpjalz14snzd3cgdysgcs3raznsijd6savad3qhijc";
-        #   };
-        # }
-      ];
-    };
-
-    programs.starship = {
+  nixpkgs.config.allowUnfree = true;
+  programs.git = {
     enable = true;
-    # Configuration written to ~/.config/starship.toml
-    settings = (with builtins; fromTOML (readFile ./starship/bracketed-segments.toml)) // {
-      # overrides here, may be empty
+    userName  = "jdguillot";
+    userEmail = "cyberfighter@gmail.com";
+    extraConfig = {
+      init.defaultBranch = "main";
     };
-    #settings = {
-      # add_newline = false;
+  };
+  programs.vscode = {
+    enable = true;
+    extensions = with pkgs.vscode-extensions; [
+      bbenoist.nix
+      ms-python.python
+      ms-azuretools.vscode-docker
+      ms-vscode-remote.remote-ssh
+      ms-vscode-remote.remote-containers
+      esbenp.prettier-vscode
+      ritwickdey.liveserver
+      eamodio.gitlens
+      visualstudioexptteam.intellicode-api-usage-examples
+      github.vscode-pull-request-github
+      redhat.vscode-yaml
+      yzhang.markdown-all-in-one
+      mhutchie.git-graph
+      zhuangtongfa.material-theme
+    ]; 
+  };
 
-      # character = {
-      #   success_symbol = "[➜](bold green)";
-      #   error_symbol = "[➜](bold red)";
-      # };
+  ###### Fish Shell
+  programs.fish = {
+    enable = true;
+    # interactiveShellInit = ''
+    #   set fish_greeting # Disable greeting
+    # '';
+    # defaultShell = true;
+    # Initialize Starship in Fish shell
+    shellInit = ''
+      eval (starship init fish)
+    '';
+    plugins = [
+      # Enable a plugin (here grc for colorized command output) from nixpkgs
+      { name = "grc"; src = pkgs.fishPlugins.grc.src; }
+      { name = "done"; src = pkgs.fishPlugins.done; }
+      { name = "fzf-fish"; src = pkgs.fishPlugins.fzf-fish; }
+      { name = "forgit"; src = pkgs.fishPlugins.forgit; }
+      # Manually packaging and enable a plugin
+      # {
+      #   name = "z";
+      #   src = pkgs.fetchFromGitHub {
+      #     owner = "jethrokuan";
+      #     repo = "z";
+      #     rev = "e0e1b9dfdba362f8ab1ae8c1afc7ccf62b89f7eb";
+      #     sha256 = "0dbnir6jbwjpjalz14snzd3cgdysgcs3raznsijd6savad3qhijc";
+      #   };
+      # }
+    ];
+  };
 
-      # package.disabled = true;
-    #};
+  programs.starship = {
+  enable = true;
+  # Configuration written to ~/.config/starship.toml
+  settings = (with builtins; fromTOML (readFile ./starship/bracketed-segments.toml)) // {
+    # overrides here, may be empty
+  };
+  #settings = {
+    # add_newline = false;
+
+    # character = {
+    #   success_symbol = "[➜](bold green)";
+    #   error_symbol = "[➜](bold red)";
+    # };
+
+    # package.disabled = true;
+  };
+
+  # Enable GnuPG in Home Manager
+  programs.gpg = {
+    enable = true;
+  };
+    
+  # Configure gpg-agent
+  services.gpg-agent = {
+    enable = true;
+    
+    # Specify default caching time for the passphrase (in seconds)
+    defaultCacheTtl = 600; # 10 minutes
+
+    # Specify maximum caching time (in seconds)
+    maxCacheTtl = 3600; # 1 hour
+
+    # Automatically start gpg-agent
+    enableSshSupport = true;
+
+    # Additional custom options for gpg-agent
+    extraConfig = ''
+      # Example: Enable pinentry graphical dialog
+      pinentry-program ${pkgs.pinentry}/bin/pinentry-gtk-2
+    '';
   };
 
 }
