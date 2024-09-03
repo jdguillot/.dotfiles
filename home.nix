@@ -128,10 +128,10 @@
   ###### Fish Shell
   programs.fish = {
     enable = true;
-    # interactiveShellInit = ''
-    #   set fish_greeting # Disable greeting
-    # '';
-    # defaultShell = true;
+    interactiveShellInit = ''
+      set fish_greeting # Disable greeting
+    '';
+
     # Initialize Starship in Fish shell
     shellInit = ''
       eval (starship init fish)
@@ -153,6 +153,16 @@
       #   };
       # }
     ];
+  };
+
+  ## Alacritty
+  programs.alacritty = {
+    enable = true;
+    settings = {
+      window.opacity = 0.9;
+      font.normal.family = "FiraCode Nerd Font Mono";
+      selection.save_to_clipboard = true;
+    };
   };
 
   programs.starship = {
