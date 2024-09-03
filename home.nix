@@ -89,7 +89,7 @@
       userEmail = "cyberfighter@gmail.com";
       programs.git.configExtra = {
         init.defaultBranch = main
-      }
+      };
     };
     programs.vscode = {
       enable = true;
