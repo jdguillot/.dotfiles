@@ -69,13 +69,13 @@
   #
   home.sessionVariables = {
     ## Github
-    GITHUB_USERNAME = jdguillot
+    GITHUB_USERNAME = "jdguillot";
 
     ## Editor
-    EDITOR = "code --wait"
+    EDITOR = "code --wait";
 
     ## Python
-    PIP_REQUIRE_VIRTUALENV = true
+    PIP_REQUIRE_VIRTUALENV = "true";
   };
 
   # Let Home Manager install and manage itself.
