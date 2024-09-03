@@ -76,10 +76,20 @@
 
     ## Python
     PIP_REQUIRE_VIRTUALENV = "true";
+
+    ## fzf
+    FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix";
+    FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND";
   };
 
   home.shellAliases = {
-      ls="exa --icons -F -H --group-directories-first --git -1";
+    ## Overriding default operations
+    ls = "eza --icons -F -H --group-directories-first --git -1  --tree --level=1 --ignore-glob='node_modules*'";
+    ll = "ls -la";
+
+    ## Command Presets
+    pysrc = ". .venv/bin/activate.fish";
+    pynew = "python3 -m venv .venv && pysrc && pip install -r requirements";
   };
 
   # Let Home Manager install and manage itself.
@@ -160,6 +170,60 @@
     # };
 
     # package.disabled = true;
+  };
+
+  ## Vim Config
+  programs.vim = {
+    enable = true;
+    plugins = with pkgs.vimPlugins; [ vim-airline ];
+    settings = { ignorecase = true; };
+    extraConfig = ''
+      set mouse=a
+      set cursorline
+    '';
+  };
+
+  ## NeoVim
+  programs.neovim = {
+    enable = true;
+    plugins = with pkgs.vimPlugins; [
+      context-filetype
+      # nerdree
+      neo-tree-nvim
+      fugitive
+      onedark-vim
+    ];
+    extraConfig = ''
+      colorscheme onedark
+      set number
+      set tabstop=2
+      set expandtab
+      set shiftwidth=2
+      set softtabstop=2
+      set wrap
+      set linebreak
+      set list
+      set lcs+=space:·
+      syntax on
+      set ignorecase
+      set smartcase
+      set hlsearch
+      set autoindent
+      set clipboard=unnamedplus
+      nnoremap <C-s> :w<CR>
+      nnoremap <C-n> :Neotree filesystem reveal<CR>
+      nnoremap <M-Up> :m -2<CR>
+      nnoremap <M-Down> :m +1<CR>
+    '';
+  };
+
+  ## Tmux
+  programs.tmux = {
+    enable = true;
+    extraConfig = ''
+      set -g mouse
+      set-option -g default-shell /usr/bin/fish 
+    '';
   };
 
   # Enable GnuPG in Home Manager
