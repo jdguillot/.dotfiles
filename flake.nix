@@ -30,18 +30,55 @@
         inherit system;
       };
     in {
+      # # hostname = razer-nixos
+      # nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
+      #   inherit system;
+      #   specialArgs = { inherit inputs system; };
+      #   modules = [
+      #     flatpaks.nixosModules.nix-flatpak
+      #     ./configuration.nix
+      #   ];
+      # };
+
+      # # hostname = razer-nixos
+      
+      # nixosConfigurations.${hostname}  = nixpkgs.lib.nixosSystem {
+      #   inherit system;
+      #   specialArgs = { inherit inputs system; };
+      #   modules = [
+      #     ./home.nix
+      #     home-manager.nixosModules.home-manager
+      #     {
+      #       home-manager.useGlobalPkgs = true;
+      #       home-manager.useUserPackages = true;
+      #       home-manager.extraSpecialArgs.flake-inputs = inputs;
+      #       home-manager.users."cyberfighter".imports = [
+      #         flatpaks.homeManagerModules.nix-flatpak
+      #         ./flatpak.nix
+      #       ];
+      #       # home-manager.users.antani.home.stateVersion = "23.11";
+      #     }
+      #   ];
+      # };
+
       nixosConfigurations = {
         razer-nixos = nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = { inherit inputs system; };
           modules = [
             ./configuration.nix
-            nix-flatpak.nixosModules.nix-flatpak
+            # nix-flatpak.nixosModules.nix-flatpak
             home-manager.nixosModules.home-manager
               {
                 home-manager.useGlobalPkgs = true;
                 home-manager.useUserPackages = true;
-                home-manager.users.cyberfighter = import ./home.nix;
+                home-manager.extraSpecialArgs.flake-inputs = inputs;
+                home-manager.backupFileExtension = "backup";
+                home-manager.users."cyberfighter".imports = [
+                  ./home.nix
+                  ./flatpak.nix
+                  nix-flatpak.homeManagerModules.nix-flatpak
+                ];
 
                 # Optionally, use home-manager.extraSpecialArgs to pass
                 # arguments to home.nix

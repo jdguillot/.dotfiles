@@ -194,13 +194,18 @@ in
 #     fishPlugins.grc
     grc  
     nodejs
+    wineWowPackages.stable
 ];
 
   services.flatpak.enable = true;
-  services.flatpak.packages = [
-    # { appId = "com.brave.Browser"; origin = "flathub";  }
-    "io.github.zen_browser.zen"
-  ];
+  # services.flatpak.packages = [
+  #   # { appId = "com.brave.Browser"; origin = "flathub";  }
+  #   "io.github.zen_browser.zen"
+  #   "org.openscad.OpenSCAD"
+  #   "org.freecadweb.FreeCAD"
+  #   "com.usebottles.bottles"
+  #   "org.libreoffice.LibreOffice"
+  # ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -291,5 +296,5 @@ in
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  home-manager.backupFileExtension = "backup";
+  # home-manager.backupFileExtension = "backup";
 }
