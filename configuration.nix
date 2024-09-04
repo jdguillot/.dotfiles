@@ -299,6 +299,9 @@ in
 
   # home-manager.backupFileExtension = "backup";
 
+  ## put smb-scecret in /etc
+  environment.etc."nixos/smb-secrets".source = ./secrets/smb-secrets;
+
   # For mount.cifs, required unless domain name resolution is not needed.
   fileSystems = {
     "/mnt/truenas-home" = {

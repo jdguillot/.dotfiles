@@ -29,6 +29,7 @@
       pkgs = import nixpkgs {
         inherit system;
       };
+      secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
     in {
       # # hostname = razer-nixos
       # nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
@@ -64,7 +65,10 @@
       nixosConfigurations = {
         razer-nixos = nixpkgs.lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit inputs system; };
+          specialArgs = {
+            inherit inputs system;
+            inherit secrets;
+          };
           modules = [
             ./configuration.nix
             # nix-flatpak.nixosModules.nix-flatpak
