@@ -183,6 +183,7 @@ in
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   #  wget
+    cifs-utils
     appimage-run
     zed-editor
     inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
@@ -297,4 +298,35 @@ in
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # home-manager.backupFileExtension = "backup";
+
+  # For mount.cifs, required unless domain name resolution is not needed.
+  fileSystems = {
+    "/mnt/truenas-home" = {
+      device = "//truenas.cyberfighter.space/userdata/Jonny";
+      fsType = "cifs";
+      options = let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+
+      in ["${automount_opts},credentials=/etc/nixos/smb-secrets"];
+    };
+    "/mnt/truenas-scanner" = {
+      device = "//truenas.cyberfighter.space/Shared/scanner";
+      fsType = "cifs";
+      options = let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+
+      in ["${automount_opts},credentials=/etc/nixos/smb-secrets"];
+    };
+    "/mnt/truenas-temp" = {
+      device = "//truenas.cyberfighter.space/Shared/Temp";
+      fsType = "cifs";
+      options = let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+
+      in ["${automount_opts},credentials=/etc/nixos/smb-secrets"];
+    };
+  };
 }
