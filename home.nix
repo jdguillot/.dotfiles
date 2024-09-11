@@ -23,6 +23,8 @@
   # environment.
   home.packages = with pkgs; [
     bottles
+    micro
+    super-productivity
 
     # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.

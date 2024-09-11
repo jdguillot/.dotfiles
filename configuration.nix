@@ -123,6 +123,18 @@ in
     #media-session.enable = true;
   };
 
+  services.openssh = {
+  enable = true;
+  ports = [ 22 ];
+  settings = {
+    PasswordAuthentication = true;
+    AllowUsers = null; # Allows all users by default. Can be [ "user1" "user2" ]
+    UseDns = true;
+    X11Forwarding = false;
+    PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
+  };
+};
+
   ## Tailscale
   services.tailscale = {
     enable = true;
@@ -168,6 +180,7 @@ in
       neofetch
       distrobox
       jq
+      qbittorrent-qt5 
     ];
   };
 
@@ -185,6 +198,7 @@ in
   #  wget
     cifs-utils
     appimage-run
+    xclip
     zed-editor
     inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
 #     fishPlugins.done
