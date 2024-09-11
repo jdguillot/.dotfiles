@@ -151,36 +151,7 @@ in
     extraGroups = [ "networkmanager" "wheel" "docker" ];
     packages = with pkgs; [
     #  thunderbird
-      bitwarden-desktop
-      vivaldi
-      eza
-#      vim
-      ssh-agents
-      tldr
-      bitwarden-cli
-      fzf
-      fd
-#      zip
-      git-crypt
-      gnupg
-      pinentry-curses
-#      fish
-      starship
-#      chezmoi
-      fira-code
-      fira-code-symbols
-      (nerdfonts.override { fonts = [ "FiraCode" ];})
-      mc
-      btop
-#      avahi
-#      firefox
-#      geckodriver
-      cmatrix
-      gh
-      neofetch
-      distrobox
-      jq
-      qbittorrent-qt5 
+
     ];
   };
 
@@ -199,7 +170,6 @@ in
     cifs-utils
     appimage-run
     xclip
-    zed-editor
     inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
 #     fishPlugins.done
 #     fishPlugins.fzf-fish

@@ -25,6 +25,38 @@
     bottles
     micro
     super-productivity
+    bitwarden-desktop
+    vivaldi
+    eza
+#      vim
+    ssh-agents
+    tldr
+    bitwarden-cli
+    fzf
+    fd
+#      zip
+    git-crypt
+    gnupg
+    pinentry-curses
+#      fish
+    # starship
+#      chezmoi
+    fira-code
+    fira-code-symbols
+    (nerdfonts.override { fonts = [ "FiraCode" ];})
+    mc
+    btop
+#      avahi
+#      firefox
+#      geckodriver
+    cmatrix
+    gh
+    neofetch
+    distrobox
+    jq
+    qbittorrent-qt5
+    xclip
+    zed-editor
 
     # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.
