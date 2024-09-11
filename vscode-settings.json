@@ -3,5 +3,6 @@
     "workbench.colorTheme": "One Dark Pro Darker",
     "git.enableSmartCommit": true,
     "editor.autoClosingQuotes": "always",
-    "editor.fontFamily": "FiraCode Nerd Font Mono"
+    "editor.fontFamily": "FiraCode Nerd Font Mono",
+    "git.autofetch": true
 }
