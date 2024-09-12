@@ -21,15 +21,20 @@
     };
     nix-flatpak.url = "github:gmodena/nix-flatpak";
     nixos-conf-editor.url = "github:snowfallorg/nixos-conf-editor";
+    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
+    vscode-server.url = "github:nix-community/nixos-vscode-server";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
       };
       secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
+      # hm-config = {
+        
+      # };
     in {
       # # hostname = razer-nixos
       # nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
@@ -70,25 +75,64 @@
             inherit secrets;
           };
           modules = [
-            ./configuration.nix
+            ./hosts/razer-nixos/configuration.nix
             # nix-flatpak.nixosModules.nix-flatpak
             home-manager.nixosModules.home-manager
-              {
-                home-manager.useGlobalPkgs = true;
-                home-manager.useUserPackages = true;
-                home-manager.extraSpecialArgs.flake-inputs = inputs;
-                home-manager.backupFileExtension = "backup";
-                home-manager.users."cyberfighter".imports = [
-                  ./home.nix
-                  ./flatpak.nix
-                  nix-flatpak.homeManagerModules.nix-flatpak
-                ];
+            {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.extraSpecialArgs.flake-inputs = inputs;
+            home-manager.backupFileExtension = "backup";
+            # Optionally, use home-manager.extraSpecialArgs to pass
+            # arguments to home.nix
 
-                # Optionally, use home-manager.extraSpecialArgs to pass
-                # arguments to home.nix
+            home-manager.users."cyberfighter".imports = [
+              ./hosts/razer-nixos/home.nix
+              ./hosts/razer-nixos/flatpak.nix
+              nix-flatpak.homeManagerModules.nix-flatpak
+            ];
             }
           ];
         };
+
+        nixos = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs system;
+            inherit secrets;
+          };
+          modules = [
+            ./hosts/work-wsl/configuration.nix
+            nixos-wsl.nixosModules.default
+            {
+              system.stateVersion = "24.05";
+              wsl.enable = true;
+              wsl.defaultUser = "jdguillot";
+              # wsl.docker-desktop.enable = true;
+            }
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs.flake-inputs = inputs;
+              home-manager.backupFileExtension = "backup";
+              # Optionally, use home-manager.extraSpecialArgs to pass
+              # arguments to home.nix
+
+              home-manager.users."jdguillot".imports = [
+                ./hosts/work-wsl/home.nix
+                # ./hosts/work-wsl/flatpak.nix
+                # nix-flatpak.homeManagerModules.nix-flatpak
+              ];
+            }
+            vscode-server.nixosModules.default
+            ({ config, pkgs, ... }: {
+              services.vscode-server.enable = true;
+            })
+          ];
+        };
+
+
       };
     };
 
