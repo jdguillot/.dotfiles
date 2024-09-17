@@ -17,7 +17,7 @@
 
   ];
 
-  sessionVariables = {
+  home.sessionVariables = {
     ## Github
     GITHUB_USERNAME = "jdguillot";
 
