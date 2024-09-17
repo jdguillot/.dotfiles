@@ -50,6 +50,25 @@
     allowUnfree = true;
   };
 
+  services.vscode-server.enable = true;
+
+  # system.activationScripts = {
+  #   # symlink nixOS extensions to trick vscode into thinking they are installed
+  #   fixVsCodeExtensions = {
+  #     text = ''
+  #       EXT_DIR=/home/jdguillot/.vscode-server/extensions
+  #       mkdir -p $EXT_DIR
+  #       chown jdguillot:users $EXT_DIR
+  #       ln -sf /home/jdguillot/.vscode/extensions/* $EXT_DIR/
+  #       done
+  #       chown -R jdguillot:users $EXT_DIR
+  #     '';
+  #     deps = [ ];
+  #   };
+  # };
+  
+  
+
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
@@ -66,14 +85,19 @@
     grc  
     nodejs
     # wineWowPackages.stable
-];
-
+    # vscode
+    
+  ];
   
 
   # virtualisation.docker = {
   #   enable = true;
   #   enableOnBoot = true;
   #   autoPrune.enable = true;
+  # };
+
+  # services.vscode-server = {
+  #   enable = true;   
   # };
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];

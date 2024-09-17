@@ -35,6 +35,38 @@
       userEmail = "jonathan_guillot@emcor.net";
   };
 
+  
+
+  # programs.vscode = {
+  #   enable = true;
+  #   enableExtensionUpdateCheck = true;
+  #   enableUpdateCheck = true;
+  #   extensions = with pkgs.vscode-extensions; [
+  #     bbenoist.nix
+  #     ms-python.python
+  #     ms-azuretools.vscode-docker
+  #     ms-vscode-remote.remote-ssh
+  #     ms-vscode-remote.remote-containers
+  #     esbenp.prettier-vscode
+  #     ritwickdey.liveserver
+  #     eamodio.gitlens
+  #     visualstudioexptteam.intellicode-api-usage-examples
+  #     github.vscode-pull-request-github
+  #     redhat.vscode-yaml
+  #     yzhang.markdown-all-in-one
+  #     mhutchie.git-graph
+  #     zhuangtongfa.material-theme
+  #   ];
+  # };
+
+
+  
+
+  # # Optionally, start the service automatically on home-manager switch
+  # home.activation.install-vscode-extensions = lib.mkAfter ''
+  #   systemctl --user start install-vscode-extensions.service
+  # '';
+
   # home.file.".xsessionrc".text = ''
   #   xset r rate 200 50
   #   '';
