@@ -49,6 +49,7 @@
       xclip
       zed-editor
       python3
+      gitmux
 
       # # Adds the 'hello' command to your environment. It prints a friendly
       # # "Hello, world!" when run.
@@ -246,9 +247,65 @@
     ## Tmux
     tmux = {
       enable = true;
+      shell = "${pkgs.fish}/bin/fish";
+      terminal = "tmux-256color";
+      historyLimit = 100000;
+      plugins = with pkgs;
+        [
+          # tmux-nvim
+          # tmuxPlugins.tmux-thumbs
+          # # TODO: why do I have to manually set this
+          # {
+          #   plugin = t-smart-manager;
+          #   extraConfig = ''
+          #     set -g @t-fzf-prompt '  '
+          #     set -g @t-bind "T"
+          #   '';
+          # }
+          # {
+          #   plugin = tmux-super-fingers;
+          #   extraConfig = "set -g @super-fingers-key f";
+          # }
+          # {
+          #   plugin = tmux-browser;
+          #   extraConfig = ''
+          #     set -g @browser_close_on_deattach '1'
+          #   '';
+          # }
+
+          # tmuxPlugins.sensible
+          # # must be before continuum edits right status bar
+          {
+            plugin = tmuxPlugins.catppuccin;
+            extraConfig = '' 
+              set -g @catppuccin_window_left_separator ""
+              set -g @catppuccin_window_right_separator " "
+              set -g @catppuccin_window_middle_separator " █"
+              set -g @catppuccin_window_number_position "right"
+
+              set -g @catppuccin_window_default_fill "number"
+              set -g @catppuccin_window_default_text "#W"
+
+              set -g @catppuccin_window_current_fill "number"
+              set -g @catppuccin_window_current_text "#W"
+
+              set -g @catppuccin_status_modules_right "directory user host session gitmux"
+              set -g @catppuccin_status_left_separator  " "
+              set -g @catppuccin_status_right_separator ""
+              set -g @catppuccin_status_fill "icon"
+              set -g @catppuccin_status_connect_separator "no"
+
+              set -g @catppuccin_directory_text "#{pane_current_path}"
+              # set -g @catppuccin_flavour 'frappe'
+              # set -g @catppuccin_window_tabs_enabled on
+              # set -g @catppuccin_date_time "%H:%M"
+              # set -g @catppuccin_status_modules_right "... gitmux ..."
+            '';
+          }
+        ];
       extraConfig = ''
         set -g mouse
-        set-option -g default-shell /usr/bin/fish 
+        # set-option -g default-shell /usr/bin/fish 
       '';
     };
 
