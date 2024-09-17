@@ -108,7 +108,7 @@
               system.stateVersion = "24.05";
               wsl.enable = true;
               wsl.defaultUser = "jdguillot";
-              # wsl.docker-desktop.enable = true;
+              wsl.docker-desktop.enable = true;
             }
             home-manager.nixosModules.home-manager
             {
