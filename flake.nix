@@ -23,9 +23,10 @@
     nixos-conf-editor.url = "github:snowfallorg/nixos-conf-editor";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     vscode-server.url = "github:nix-community/nixos-vscode-server";
+    pst-bin.url = "path:./programs/pst";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, pst-bin, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -36,6 +37,7 @@
         
       # };
     in {
+
       # # hostname = razer-nixos
       # nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
       #   inherit system;
