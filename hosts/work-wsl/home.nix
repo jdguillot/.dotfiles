@@ -35,7 +35,9 @@
       userEmail = "jonathan_guillot@emcor.net";
   };
 
-  
+  home.file = {
+      ".ssh/config".source = ../../secrets/.ssh_config_work;
+    };
 
   # programs.vscode = {
   #   enable = true;
