@@ -50,6 +50,8 @@
       zed-editor
       python3
       gitmux
+      zoxide
+      bat
 
       # # Adds the 'hello' command to your environment. It prints a friendly
       # # "Hello, world!" when run.
@@ -111,7 +113,7 @@
 
       ## fzf
       FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix";
-      FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND";
+      # FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND";
     };
 
     shellAliases = {
@@ -162,6 +164,8 @@
       # Initialize Starship in Fish shell
       shellInit = ''
         eval (starship init fish)
+        zoxide init fish | source
+        fzf --fish | source
       '';
       plugins = [
         # Enable a plugin (here grc for colorized command output) from nixpkgs
@@ -202,7 +206,10 @@
     ## Vim Config
     vim = {
       enable = true;
-      plugins = with pkgs.vimPlugins; [ vim-airline ];
+      plugins = with pkgs.vimPlugins; [
+        vim-airline
+        # onedark-vim
+      ];
       settings = { ignorecase = true; };
       extraConfig = ''
         set mouse=a
@@ -218,10 +225,10 @@
         # nerdree
         neo-tree-nvim
         fugitive
-        onedark-vim
+        # onedarkpro-nvim
+        vim-tmux-navigator
       ];
       extraConfig = ''
-        colorscheme onedark
         set number
         set tabstop=2
         set expandtab
@@ -237,8 +244,9 @@
         set hlsearch
         set autoindent
         set clipboard=unnamedplus
-        nnoremap <C-s> :w<CR>
-        nnoremap <C-n> :Neotree filesystem reveal<CR>
+        nnoremap <C-s> <ESC>:w<CR>
+        nnoremap <C-q> <ESC>:q<CR>
+        nnoremap <C-e> :Neotree filesystem reveal<CR>
         nnoremap <M-Up> :m -2<CR>
         nnoremap <M-Down> :m +1<CR>
       '';
@@ -248,7 +256,7 @@
     tmux = {
       enable = true;
       shell = "${pkgs.fish}/bin/fish";
-      terminal = "tmux-256color";
+      # terminal = "tmux-256color";
       historyLimit = 100000;
       plugins = with pkgs;
         [
@@ -276,36 +284,63 @@
           # tmuxPlugins.sensible
           # # must be before continuum edits right status bar
           {
+            plugin = tmuxPlugins.prefix-highlight;
+
+          }
+          {
             plugin = tmuxPlugins.catppuccin;
+
             extraConfig = '' 
-              set -g @catppuccin_window_left_separator ""
-              set -g @catppuccin_window_right_separator " "
-              set -g @catppuccin_window_middle_separator " █"
-              set -g @catppuccin_window_number_position "right"
+              # set -g @catppuccin_window_left_separator ""
+              # set -g @catppuccin_window_right_separator " "
+              # set -g @catppuccin_window_middle_separator " █"
+              # set -g @catppuccin_window_number_position "right"
 
-              set -g @catppuccin_window_default_fill "number"
-              set -g @catppuccin_window_default_text "#W"
+              # set -g @catppuccin_window_default_fill "number"
+              # set -g @catppuccin_window_default_text "#W"
 
-              set -g @catppuccin_window_current_fill "number"
-              set -g @catppuccin_window_current_text "#W"
+              # set -g @catppuccin_window_current_fill "number"
+              # set -g @catppuccin_window_current_text "#W"
 
-              set -g @catppuccin_status_modules_right "directory user host session gitmux"
-              set -g @catppuccin_status_left_separator  " "
-              set -g @catppuccin_status_right_separator ""
-              set -g @catppuccin_status_fill "icon"
-              set -g @catppuccin_status_connect_separator "no"
+              set -g @catppuccin_status_modules_right "directory host gitmux"
+              # set -g @catppuccin_status_left_separator  " "
+              # set -g @catppuccin_status_right_separator ""
+              # set -g @catppuccin_status_fill "icon"
+              # set -g @catppuccin_status_connect_separator "no"
 
               set -g @catppuccin_directory_text "#{pane_current_path}"
               # set -g @catppuccin_flavour 'frappe'
               # set -g @catppuccin_window_tabs_enabled on
               # set -g @catppuccin_date_time "%H:%M"
               # set -g @catppuccin_status_modules_right "... gitmux ..."
+
+              set -g @catppuccin_window_status_style "slanted"
             '';
           }
+          {
+            plugin = tmuxPlugins.vim-tmux-navigator;
+          }
+          # {
+          #   plugin = tmuxPlugins.nord;
+
+          #   extraConfig = ''
+          #     # set -g @nord_direcory_text "#{pane_current_path}"
+          #     # set -g @nord_date_time "%H:%M"
+          #     #set -g @nord_tmux_show_status_content "0"
+          #     # set -g @nord_status_modules_right "prefix_highlight pane_current_path host gitmux "
+          #   '';
+          # }
         ];
       extraConfig = ''
         set -g mouse
         # set-option -g default-shell /usr/bin/fish 
+        unbind r
+        bind r source-file ~/.config/tmux/tmux.conf
+        set -g prefix C-d
+
+        # Setup right status bar
+        # set -g status-right "#[fg=white,bg=brightblack,nobold,noitalics,nounderscore]#[fg=white,bg=brightblack] %I:%M%p #[fg=white,bg=brightblack,nobold,noitalics,nounderscore]#[fg=white,bg=brightblack] #{gitmux} #[fg=cyan,bg=brightblack,nobold,noitalics,nounderscore]#[fg=black,bg=cyan,bold] #H "
+        # set -g status-right "#{prefix_highlight}  #{pane_current_path}  #{host}  #{gitmux}"
       '';
     };
 
