@@ -41,7 +41,7 @@
       mc
       btop
       cmatrix
-      gh
+      # gh
       neofetch
       distrobox
       jq
@@ -139,6 +139,11 @@
       extraConfig = {
         init.defaultBranch = "main";
       };
+    };
+
+    gh = {
+      enable = true;
+      gitCredentialHelper.enable = true;
     };
 
 
