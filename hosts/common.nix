@@ -349,6 +349,15 @@
       '';
     };
 
+    zellij = {
+      enable = true;
+      enableFishIntegration = true;
+      settings = {
+        theme = "nord";
+        font = "FiraCode Nerd Font";
+      };
+    };
+
     # Enable GnuPG in Home Manager
     gpg = {
       enable = true;
