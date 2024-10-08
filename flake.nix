@@ -23,10 +23,13 @@
     nixos-conf-editor.url = "github:snowfallorg/nixos-conf-editor";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     vscode-server.url = "github:nix-community/nixos-vscode-server";
+    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+    nix-index-database.url = "github:nix-community/nix-index-database";
+    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     pst-bin.url = "path:./programs/pst";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, pst-bin, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -77,7 +80,13 @@
             inherit secrets;
           };
           modules = [
+            {
+              nixpkgs.overlays = [
+                inputs.nix-vscode-extensions.overlays.default
+              ];
+            }
             ./hosts/razer-nixos/configuration.nix
+            nix-index-database.nixosModules.nix-index
             # nix-flatpak.nixosModules.nix-flatpak
             home-manager.nixosModules.home-manager
             {
