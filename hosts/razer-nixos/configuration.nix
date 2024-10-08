@@ -62,6 +62,7 @@ in
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.initrd.luks.devices."luks-490adcca-e0d1-4876-a6c4-72a61b0652e7".device = "/dev/disk/by-uuid/490adcca-e0d1-4876-a6c4-72a61b0652e7";
 
   networking.hostName = "razer-nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -94,9 +95,13 @@ in
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
+  # Enable the KDE Plasma Desktop Environment.
+ services.displayManager.sddm.enable = true;
+ services.desktopManager.plasma6.enable = true;
+
   # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  # services.xserver.displayManager.gdm.enable = true;
+  # services.xserver.desktopManager.gnome.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -155,6 +160,10 @@ in
     ];
   };
 
+  # Enable automatic login for the user.
+ # services.displayManager.autoLogin.enable = true;
+ # services.displayManager.autoLogin.user = "cyberfighter";
+
   # Install firefox.
   programs.firefox.enable = true;
 
@@ -180,6 +189,7 @@ in
     grc  
     nodejs
     wineWowPackages.stable
+    distrobox
 ];
 
   services.flatpak.enable = true;
@@ -221,27 +231,29 @@ in
 
   ###### Begin Nvidia
   # Enable OpenGL
-  hardware.graphics = {
-    enable = true;
-  };
+#  hardware.graphics = {
+#    enable = false;
+#  };
+
+#  boot.blacklistedKernelModules = ["nouveau"];
 
   # Load nvidia driver for Xorg and Wayland
-  services.xserver.videoDrivers = ["nvidia"];
+#  services.xserver.videoDrivers = ["nvidia"];
 
-  hardware.nvidia = {
+#  hardware.nvidia = {
 
     # Modesetting is required.
-    modesetting.enable = true;
+#    modesetting.enable = true;
 
     # Nvidia power management. Experimental, and can cause sleep/suspend to fai>
     # Enable this if you have graphical corruption issues or application crashe>
     # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ in>
     # of just the bare essentials.
-    powerManagement.enable = false;
+#    powerManagement.enable = false;
 
     # Fine-grained power management. Turns off GPU when not in use.
     # Experimental and only works on modern Nvidia GPUs (Turing or newer).
-    powerManagement.finegrained = false;
+#    powerManagement.finegrained = false;
 
     # Use the NVidia open source kernel module (not to be confused with the
     # independent third-party "nouveau" open source driver).
@@ -250,22 +262,28 @@ in
     # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus 
     # Only available from driver 515.43.04+
     # Currently alpha-quality/buggy, so false is currently the recommended sett>
-    open = false;
+#    open = true;
 
     # Enable the Nvidia settings menu,
         # accessible via `nvidia-settings`.
-    nvidiaSettings = true;
+#    nvidiaSettings = true;
 
     # Optionally, you may need to select the appropriate driver version for you>
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-  };
+#    package = config.boot.kernelPackages.nvidiaPackages.stable;
+#  };
 
-  hardware.nvidia.prime = {
+  # https://discourse.nixos.org/t/plasma-5-works-with-nvidia-but-sddm-fails/29655/10
+
+#  hardware.nvidia.prime = {
+#    sync.enable = true;
   # Make sure to use the correct Bus ID values for your system!
-    intelBusId = "PCI:0:2:0";
-    nvidiaBusId = "PCI:2:0:0";
-    # amdgpuBusId = "PCI:54:0:0"; For AMD GPU
-  };
+#    intelBusId = "PCI:0:2:0";
+#    nvidiaBusId = "PCI:2:0:0";
+#    # amdgpuBusId = "PCI:54:0:0"; For AMD GPU
+#  };
+
+#  boot.initrd.kernelModules = [ "nvidia" ];
+#  boot.extraModulePackages = [ config.boot.kernelPackages.nvidia_x11 ];
 
   ###### End Nvidia
 

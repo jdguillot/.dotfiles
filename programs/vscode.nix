@@ -1,8 +1,8 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 {
   programs.vscode = {
     enable = true;
-    extensions = with pkgs.vscode-extensions; [
+    extensions = with pkgs.vscode-marketplace; [
       bbenoist.nix
       ms-python.python
       ms-python.vscode-pylance
@@ -18,14 +18,18 @@
       yzhang.markdown-all-in-one
       mhutchie.git-graph
       zhuangtongfa.material-theme
+      lakshits11.best-themes-redefined
+      jnoortheen.nix-ide
+      arrterian.nix-env-selector
+      mkhl.direnv
     ];
     userSettings = {
-      "workbench.colorTheme": "One Dark Pro Darker",
-      "git.enableSmartCommit": true,
-      "editor.autoClosingQuotes": "always",
-      "editor.fontFamily": "FiraCode Nerd Font Mono",
+      "workbench.colorTheme" =  "Best Themes - Nord Cold";
+      "git.enableSmartCommit" = true;
+      "editor.autoClosingQuotes" = "always";
+      "editor.fontFamily" = "FiraCode Nerd Font Mono";
       "editor.fontLigatures" = true;
-      "git.autofetch": true
+      "git.autofetch" = true;
     };
   };
  }
