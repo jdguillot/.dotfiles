@@ -189,6 +189,7 @@ in
     grc  
     nodejs
     wineWowPackages.stable
+    distrobox
 ];
 
   services.flatpak.enable = true;
