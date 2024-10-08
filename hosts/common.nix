@@ -45,13 +45,14 @@
       neofetch
       distrobox
       jq
-      qbittorrent-qt5
+      qbittorrent
       xclip
       zed-editor
       python3
       gitmux
       zoxide
       bat
+      lazygit
 
       # # Adds the 'hello' command to your environment. It prints a friendly
       # # "Hello, world!" when run.
