@@ -10,6 +10,13 @@
   # You should not change this value, even if you update Home Manager. If you do
   # want to update the value, then make sure to first check the Home Manager
   # release notes.
+
+
+  imports = [
+    ../programs/lazygit.nix
+  ];
+
+
   home = {
     stateVersion = "24.05"; # Please read the comment before changing.
 
@@ -52,7 +59,6 @@
       gitmux
       zoxide
       bat
-      lazygit
 
       # # Adds the 'hello' command to your environment. It prints a friendly
       # # "Hello, world!" when run.
@@ -139,6 +145,7 @@
       enable = true;
       extraConfig = {
         init.defaultBranch = "main";
+        pull.rebase = true;
       };
     };
 
@@ -223,11 +230,11 @@
         # nerdree
         neo-tree-nvim
         fugitive
-        onedark-vim
+        # onedark-vim
         vim-tmux-navigator
       ];
       extraConfig = ''
-        colorscheme onedark
+        set relativenumber
         set number
         set tabstop=2
         set expandtab
@@ -244,7 +251,6 @@
         set autoindent
         set clipboard=unnamedplus
         nnoremap <C-s> <ESC>:w<CR>
-        nnoremap <C-q> <ESC>:q<CR>
         nnoremap <C-e> :Neotree filesystem reveal<CR>
         nnoremap <M-Up> :m -2<CR>
         nnoremap <M-Down> :m +1<CR>

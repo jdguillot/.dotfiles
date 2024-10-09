@@ -2,8 +2,6 @@
 {
   imports = [
     ../common.nix
-    # ../common-linux.nix
-    #../../programs/non-free.nix
   ];
   # home.username = "jdguillot";
   # home.homeDirectory = "/home/jdguillot";
