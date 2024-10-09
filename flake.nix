@@ -115,6 +115,7 @@
           modules = [
             ./hosts/work-wsl/configuration.nix
             nixos-wsl.nixosModules.default
+            nix-index-database.nixosModules.nix-index
             {
               system.stateVersion = "24.05";
               wsl.enable = true;
