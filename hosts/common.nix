@@ -41,7 +41,7 @@
       mc
       btop
       cmatrix
-      # gh
+      gh
       neofetch
       distrobox
       jq
@@ -142,11 +142,6 @@
       };
     };
 
-    gh = {
-      enable = true;
-      gitCredentialHelper.enable = true;
-    };
-
 
     ### Bash Shell
     bash = {
@@ -212,10 +207,7 @@
     ## Vim Config
     vim = {
       enable = true;
-      plugins = with pkgs.vimPlugins; [
-        vim-airline
-        # onedark-vim
-      ];
+      plugins = with pkgs.vimPlugins; [ vim-airline ];
       settings = { ignorecase = true; };
       extraConfig = ''
         set mouse=a
@@ -231,10 +223,11 @@
         # nerdree
         neo-tree-nvim
         fugitive
-        # onedarkpro-nvim
+        onedark-vim
         vim-tmux-navigator
       ];
       extraConfig = ''
+        colorscheme onedark
         set number
         set tabstop=2
         set expandtab
@@ -262,7 +255,7 @@
     tmux = {
       enable = true;
       shell = "${pkgs.fish}/bin/fish";
-      # terminal = "tmux-256color";
+      terminal = "tmux-256color";
       historyLimit = 100000;
       plugins = with pkgs;
         [
@@ -290,52 +283,36 @@
           # tmuxPlugins.sensible
           # # must be before continuum edits right status bar
           {
-            plugin = tmuxPlugins.prefix-highlight;
-
-          }
-          {
             plugin = tmuxPlugins.catppuccin;
 
             extraConfig = '' 
-              # set -g @catppuccin_window_left_separator ""
-              # set -g @catppuccin_window_right_separator " "
-              # set -g @catppuccin_window_middle_separator " █"
-              # set -g @catppuccin_window_number_position "right"
+              set -g @catppuccin_window_left_separator ""
+              set -g @catppuccin_window_right_separator " "
+              set -g @catppuccin_window_middle_separator " █"
+              set -g @catppuccin_window_number_position "right"
 
-              # set -g @catppuccin_window_default_fill "number"
-              # set -g @catppuccin_window_default_text "#W"
+              set -g @catppuccin_window_default_fill "number"
+              set -g @catppuccin_window_default_text "#W"
 
-              # set -g @catppuccin_window_current_fill "number"
-              # set -g @catppuccin_window_current_text "#W"
+              set -g @catppuccin_window_current_fill "number"
+              set -g @catppuccin_window_current_text "#W"
 
               set -g @catppuccin_status_modules_right "directory host gitmux"
-              # set -g @catppuccin_status_left_separator  " "
-              # set -g @catppuccin_status_right_separator ""
-              # set -g @catppuccin_status_fill "icon"
-              # set -g @catppuccin_status_connect_separator "no"
+              set -g @catppuccin_status_left_separator  " "
+              set -g @catppuccin_status_right_separator ""
+              set -g @catppuccin_status_fill "icon"
+              set -g @catppuccin_status_connect_separator "no"
 
               set -g @catppuccin_directory_text "#{pane_current_path}"
               # set -g @catppuccin_flavour 'frappe'
               # set -g @catppuccin_window_tabs_enabled on
               # set -g @catppuccin_date_time "%H:%M"
               # set -g @catppuccin_status_modules_right "... gitmux ..."
-
-              set -g @catppuccin_window_status_style "slanted"
             '';
           }
           {
             plugin = tmuxPlugins.vim-tmux-navigator;
           }
-          # {
-          #   plugin = tmuxPlugins.nord;
-
-          #   extraConfig = ''
-          #     # set -g @nord_direcory_text "#{pane_current_path}"
-          #     # set -g @nord_date_time "%H:%M"
-          #     #set -g @nord_tmux_show_status_content "0"
-          #     # set -g @nord_status_modules_right "prefix_highlight pane_current_path host gitmux "
-          #   '';
-          # }
         ];
       extraConfig = ''
         set -g mouse
@@ -343,20 +320,7 @@
         unbind r
         bind r source-file ~/.config/tmux/tmux.conf
         set -g prefix C-d
-
-        # Setup right status bar
-        # set -g status-right "#[fg=white,bg=brightblack,nobold,noitalics,nounderscore]#[fg=white,bg=brightblack] %I:%M%p #[fg=white,bg=brightblack,nobold,noitalics,nounderscore]#[fg=white,bg=brightblack] #{gitmux} #[fg=cyan,bg=brightblack,nobold,noitalics,nounderscore]#[fg=black,bg=cyan,bold] #H "
-        # set -g status-right "#{prefix_highlight}  #{pane_current_path}  #{host}  #{gitmux}"
       '';
-    };
-
-    zellij = {
-      enable = true;
-      enableFishIntegration = true;
-      settings = {
-        theme = "nord";
-        font = "FiraCode Nerd Font";
-      };
     };
 
     # Enable GnuPG in Home Manager
