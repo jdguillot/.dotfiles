@@ -13,6 +13,8 @@
       fugitive
       # onedark-vim
       vim-tmux-navigator
+      comment-nvim
+      nvim-treesitter.withAllGrammars
     ];
     extraConfig = ''
       set relativenumber
@@ -35,6 +37,11 @@
       nnoremap <C-e> :Neotree filesystem reveal<CR>
       nnoremap <M-Up> :m -2<CR>
       nnoremap <M-Down> :m +1<CR>
+
+      nnoremap <C-/> gcc
+      vnoremap <C-/> gc
+      inoremap <ESC>gccA
+
       " Coc Nvim
 
       inoremap <silent><expr> <TAB>
