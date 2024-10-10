@@ -2,7 +2,6 @@
 
 {
 
-
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.
@@ -59,6 +58,7 @@
       gitmux
       zoxide
       bat
+      nixd
 
       # # Adds the 'hello' command to your environment. It prints a friendly
       # # "Hello, world!" when run.
@@ -226,7 +226,10 @@
     ## NeoVim
     neovim = {
       enable = true;
+      withPython3 = true;
       plugins = with pkgs.vimPlugins; [
+        coc-nvim
+        coc-python
         context-filetype
         # nerdree
         neo-tree-nvim
@@ -255,6 +258,32 @@
         nnoremap <C-e> :Neotree filesystem reveal<CR>
         nnoremap <M-Up> :m -2<CR>
         nnoremap <M-Down> :m +1<CR>
+        " Coc Nvim
+
+        inoremap <silent><expr> <TAB>
+             \ coc#pum#visible() ? coc#pum#next(1) :
+             \ CheckBackspace() ? "\<Tab>" :
+             \ coc#refresh()
+        inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+
+        " Use <c-space> to trigger completion
+        if has('nvim')
+          inoremap <silent><expr> <c-space> coc#refresh()
+        else
+          inoremap <silent><expr> <c-@> coc#refresh()
+        endif
+
+        function! CheckBackspace() abort
+          let col = col('.') - 1
+          return !col || getline('.')[col - 1]  =~# '\s'
+        endfunction
+
+        " Use <c-space> to trigger completion
+        if has('nvim')
+          inoremap <silent><expr> <c-space> coc#refresh()
+        else
+          inoremap <silent><expr> <c-@> coc#refresh()
+        endif
       '';
     };
 
@@ -336,6 +365,11 @@
       settings = {
         theme = "nord";
         font = "FiraCode Nerd Font";
+        keybinds = {
+          normal = {};
+          pane = {};
+        };
+        default_mode = "tmux";
       };
     };
 
