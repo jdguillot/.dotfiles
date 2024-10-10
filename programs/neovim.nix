@@ -38,6 +38,12 @@
       nnoremap <M-Up> :m -2<CR>
       nnoremap <M-Down> :m +1<CR>
 
+      " Use ctrl-[hjkl] to select the active split!
+      nmap <silent> <c-k> :wincmd k<CR>
+      nmap <silent> <c-j> :wincmd j<CR>
+      nmap <silent> <c-h> :wincmd h<CR>
+      nmap <silent> <c-l> :wincmd l<CR>
+
       nnoremap <C-/> gcc
       vnoremap <C-/> gc
       inoremap <ESC>gccA
