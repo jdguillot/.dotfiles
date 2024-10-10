@@ -62,31 +62,10 @@
       nixd
       ripgrep
       clang-tools
-
-      # # Adds the 'hello' command to your environment. It prints a friendly
-      # # "Hello, world!" when run.
-      # pkgs.hello
-
-      # # It is sometimes useful to fine-tune packages, for example, by applying
-      # # overrides. You can do that directly here, just don't forget the
-      # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-      # # fonts?
-      # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-      # # You can also create simple shell scripts directly inside your
-      # # configuration. For example, this adds a command 'my-hello' to your
-      # # environment:
-      # (pkgs.writeShellScriptBin "my-hello" ''
-      #   echo "Hello, ${config.home.username}!"
-      # '')
+      gcc
     ];
 
-    # Home Manager is pretty good at managing dotfiles. The primary way to manage
-    # plain files is through 'home.file'.
     file = {
-      # # Building this configuration will create a copy of 'dotfiles/screenrc' in
-      # # the Nix store. Activating the configuration will then make '~/.screenrc' a
-      # # symlink to the Nix store copy.
       # ".screenrc".source = dotfiles/screenrc;
       # ".config/Code/User/settings.json".source = ../programs/vscode/vscode-settings.json;
 
@@ -97,23 +76,6 @@
       # '';
     };
 
-    # Home Manager can also manage your environment variables through
-    # 'home.sessionVariables'. These will be explicitly sourced when using a
-    # shell provided by Home Manager. If you don't want to manage your shell
-    # through Home Manager then you have to manually source 'hm-session-vars.sh'
-    # located at either
-    #
-    #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-    #
-    # or
-    #
-    #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
-    #
-    # or
-    #
-    #  /etc/profiles/per-user/cyberfighter/etc/profile.d/hm-session-vars.sh
-    #
-
     sessionVariables = {
       ## Editor
       EDITOR = "code --wait";
@@ -123,7 +85,6 @@
 
       ## fzf
       FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix";
-      # FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND";
     };
 
     shellAliases = {
@@ -133,17 +94,13 @@
 
       ## Command Presets
       pysrc = ". .venv/bin/activate.fish";
-      pynew = "python3 -m venv .venv && pysrc && pip install -r requirements";
+      pynew = "python -m venv .venv && pysrc && pip install -r requirements";
     };
   };
 
   programs = {
-
-    # Let Home Manager install and manage itself.
     home-manager.enable = true;
 
-
-    # nixpkgs.config.allowUnfree = true;
     git = {
       enable = true;
       extraConfig = {
@@ -185,16 +142,6 @@
         { name = "done"; src = pkgs.fishPlugins.done; }
         { name = "fzf-fish"; src = pkgs.fishPlugins.fzf-fish; }
         { name = "forgit"; src = pkgs.fishPlugins.forgit; }
-        # Manually packaging and enable a plugin
-        # {
-        #   name = "z";
-        #   src = pkgs.fetchFromGitHub {
-        #     owner = "jethrokuan";
-        #     repo = "z";
-        #     rev = "e0e1b9dfdba362f8ab1ae8c1afc7ccf62b89f7eb";
-        #     sha256 = "0dbnir6jbwjpjalz14snzd3cgdysgcs3raznsijd6savad3qhijc";
-        #   };
-        # }
       ];
     };
 
@@ -226,70 +173,6 @@
       '';
     };
 
-#    ## NeoVim
-#    neovim = {
-#      enable = true;
-#      withPython3 = true;
-#      plugins = with pkgs.vimPlugins; [
-#        coc-nvim
-#        coc-python
-#        context-filetype
-#        # nerdree
-#        neo-tree-nvim
-#        fugitive
-#        # onedark-vim
-#        vim-tmux-navigator
-#      ];
-#      extraConfig = ''
-#        set relativenumber
-#        set number
-#        set tabstop=2
-#        set expandtab
-#        set shiftwidth=2
-#        set softtabstop=2
-#        set wrap
-#        set linebreak
-#        set list
-#        set lcs+=space:·
-#        syntax on
-#        set ignorecase
-#        set smartcase
-#        set hlsearch
-#        set autoindent
-#        set clipboard=unnamedplus
-#        nnoremap <C-s> <ESC>:w<CR>
-#        nnoremap <C-e> :Neotree filesystem reveal<CR>
-#        nnoremap <M-Up> :m -2<CR>
-#        nnoremap <M-Down> :m +1<CR>
-#        " Coc Nvim
-#
-#        inoremap <silent><expr> <TAB>
-#             \ coc#pum#visible() ? coc#pum#next(1) :
-#             \ CheckBackspace() ? "\<Tab>" :
-#             \ coc#refresh()
-#        inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
-#
-#        " Use <c-space> to trigger completion
-#        if has('nvim')
-#          inoremap <silent><expr> <c-space> coc#refresh()
-#        else
-#          inoremap <silent><expr> <c-@> coc#refresh()
-#        endif
-#
-#        function! CheckBackspace() abort
-#          let col = col('.') - 1
-#          return !col || getline('.')[col - 1]  =~# '\s'
-#        endfunction
-#
-#        " Use <c-space> to trigger completion
-#        if has('nvim')
-#          inoremap <silent><expr> <c-space> coc#refresh()
-#        else
-#          inoremap <silent><expr> <c-@> coc#refresh()
-#        endif
-#      '';
-#    };
-
     ## Tmux
     tmux = {
       enable = true;
@@ -298,29 +181,6 @@
       historyLimit = 100000;
       plugins = with pkgs;
         [
-          # tmux-nvim
-          # tmuxPlugins.tmux-thumbs
-          # # TODO: why do I have to manually set this
-          # {
-          #   plugin = t-smart-manager;
-          #   extraConfig = ''
-          #     set -g @t-fzf-prompt '  '
-          #     set -g @t-bind "T"
-          #   '';
-          # }
-          # {
-          #   plugin = tmux-super-fingers;
-          #   extraConfig = "set -g @super-fingers-key f";
-          # }
-          # {
-          #   plugin = tmux-browser;
-          #   extraConfig = ''
-          #     set -g @browser_close_on_deattach '1'
-          #   '';
-          # }
-
-          # tmuxPlugins.sensible
-          # # must be before continuum edits right status bar
           {
             plugin = tmuxPlugins.catppuccin;
 
