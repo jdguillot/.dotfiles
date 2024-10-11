@@ -184,40 +184,32 @@
       plugins = with pkgs;
         [
           {
-            plugin = tmuxPlugins.catppuccin;
+            # plugin = tmuxPlugins.catppuccin;
+            plugin = tmuxPlugins.nord;
+            # extraConfig = '' 
+              # set -g @catppuccin_window_left_separator ""
+              # set -g @catppuccin_window_right_separator " "
+              # set -g @catppuccin_window_middle_separator " █"
+              # set -g @catppuccin_window_number_position "right"
+              #
+              # set -g @catppuccin_window_default_fill "number"
+              # set -g @catppuccin_window_default_text "#W"
+              #
+              # set -g @catppuccin_window_current_fill "number"
+              # set -g @catppuccin_window_current_text "#W"
+              #
+              # set -g @catppuccin_status_modules_right "directory host gitmux"
+              # set -g @catppuccin_status_left_separator  " "
+              # set -g @catppuccin_status_right_separator ""
+              # set -g @catppuccin_status_fill "icon"
+              # set -g @catppuccin_status_connect_separator "no"
 
-            extraConfig = '' 
-              set -g @catppuccin_window_left_separator ""
-              set -g @catppuccin_window_right_separator " "
-              set -g @catppuccin_window_middle_separator " █"
-              set -g @catppuccin_window_number_position "right"
-
-              set -g @catppuccin_window_default_fill "number"
-              set -g @catppuccin_window_default_text "#W"
-
-              set -g @catppuccin_window_current_fill "number"
-              set -g @catppuccin_window_current_text "#W"
-
-              set -g @catppuccin_status_modules_right "directory host gitmux"
-              set -g @catppuccin_status_left_separator  " "
-              set -g @catppuccin_status_right_separator ""
-              set -g @catppuccin_status_fill "icon"
-              set -g @catppuccin_status_connect_separator "no"
-
-              set -g @catppuccin_directory_text "#{pane_current_path}"
-              # set -g @catppuccin_flavour 'frappe'
-              # set -g @catppuccin_window_tabs_enabled on
-              # set -g @catppuccin_date_time "%H:%M"
-              # set -g @catppuccin_status_modules_right "... gitmux ..."
-            '';
-          }
-          {
-            plugin = tmuxPlugins.vim-tmux-navigator;
+              # set -g @catppuccin_directory_text "#{pane_current_path}"
+            # '';
           }
         ];
       extraConfig = ''
         set -g mouse
-        # set-option -g default-shell /usr/bin/fish 
         unbind r
         bind r source-file ~/.config/tmux/tmux.conf
         set -g prefix C-d
@@ -226,7 +218,7 @@
 
     zellij = {
       enable = true;
-      enableFishIntegration = true;
+      # enableFishIntegration = true;
       settings = {
         theme = "nord";
         font = "FiraCode Nerd Font";
@@ -234,7 +226,6 @@
           normal = {};
           pane = {};
         };
-        default_mode = "tmux";
       };
     };
 
