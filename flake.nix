@@ -55,6 +55,7 @@
             # Optionally, use home-manager.extraSpecialArgs to pass
             # arguments to home.nix
 
+            # home-manager.users.defaultUserShell = pkgs.zsh;
             home-manager.users."cyberfighter".imports = [
               ./hosts/razer-nixos/home.nix
               ./hosts/razer-nixos/flatpak.nix
@@ -75,7 +76,7 @@
             nixos-wsl.nixosModules.default
             nix-index-database.nixosModules.nix-index
             {
-              system.stateVersion = "24.05";
+              # system.stateVersion = "24.05";
               wsl.enable = true;
               wsl.defaultUser = "jdguillot";
               wsl.docker-desktop.enable = true;
@@ -89,6 +90,7 @@
               # Optionally, use home-manager.extraSpecialArgs to pass
               # arguments to home.nix
 
+              home-manager.users.defaultUserShell = pkgs.zsh;
               home-manager.users."jdguillot".imports = [
                 ./hosts/work-wsl/home.nix
                 # ./hosts/work-wsl/flatpak.nix
@@ -96,9 +98,9 @@
               ];
             }
             vscode-server.nixosModules.default
-            ({ config, pkgs, ... }: {
-              services.vscode-server.enable = true;
-            })
+            # ({ config, pkgs, ... }: {
+            #   services.vscode-server.enable = true;
+            # })
           ];
         };
 
