@@ -14,7 +14,8 @@
   imports = [
     ../programs/lazygit.nix
     ../programs/neovim.nix
-  ];
+    ../programs/zsh.nix
+];
 
 
   home = {
@@ -63,6 +64,7 @@
       ripgrep
       clang-tools
       gcc
+      thefuck
     ];
 
     file = {
