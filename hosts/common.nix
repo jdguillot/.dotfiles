@@ -95,7 +95,7 @@
       ll = "ls -la";
 
       ## Command Presets
-      pysrc = ". .venv/bin/activate.fish";
+      pysrc = ". .venv/bin/activate";
       pynew = "python -m venv .venv && pysrc && pip install -r requirements";
       
       nswitch = "sudo nixos-rebuild switch --flake ~/.dotfiles";
