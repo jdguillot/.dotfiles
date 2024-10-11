@@ -97,6 +97,9 @@
       ## Command Presets
       pysrc = ". .venv/bin/activate.fish";
       pynew = "python -m venv .venv && pysrc && pip install -r requirements";
+      
+      nswitch = "sudo nixos-rebuild switch --flake ~/.dotfiles";
+      nupdate = "sudo nix flake update ~/.dotfiles";
     };
   };
 
