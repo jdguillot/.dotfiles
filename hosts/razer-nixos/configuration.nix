@@ -69,8 +69,13 @@ in
   services.xserver.enable = true;
 
   # Enable the KDE Plasma Desktop Environment.
- services.displayManager.sddm.enable = true;
- services.desktopManager.plasma6.enable = true;
+  services.displayManager.sddm.enable = true;
+  services.desktopManager.plasma6.enable = true;
+
+  # Hyperland
+  programs.hyprland.enable = true;
+  # environment.systemPackages = [ pkgs.kitty ]; # Required for hyperland default
+
 
   # Enable the GNOME Desktop Environment.
   # services.xserver.displayManager.gdm.enable = true;
@@ -150,7 +155,10 @@ in
     nodejs
     wineWowPackages.stable
     distrobox
-];
+    kitty
+    dolphin
+    nvim-pkg
+  ];
 
   services.flatpak.enable = true;
   # Some programs need SUID wrappers, can be configured further or are

@@ -19,9 +19,10 @@
     nix-index-database.url = "github:nix-community/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     pst-bin.url = "path:./programs/pst";
+    kickstart-nvim.url = "github:jdguillot/kickstart-nix.nvim";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin, kickstart-nvim, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -41,6 +42,7 @@
             {
               nixpkgs.overlays = [
                 inputs.nix-vscode-extensions.overlays.default
+                kickstart-nvim.overlays.default
               ];
             }
             ./hosts/razer-nixos/configuration.nix

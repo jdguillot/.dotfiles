@@ -4,7 +4,7 @@
 
   imports = [
     ../programs/lazygit.nix
-    ../programs/neovim.nix
+    # ../programs/neovim.nix
     ../programs/zsh.nix
 ];
 
