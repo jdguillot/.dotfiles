@@ -1,0 +1,3 @@
+[submodule "kickstart-nix.nvim"]
+	path = programs/kickstart-nix.nvim
+	url = ../kickstart-nix.nvim
