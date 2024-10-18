@@ -302,15 +302,15 @@
       "locked": {
         "lastModified": 1728849950,
         "narHash": "sha256-w+pPIZ8l7/5A07XAAcaP0UgwD0o1AAhyKI7lheWD9cg=",
-        "owner": "jdguillot",
-        "repo": "kickstart-nix.nvim",
+        "ref": "refs/heads/main",
         "rev": "88b20121aabcfba2b8327ec5d6983fefbc7b3902",
-        "type": "github"
+        "revCount": 2,
+        "type": "git",
+        "url": "file:./programs/kickstart-nix.nvim"
       },
       "original": {
-        "owner": "jdguillot",
-        "repo": "kickstart-nix.nvim",
-        "type": "github"
+        "type": "git",
+        "url": "file:./programs/kickstart-nix.nvim"
       }
     },
     "luvit-meta": {

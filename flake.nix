@@ -22,7 +22,7 @@
     nix-index-database.url = "github:nix-community/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     pst-bin.url = "path:./programs/pst";
-    kickstart-nvim.url = "github:jdguillot/kickstart-nix.nvim";
+    kickstart-nvim.url = "git+file:./programs/kickstart-nix.nvim";
   };
 
   outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin,nixpkgs-stable, nixpkgs-temp, kickstart-nvim, ... }:
