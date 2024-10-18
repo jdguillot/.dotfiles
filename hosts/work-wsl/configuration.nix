@@ -8,9 +8,9 @@
 { config, lib, pkgs, inputs, ... }:
 
 {
- imports = [
-    ./docker-desktop-fix.nix
-];
+#  imports = [
+#     ./docker-desktop-fix.nix
+# ];
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org;
@@ -21,7 +21,23 @@
   '';
 
   wsl.docker-desktop.enable = true;
-  fix.docker-desktop.enable = true;
+  # fix.docker-desktop.enable = false;
+
+  # security.sudo.enable = true;
+  # # Allow members of the "wheel" group to sudo:
+  # security.sudo.configFile = ''
+  #   %wheel ALL=(ALL) ALL
+  # '';
+
+  ###### Docker
+  virtualisation.docker = {
+    enable = true;
+    enableOnBoot = true;
+  };
+  # virtualisation.docker.rootless = {
+  #   enable = true;
+  #   setSocketVariable = true;
+  # };
 
   users.defaultUserShell = pkgs.zsh;
 
@@ -55,6 +71,7 @@
     grc  
     nodejs
     # wineWowPackages.stable
+    nvim-pkg
   ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];

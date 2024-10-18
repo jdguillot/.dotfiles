@@ -6,6 +6,9 @@
     # # This is the long form of both of below
     nixpkgs.url = "nixpkgs/nixos-unstable";
 
+    nixpkgs-stable.url = "nixpkgs/nixos-24.05";
+    nixpkgs-temp.url = "github:NixOS/nixpkgs/5a917406275ee76a0ccdd9f598a6eed57d7f5cff";
+
     # Home-manager using the same nixpkgs
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -19,14 +22,17 @@
     nix-index-database.url = "github:nix-community/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     pst-bin.url = "path:./programs/pst";
+    kickstart-nvim.url = "github:jdguillot/kickstart-nix.nvim";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin,nixpkgs-stable, nixpkgs-temp, kickstart-nvim, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
       };
+      pkgs-stable = import nixpkgs-stable { inherit system; };
+      pkgs-temp = import nixpkgs-temp { inherit system; };
       secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
     in {
 
@@ -41,6 +47,7 @@
             {
               nixpkgs.overlays = [
                 inputs.nix-vscode-extensions.overlays.default
+                kickstart-nvim.overlays.default
               ];
             }
             ./hosts/razer-nixos/configuration.nix
@@ -50,10 +57,11 @@
             {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs.flake-inputs = inputs;
+            home-manager.extraSpecialArgs = {
+              flake-inputs = inputs;
+              inherit pkgs-stable pkgs-temp;
+            };
             home-manager.backupFileExtension = "backup";
-            # Optionally, use home-manager.extraSpecialArgs to pass
-            # arguments to home.nix
 
             home-manager.users."cyberfighter".imports = [
               ./hosts/razer-nixos/home.nix
@@ -71,6 +79,11 @@
             inherit secrets;
           };
           modules = [
+            {
+              nixpkgs.overlays = [
+                kickstart-nvim.overlays.default
+              ];
+            }
             ./hosts/work-wsl/configuration.nix
             nixos-wsl.nixosModules.default
             nix-index-database.nixosModules.nix-index
@@ -84,7 +97,10 @@
             {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs.flake-inputs = inputs;
+              home-manager.extraSpecialArgs = {
+                flake-inputs = inputs;
+                inherit pkgs-stable pkgs-temp;
+              };
               home-manager.backupFileExtension = "backup";
               # Optionally, use home-manager.extraSpecialArgs to pass
               # arguments to home.nix

@@ -1,19 +1,10 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-temp, ... }:
 
 {
 
-  # This value determines the Home Manager release that your configuration is
-  # compatible with. This helps avoid breakage when a new Home Manager release
-  # introduces backwards incompatible changes.
-  #
-  # You should not change this value, even if you update Home Manager. If you do
-  # want to update the value, then make sure to first check the Home Manager
-  # release notes.
-
-
   imports = [
     ../programs/lazygit.nix
-    ../programs/neovim.nix
+    # ../programs/neovim.nix
     ../programs/zsh.nix
 ];
 
@@ -27,13 +18,13 @@
       bottles
       micro
       super-productivity
-      bitwarden-desktop
+      # bitwarden-desktop
       vivaldi
       eza
       # vim
       ssh-agents
       tldr
-      bitwarden-cli
+      # bitwarden-cli
       fzf
       fd
       zip
@@ -57,7 +48,7 @@
       xclip
       zed-editor
       python3
-      gitmux
+      # gitmux
       zoxide
       bat
       nixd
@@ -66,17 +57,14 @@
       gcc
       thefuck
       devenv
+      nix-your-shell
+    ] ++ [
+      pkgs-temp.gitmux
+      pkgs-temp.bitwarden-desktop
     ];
 
     file = {
-      # ".screenrc".source = dotfiles/screenrc;
-      # ".config/Code/User/settings.json".source = ../programs/vscode/vscode-settings.json;
 
-      # # You can also set the file content immediately.
-      # ".gradle/gradle.properties".text = ''
-      #   org.gradle.console=verbose
-      #   org.gradle.daemon.idletimeout=3600000
-      # '';
     };
 
     sessionVariables = {
@@ -100,7 +88,7 @@
       pynew = "python -m venv .venv && pysrc && pip install -r requirements";
       
       nswitch = "sudo nixos-rebuild switch --flake ~/.dotfiles";
-      nupdate = "sudo nix flake update ~/.dotfiles";
+      nupdate = "nix flake update --flake ~/.dotfiles";
     };
   };
 
@@ -120,13 +108,13 @@
     ### Bash Shell
     bash = {
       enable = true;
-      initExtra = ''
-        if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
-        then
-          shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
-          exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
-        fi
-      '';
+      # initExtra = ''
+      #   if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
+      #   then
+      #     shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+      #     exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
+      #   fi
+      # '';
     };
 
     ###### Fish Shell
@@ -190,26 +178,6 @@
           {
             # plugin = tmuxPlugins.catppuccin;
             plugin = tmuxPlugins.nord;
-            # extraConfig = '' 
-              # set -g @catppuccin_window_left_separator ""
-              # set -g @catppuccin_window_right_separator " "
-              # set -g @catppuccin_window_middle_separator " █"
-              # set -g @catppuccin_window_number_position "right"
-              #
-              # set -g @catppuccin_window_default_fill "number"
-              # set -g @catppuccin_window_default_text "#W"
-              #
-              # set -g @catppuccin_window_current_fill "number"
-              # set -g @catppuccin_window_current_text "#W"
-              #
-              # set -g @catppuccin_status_modules_right "directory host gitmux"
-              # set -g @catppuccin_status_left_separator  " "
-              # set -g @catppuccin_status_right_separator ""
-              # set -g @catppuccin_status_fill "icon"
-              # set -g @catppuccin_status_connect_separator "no"
-
-              # set -g @catppuccin_directory_text "#{pane_current_path}"
-            # '';
           }
         ];
       extraConfig = ''
