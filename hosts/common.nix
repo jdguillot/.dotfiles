@@ -185,6 +185,7 @@
         unbind r
         bind r source-file ~/.config/tmux/tmux.conf
         set -g prefix C-d
+        set -ga terminal-overrides ',xterm-256color:Tc'
       '';
     };
 

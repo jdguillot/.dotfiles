@@ -300,11 +300,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1728849950,
-        "narHash": "sha256-w+pPIZ8l7/5A07XAAcaP0UgwD0o1AAhyKI7lheWD9cg=",
+        "lastModified": 1729290055,
+        "narHash": "sha256-n55XPdebdDkJxb+XlXv0WZR4r2Vx443Fi91yN06eGcg=",
         "ref": "refs/heads/main",
-        "rev": "88b20121aabcfba2b8327ec5d6983fefbc7b3902",
-        "revCount": 2,
+        "rev": "283328b692c7edf0ce123b08986248d32647f77c",
+        "revCount": 11,
         "type": "git",
         "url": "file:./programs/kickstart-nix.nvim"
       },
