@@ -300,11 +300,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1729290055,
-        "narHash": "sha256-n55XPdebdDkJxb+XlXv0WZR4r2Vx443Fi91yN06eGcg=",
+        "lastModified": 1729296345,
+        "narHash": "sha256-WvNppialwZqTJO8bbEaDbC+GmMVcWiPF3L0g+M3Czsc=",
         "ref": "refs/heads/main",
-        "rev": "283328b692c7edf0ce123b08986248d32647f77c",
-        "revCount": 11,
+        "rev": "bba7e48f00d2af1616a34c5302de2350f8e2186a",
+        "revCount": 12,
         "type": "git",
         "url": "file:./programs/kickstart-nix.nvim"
       },
@@ -471,11 +471,11 @@
     },
     "nixpkgs-stable_2": {
       "locked": {
-        "lastModified": 1729044727,
-        "narHash": "sha256-GKJjtPY+SXfLF/yTN7M2cAnQB6RERFKnQhD8UvPSf3M=",
+        "lastModified": 1729181673,
+        "narHash": "sha256-LDiPhQ3l+fBjRATNtnuDZsBS7hqoBtPkKBkhpoBHv3I=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "dc2e0028d274394f73653c7c90cc63edbb696be1",
+        "rev": "4eb33fe664af7b41a4c446f87d20c9a0a6321fa3",
         "type": "github"
       },
       "original": {
