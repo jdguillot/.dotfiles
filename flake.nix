@@ -30,6 +30,15 @@
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
+        
+        config = {
+          allowUnfree = true;
+        };
+        
+        overlays = [
+          nix-vscode-extensions.overlays.default
+          kickstart-nvim.overlays.default
+        ];
       };
       pkgs-stable = import nixpkgs-stable { inherit system; };
       pkgs-temp = import nixpkgs-temp { inherit system; };
