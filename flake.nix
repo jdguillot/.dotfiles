@@ -23,9 +23,13 @@
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     pst-bin.url = "path:./programs/pst";
     kickstart-nvim.url = "git+file:./programs/kickstart-nix.nvim";
+    tasmotizer.url = "path:./programs/tasmotizer";
+    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin,nixpkgs-stable, nixpkgs-temp, kickstart-nvim, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin,nixpkgs-stable, nixpkgs-temp, kickstart-nvim, tasmotizer, sops-nix, ... }:
+  
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -47,21 +51,14 @@
 
       nixosConfigurations = {
         razer-nixos = nixpkgs.lib.nixosSystem {
-          inherit system;
           specialArgs = {
-            inherit inputs system;
-            inherit secrets;
+            inherit inputs system pkgs secrets;
           };
           modules = [
-            {
-              nixpkgs.overlays = [
-                inputs.nix-vscode-extensions.overlays.default
-                kickstart-nvim.overlays.default
-              ];
-            }
             ./hosts/razer-nixos/configuration.nix
             nix-index-database.nixosModules.nix-index
             # nix-flatpak.nixosModules.nix-flatpak
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
             {
             home-manager.useGlobalPkgs = true;

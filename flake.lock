@@ -300,11 +300,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1729296345,
-        "narHash": "sha256-WvNppialwZqTJO8bbEaDbC+GmMVcWiPF3L0g+M3Czsc=",
+        "lastModified": 1729350037,
+        "narHash": "sha256-s+3gUEhr7+aRfQ6A9+73qN9r+Y51lbcDnzBu4VZNgB8=",
         "ref": "refs/heads/main",
-        "rev": "bba7e48f00d2af1616a34c5302de2350f8e2186a",
-        "revCount": 12,
+        "rev": "91ffd552183be2336f9d08efe358f27b4792ef35",
+        "revCount": 15,
         "type": "git",
         "url": "file:./programs/kickstart-nix.nvim"
       },
@@ -484,6 +484,22 @@
         "type": "indirect"
       }
     },
+    "nixpkgs-stable_3": {
+      "locked": {
+        "lastModified": 1729357638,
+        "narHash": "sha256-66RHecx+zohbZwJVEPF7uuwHeqf8rykZTMCTqIrOew4=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "bb8c2cf7ea0dd2e18a52746b2c3a5b0c73b93c22",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "release-24.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-temp": {
       "locked": {
         "lastModified": 1725563437,
@@ -593,6 +609,22 @@
     },
     "nixpkgs_8": {
       "locked": {
+        "lastModified": 1728492678,
+        "narHash": "sha256-9UTxR8eukdg+XZeHgxW5hQA9fIKHsKCdOIUycTryeVw=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "5633bcff0c6162b9e4b5f1264264611e950c8ec7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_9": {
+      "locked": {
         "lastModified": 1682134069,
         "narHash": "sha256-TnI/ZXSmRxQDt2sjRYK/8j8iha4B4zP2cnQCZZ3vp7k=",
         "owner": "NixOS",
@@ -633,6 +665,8 @@
         "nixpkgs-stable": "nixpkgs-stable_2",
         "nixpkgs-temp": "nixpkgs-temp",
         "pst-bin": "pst-bin",
+        "sops-nix": "sops-nix",
+        "tasmotizer": "tasmotizer",
         "vscode-server": "vscode-server"
       }
     },
@@ -656,6 +690,27 @@
       "original": {
         "owner": "snowfallorg",
         "repo": "lib",
+        "type": "github"
+      }
+    },
+    "sops-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nixpkgs-stable": "nixpkgs-stable_3"
+      },
+      "locked": {
+        "lastModified": 1729394972,
+        "narHash": "sha256-fADlzOzcSaGsrO+THUZ8SgckMMc7bMQftztKFCLVcFI=",
+        "owner": "Mic92",
+        "repo": "sops-nix",
+        "rev": "c504fd7ac946d7a1b17944d73b261ca0a0b226a5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "sops-nix",
         "type": "github"
       }
     },
@@ -734,10 +789,25 @@
         "type": "github"
       }
     },
+    "tasmotizer": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_8"
+      },
+      "locked": {
+        "lastModified": 1,
+        "narHash": "sha256-l4K+2SrXR5hiXVxsK2d23nME41W341+vw66ro54RPhg=",
+        "path": "./programs/tasmotizer",
+        "type": "path"
+      },
+      "original": {
+        "path": "./programs/tasmotizer",
+        "type": "path"
+      }
+    },
     "vscode-server": {
       "inputs": {
         "flake-utils": "flake-utils_5",
-        "nixpkgs": "nixpkgs_8"
+        "nixpkgs": "nixpkgs_9"
       },
       "locked": {
         "lastModified": 1713958148,

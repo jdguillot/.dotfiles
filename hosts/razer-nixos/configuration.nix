@@ -17,17 +17,28 @@ in
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      # "${(import ./nix/sources.nix).sops-nix}/modules/sops"
+      ../../programs/pia/pia.nix
     ];
 
   nix.extraOptions = ''
-    extra-substituters = https://devenv.cachix.org;
-    extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=;
+    extra-substituters = https://devenv.cachix.org
+    extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQ"v+f9TZLr6cv/Hm9XgU50cw=
     trusted-users = root jdguillot
     keep-outputs = true
     keep-derivations = true
   '';
 
   users.defaultUserShell = pkgs.zsh;
+  
+  sops = {
+    defaultSopsFile = ../../secrets/secrets.yaml;
+    age = {
+      sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+      keyFile = "/var/lib/sops-nix/key.txt";
+      generateKey = true;
+    };
+  };
 
   programs.zsh.enable = true;
 
@@ -71,11 +82,18 @@ in
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
+  # services.xserver.desktopManager.plasma5.enable = true;
 
   # Hyperland
-  programs.hyprland.enable = true;
+  programs.hyprland = {
+    enable = true;
+    xwayland.enable = true;
+  };
   # environment.systemPackages = [ pkgs.kitty ]; # Required for hyperland default
 
+  virtualisation.virtualbox.host.enable = true;
+  users.extraGroups.vboxusers.members = [ "user-with-access-to-virtualbox" ];
+  virtualisation.virtualbox.host.enableExtensionPack = true;
 
   # Enable the GNOME Desktop Environment.
   # services.xserver.displayManager.gdm.enable = true;
@@ -88,7 +106,7 @@ in
   };
 
   # Enable CUPS to print documents.
-  services.printing.enable = true;
+  services.printing.enable = false;
 
   # Enable sound with pipewire.
   hardware.pulseaudio.enable = false;
@@ -107,7 +125,7 @@ in
   };
 
   services.openssh = {
-  enable = true;
+  enable = false;
   ports = [ 22 ];
   settings = {
     PasswordAuthentication = true;
@@ -157,7 +175,10 @@ in
     distrobox
     kitty
     dolphin
+    wofi
     nvim-pkg
+    age
+    sops
   ];
 
   services.flatpak.enable = true;
@@ -173,19 +194,19 @@ in
 
   ###### Begin Nvidia
   # Enable OpenGL
-#  hardware.graphics = {
-#    enable = false;
-#  };
+  hardware.graphics = {
+    enable = true;
+  };
 
 #  boot.blacklistedKernelModules = ["nouveau"];
 
   # Load nvidia driver for Xorg and Wayland
-#  services.xserver.videoDrivers = ["nvidia"];
+  services.xserver.videoDrivers = ["nvidia"];
 
-#  hardware.nvidia = {
+  hardware.nvidia = {
 
     # Modesetting is required.
-#    modesetting.enable = true;
+    modesetting.enable = true;
 
     # Nvidia power management. Experimental, and can cause sleep/suspend to fai>
     # Enable this if you have graphical corruption issues or application crashe>
@@ -204,25 +225,25 @@ in
     # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus 
     # Only available from driver 515.43.04+
     # Currently alpha-quality/buggy, so false is currently the recommended sett>
-#    open = true;
+    open = false;
 
     # Enable the Nvidia settings menu,
         # accessible via `nvidia-settings`.
-#    nvidiaSettings = true;
+    nvidiaSettings = true;
 
     # Optionally, you may need to select the appropriate driver version for you>
 #    package = config.boot.kernelPackages.nvidiaPackages.stable;
-#  };
+  };
 
   # https://discourse.nixos.org/t/plasma-5-works-with-nvidia-but-sddm-fails/29655/10
 
-#  hardware.nvidia.prime = {
-#    sync.enable = true;
+  hardware.nvidia.prime = {
+    sync.enable = true;
   # Make sure to use the correct Bus ID values for your system!
-#    intelBusId = "PCI:0:2:0";
-#    nvidiaBusId = "PCI:2:0:0";
-#    # amdgpuBusId = "PCI:54:0:0"; For AMD GPU
-#  };
+    intelBusId = "PCI:0:2:0";
+    nvidiaBusId = "PCI:2:0:0";
+    # amdgpuBusId = "PCI:54:0:0"; For AMD GPU
+  };
 
 #  boot.initrd.kernelModules = [ "nvidia" ];
 #  boot.extraModulePackages = [ config.boot.kernelPackages.nvidia_x11 ];
