@@ -6,6 +6,7 @@
     ../programs/lazygit.nix
     # ../programs/neovim.nix
     ../programs/zsh.nix
+    ../programs/btop/btop.nix
 ];
 
 
@@ -38,7 +39,7 @@
       fira-code-symbols
       (nerdfonts.override { fonts = [ "FiraCode" ];})
       mc
-      btop
+      # btop
       cmatrix
       gh
       neofetch

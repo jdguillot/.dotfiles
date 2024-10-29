@@ -45,7 +45,7 @@
     fira-code-symbols
     (nerdfonts.override { fonts = [ "FiraCode" ];})
     mc
-    btop
+#     btop
 #      avahi
 #      firefox
 #      geckodriver
