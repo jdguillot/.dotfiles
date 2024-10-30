@@ -1,2 +1,5 @@
 .secret-key*
 secret-key*
+
+## Flake Result Folders
+result/*
