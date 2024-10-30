@@ -90,6 +90,8 @@
       
       nswitch = "sudo nixos-rebuild switch --flake ~/.dotfiles";
       nupdate = "nix flake update --flake ~/.dotfiles";
+
+      myip = "curl http://ip-api.com/json/ -s | jq";
     };
   };
 

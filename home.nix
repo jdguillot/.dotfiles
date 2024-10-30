@@ -131,7 +131,7 @@
     ## Command Presets
     pysrc = ". .venv/bin/activate.fish";
     pynew = "python3 -m venv .venv && pysrc && pip install -r requirements";
-  };
+};
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
