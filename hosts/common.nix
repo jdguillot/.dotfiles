@@ -29,6 +29,7 @@
       fzf
       fd
       zip
+      unzip
       git-crypt
       gnupg
       pinentry-curses
@@ -59,6 +60,7 @@
       thefuck
       devenv
       nix-your-shell
+      dua
     ] ++ [
       pkgs-temp.gitmux
       pkgs-temp.bitwarden-desktop
