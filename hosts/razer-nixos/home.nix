@@ -5,6 +5,7 @@
     # ../common-linux.nix
     ../../programs/vscode.nix
     ../../programs/alacritty.nix
+    ../../programs/bitwarden.nix
   ];
   # home.username = "jdguillot";
   # home.homeDirectory = "/home/jdguillot";
@@ -13,6 +14,11 @@
   #   enable = true;
   #   package = pkgs.emacsSebastiant;
   # };
+
+
+  home.file = {
+    "generate_ssh_key.sh".source = ../../scripts/generate_ssh_key.sh;
+  };
 
   home.packages = with pkgs; [
 
