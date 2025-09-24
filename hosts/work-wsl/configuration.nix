@@ -48,6 +48,9 @@
     ];
   };
 
+  security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt  ];
+
+
   programs.zsh.enable =true;
 
   programs.nix-ld = {
