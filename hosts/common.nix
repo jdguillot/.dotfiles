@@ -11,7 +11,7 @@
 
 
   home = {
-    stateVersion = "24.05"; # Please read the comment before changing.
+    stateVersion = "25.05"; # Please read the comment before changing.
 
     # The home.packages option allows you to install Nix packages into your
     # environment.
@@ -38,7 +38,7 @@
       # chezmoi
       fira-code
       fira-code-symbols
-      (nerdfonts.override { fonts = [ "FiraCode" ];})
+      nerd-fonts.fira-code
       mc
       # btop
       cmatrix
@@ -57,7 +57,7 @@
       ripgrep
       clang-tools
       gcc
-      thefuck
+      pay-respects
       devenv
       nix-your-shell
       dua
@@ -65,6 +65,12 @@
       pkgs-temp.gitmux
       pkgs-temp.bitwarden-desktop
     ];
+
+    # fonts.packages = [
+    #   pkgs.fira-code
+    #   pkgs.fira-code-symbols
+    # ];
+
 
     file = {
 
@@ -92,6 +98,7 @@
       
       nswitch = "sudo nixos-rebuild switch --flake ~/.dotfiles";
       nupdate = "nix flake update --flake ~/.dotfiles";
+      nboot = "sudo nixos-rebuild boot --flake ~/.dotfiles";
 
       myip = "curl http://ip-api.com/json/ -s | jq";
     };

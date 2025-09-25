@@ -6,7 +6,7 @@
     # # This is the long form of both of below
     nixpkgs.url = "nixpkgs/nixos-unstable";
 
-    nixpkgs-stable.url = "nixpkgs/nixos-24.05";
+    nixpkgs-stable.url = "nixpkgs/nixos-25.05";
     nixpkgs-temp.url = "github:NixOS/nixpkgs/5a917406275ee76a0ccdd9f598a6eed57d7f5cff";
 
     # Home-manager using the same nixpkgs
@@ -21,14 +21,14 @@
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
     nix-index-database.url = "github:nix-community/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
-    pst-bin.url = "path:./programs/pst";
+#    pst-bin.url = "path:./programs/pst";
     kickstart-nvim.url = "git+file:./programs/kickstart-nix.nvim";
-    tasmotizer.url = "path:./programs/tasmotizer";
+#    tasmotizer.url = "path:./programs/tasmotizer";
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, pst-bin,nixpkgs-stable, nixpkgs-temp, kickstart-nvim, tasmotizer, sops-nix, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, nixpkgs-stable, nixpkgs-temp, kickstart-nvim, sops-nix, ... }:
   
     let
       system = "x86_64-linux";
@@ -94,7 +94,7 @@
             nixos-wsl.nixosModules.default
             nix-index-database.nixosModules.nix-index
             {
-              system.stateVersion = "24.05";
+              system.stateVersion = "25.05";
               wsl.enable = true;
               wsl.defaultUser = "jdguillot";
               wsl.docker-desktop.enable = true;

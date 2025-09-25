@@ -13,7 +13,7 @@
     };
 
     # Initialize Starship in Fish shell
-    initExtra = ''
+    initContent = ''
       eval "$(starship init zsh)"
       eval "$(zoxide init zsh)"
 
@@ -26,7 +26,7 @@
       enable = true;
       plugins = [
         "git"
-        "thefuck"
+        # "thefuck"
         "fzf"
       ];
     };
