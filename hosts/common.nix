@@ -119,6 +119,13 @@
       };
     };
 
+    gh = {
+      enable = true;
+      gitCredentialHelper = {
+        enable = true;
+      };
+    };
+
 
     ### Bash Shell
     bash = {
