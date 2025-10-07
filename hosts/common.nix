@@ -64,6 +64,10 @@
       lazyssh
       flake-inputs.isd.packages.${system}.default
       lazydocker
+      cowsay
+      lolcat
+      fortune
+      tree
     ] ++ [
       pkgs-temp.gitmux
       pkgs-temp.bitwarden-desktop
@@ -201,6 +205,10 @@
             # plugin = tmuxPlugins.catppuccin;
             plugin = tmuxPlugins.nord;
           }
+          
+          tmuxPlugins.resurrect
+          tmuxPlugins.continuum
+
         ];
       extraConfig = ''
         set -g mouse

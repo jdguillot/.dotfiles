@@ -16,6 +16,7 @@
     initContent = ''
       eval "$(starship init zsh)"
       eval "$(zoxide init zsh)"
+      fortune | cowsay -f sus | lolcat
 
       if command -v nix-your-shell > /dev/null; then
         nix-your-shell zsh | source /dev/stdin
@@ -28,6 +29,7 @@
         "git"
         # "thefuck"
         "fzf"
+        "gh"
       ];
     };
   };
