@@ -26,6 +26,7 @@
 #    tasmotizer.url = "path:./programs/tasmotizer";
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    isd.url = "github:kainctl/isd";
   };
 
   outputs = inputs@{ self, nixpkgs, home-manager, nix-flatpak, nixos-wsl, vscode-server, nix-vscode-extensions, nix-index-database, nixpkgs-stable, nixpkgs-temp, kickstart-nvim, sops-nix, ... }:

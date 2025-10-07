@@ -1,4 +1,4 @@
-{ pkgs, pkgs-temp, ... }:
+{ pkgs, pkgs-temp, flake-inputs, ... }:
 
 {
 
@@ -61,6 +61,9 @@
       devenv
       nix-your-shell
       dua
+      lazyssh
+      flake-inputs.isd.packages.${system}.default
+      lazydocker
     ] ++ [
       pkgs-temp.gitmux
       pkgs-temp.bitwarden-desktop
