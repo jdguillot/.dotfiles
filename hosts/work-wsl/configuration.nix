@@ -8,9 +8,10 @@
 { config, lib, pkgs, inputs, ... }:
 
 {
-#  imports = [
-#     ./docker-desktop-fix.nix
-# ];
+ imports = [
+    # ./docker-desktop-fix.nix
+    # ./flatpak.nix
+];
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org
