@@ -2,6 +2,7 @@
 {
   imports = [
     ../common.nix
+    ../../programs/lazyvim/lazyvim.nix
   ];
   # home.username = "jdguillot";
   # home.homeDirectory = "/home/jdguillot";

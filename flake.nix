@@ -86,11 +86,11 @@
             inherit secrets;
           };
           modules = [
-            {
-              nixpkgs.overlays = [
-                kickstart-nvim.overlays.default
-              ];
-            }
+            # {
+            #   nixpkgs.overlays = [
+            #     kickstart-nvim.overlays.default
+            #   ];
+            # }
             ./hosts/work-wsl/configuration.nix
             nixos-wsl.nixosModules.default
             nix-index-database.nixosModules.nix-index
