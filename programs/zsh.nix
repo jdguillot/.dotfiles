@@ -16,7 +16,7 @@
     initContent = ''
       eval "$(starship init zsh)"
       eval "$(zoxide init zsh)"
-      fortune | cowsay -f sus | lolcat
+      curl -s -H "Accept: text/plain" https://icanhazdadjoke.com | cowsay -f sus | lolcat
 
       if command -v nix-your-shell > /dev/null; then
         nix-your-shell zsh | source /dev/stdin
