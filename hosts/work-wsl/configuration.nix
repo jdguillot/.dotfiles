@@ -10,7 +10,7 @@
 {
  imports = [
     # ./docker-desktop-fix.nix
-    # ./flatpak.nix
+    ./flatpak.nix
 ];
 
   nix.extraOptions = ''
@@ -65,6 +65,12 @@
 
   services.vscode-server.enable = true;
 
+  services.tailscale = {
+    enable = true;
+    useRoutingFeatures = "client";
+    extraUpFlags = [ "--accept-routes=true" ];
+  };
+
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
@@ -75,8 +81,61 @@
     grc  
     nodejs
     # wineWowPackages.stable
-    nvim-pkg
+    # nvim-pkg
+    vulkan-tools
+    vulkan-loader
+    lshw
+    virtualgl
+    moonlight-qt
   ];
+
+  hardware.graphics = {
+    enable = true;
+    # extraPackages = with pkgs; [
+    #   vulkan-tools
+    #   vulkan-loader
+    #   vulkan-validation-layers
+    # ];
+  };
+
+  xdg.portal.enable = true;
+  
+  xdg.portal.extraPortals = with pkgs; [
+    xdg-desktop-portal-gtk
+  ];
+
+  # services.xserver.videoDrivers = ["nvidia"];
+  # hardware.nvidia.open = true;
+
+  # environment.sessionVariables = {
+  #     CUDA_PATH = "${pkgs.cudatoolkit}";
+  #     EXTRA_LDFLAGS = "-L/lib -L${pkgs.linuxPackages.nvidia_x11}/lib";
+  #     EXTRA_CCFLAGS = "-I/usr/include";
+  #     LD_LIBRARY_PATH = [
+  #         "/usr/lib/wsl/lib"
+  #         "${pkgs.linuxPackages.nvidia_x11}/lib"
+  #         "${pkgs.ncurses5}/lib"
+  #         "/run/opengl-driver/lib"
+  #     ];
+  #     GALLIUM_DRIVER = "d3d12";
+  #     MESA_D3D12_DEFAULT_ADAPTER_NAME = "Nvidia";
+  # };
+
+  # hardware.nvidia-container-toolkit = {
+  #     enable = true;
+  #     mount-nvidia-executables = false;
+  # };
+
+  # systemd.services = {
+  #     nvidia-cdi-generator = {
+  #         description = "Generate nvidia cdi";
+  #         wantedBy = [ "docker.service" ];
+  #         serviceConfig = {
+  #         Type = "oneshot";
+  #         ExecStart = "${pkgs.nvidia-docker}/bin/nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml --nvidia-ctk-path=${pkgs.nvidia-container-toolkit}/bin/nvidia-ctk";
+  #         };
+  #     };
+  # };
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 

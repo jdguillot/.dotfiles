@@ -64,10 +64,16 @@
       lazyssh
       flake-inputs.isd.packages.${system}.default
       lazydocker
+      dig
       cowsay
       lolcat
       fortune
+      cbonsai
+      fireplace
+      asciiquarium
+      pipes
       tree
+      fx
     ] ++ [
       pkgs-temp.gitmux
       pkgs-temp.bitwarden-desktop
@@ -108,6 +114,8 @@
       nboot = "sudo nixos-rebuild boot --flake ~/.dotfiles";
 
       myip = "curl http://ip-api.com/json/ -s | jq";
+
+      dadjoke = "curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f sus | lolcat";
     };
   };
 
@@ -216,6 +224,7 @@
         bind r source-file ~/.config/tmux/tmux.conf
         set -g prefix C-d
         set -ga terminal-overrides ',xterm-256color:Tc'
+        set -g @resurrect-processes 'pipes asciiquarium cbonsai fireplace cmatrix pipes'
       '';
     };
 
