@@ -125,6 +125,44 @@
           ];
         };
 
+        nixos-portable = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs system;
+            inherit secrets;
+          };
+          modules = [
+            {
+              nixpkgs.overlays = [
+                kickstart-nvim.overlays.default
+              ];
+            }
+            ./hosts/nixos-portable/configuration.nix
+            nix-index-database.nixosModules.nix-index
+            {
+              system.stateVersion = "25.05";
+            }
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = {
+                flake-inputs = inputs;
+                inherit pkgs-stable pkgs-temp;
+              };
+              home-manager.backupFileExtension = "backup";
+              # Optionally, use home-manager.extraSpecialArgs to pass
+              # arguments to home.nix
+
+              home-manager.users."cyberfighter".imports = [
+                ./hosts/nixos-portable/home.nix
+                # ./hosts/work-wsl/flatpak.nix
+                # nix-flatpak.homeManagerModules.nix-flatpak
+              ];
+            }
+          ];
+        };
+
 
       };
     };
