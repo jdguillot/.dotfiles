@@ -148,7 +148,7 @@
     mangohud
     mangojuice
     moonlight-qt
-    etherwake
+    wakeonlan
   ];
 
   # Enable OpenGL

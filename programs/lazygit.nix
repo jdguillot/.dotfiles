@@ -9,7 +9,7 @@
       git = {
         parseEmoji = true;
       };
-      confirmOnQuit = true;
+      confirmOnQuit = false;
     };
   };
 
