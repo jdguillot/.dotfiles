@@ -104,6 +104,7 @@
     xdg-desktop-portal-gtk
   ];
 
+    xdg.portal.config.common.default = "*";
   # services.xserver.videoDrivers = ["nvidia"];
   # hardware.nvidia.open = true;
 
