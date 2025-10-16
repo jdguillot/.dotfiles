@@ -132,11 +132,11 @@
             inherit secrets;
           };
           modules = [
-            {
-              nixpkgs.overlays = [
-                kickstart-nvim.overlays.default
-              ];
-            }
+            # {
+            #   nixpkgs.overlays = [
+            #     kickstart-nvim.overlays.default
+            #   ];
+            # }
             ./hosts/nixos-portable/configuration.nix
             nix-index-database.nixosModules.nix-index
             {

@@ -5,6 +5,7 @@
     ../../programs/vscode.nix
     ../../programs/alacritty.nix
     ../../programs/bitwarden.nix
+    ../../programs/lazyvim/lazyvim.nix
   ];
 
   home.packages = with pkgs; [

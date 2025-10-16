@@ -12,6 +12,7 @@
     # ./docker-desktop-fix.nix
     # ./flatpak.nix
     ./hardware-configuration.nix
+    ../../programs/tailscale/defualt.nix
 ];
 
   # Bootloader.
@@ -143,9 +144,11 @@
     grc  
     nodejs
     # wineWowPackages.stable
-    nvim-pkg
+    # nvim-pkg
     mangohud
     mangojuice
+    moonlight-qt
+    etherwake
   ];
 
   # Enable OpenGL
