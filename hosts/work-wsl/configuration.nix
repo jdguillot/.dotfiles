@@ -5,13 +5,19 @@
 # NixOS-WSL specific options are documented on the NixOS-WSL repository:
 # https://github.com/nix-community/NixOS-WSL
 
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 {
- imports = [
+  imports = [
     # ./docker-desktop-fix.nix
     ./flatpak.nix
-];
+  ];
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org
@@ -49,10 +55,9 @@
     ];
   };
 
-  security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt  ];
+  security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
 
-
-  programs.zsh.enable =true;
+  programs.zsh.enable = true;
 
   programs.nix-ld = {
     enable = true;
@@ -72,13 +77,13 @@
   };
 
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
     cifs-utils
     appimage-run
     xclip
     inputs.nixos-conf-editor.packages.${system}.nixos-conf-editor
-    grc  
+    grc
     nodejs
     # wineWowPackages.stable
     # nvim-pkg
@@ -87,6 +92,7 @@
     lshw
     virtualgl
     moonlight-qt
+    nil
   ];
 
   hardware.graphics = {
@@ -99,12 +105,12 @@
   };
 
   xdg.portal.enable = true;
-  
+
   xdg.portal.extraPortals = with pkgs; [
     xdg-desktop-portal-gtk
   ];
 
-    xdg.portal.config.common.default = "*";
+  xdg.portal.config.common.default = "*";
   # services.xserver.videoDrivers = ["nvidia"];
   # hardware.nvidia.open = true;
 
@@ -138,7 +144,10 @@
   #     };
   # };
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   system.stateVersion = "25.05"; # Did you read the comment?
 }
