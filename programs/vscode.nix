@@ -1,11 +1,11 @@
-{ pkgs, ... }:
+{ }:
 {
   programs.vscode = {
     enable = true;
     profiles = {
       default = {
         userSettings = {
-          "workbench.colorTheme" =  "Best Themes - Nord Cold";
+          "workbench.colorTheme" = "Best Themes - Nord Cold";
           "git.enableSmartCommit" = true;
           "editor.autoClosingQuotes" = "always";
           "editor.fontFamily" = "FiraCode Nerd Font Mono";
@@ -15,4 +15,7 @@
       };
     };
   };
- }
+
+  services.vscode-server.enable = true;
+}
+

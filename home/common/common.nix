@@ -1,89 +1,93 @@
-{ pkgs, pkgs-temp, flake-inputs, ... }:
+{
+  pkgs,
+  pkgs-temp,
+  flake-inputs,
+  ...
+}:
 
 {
 
   imports = [
-    ../programs/lazygit.nix
-    # ../programs/neovim.nix
-    ../programs/zsh.nix
-    ../programs/btop/btop.nix
-];
-
+    ../features/cli/zsh/default.nix
+    ../features/cli/btop/btop.nix
+  ];
 
   home = {
-    stateVersion = "25.05"; # Please read the comment before changing.
+    stateVersion = "24.11"; # Please read the comment before changing.
 
     # The home.packages option allows you to install Nix packages into your
     # environment.
-    packages = with pkgs; [
-      bottles
-      micro
-      super-productivity
-      # bitwarden-desktop
-      vivaldi
-      eza
-      # vim
-      ssh-agents
-      tldr
-      # bitwarden-cli
-      fzf
-      fd
-      zip
-      unzip
-      git-crypt
-      gnupg
-      pinentry-curses
-      # fish
-      # starship
-      # chezmoi
-      fira-code
-      fira-code-symbols
-      nerd-fonts.fira-code
-      mc
-      # btop
-      cmatrix
-      gh
-      neofetch
-      distrobox
-      jq
-      qbittorrent
-      xclip
-      zed-editor
-      python3
-      # gitmux
-      zoxide
-      bat
-      nixd
-      ripgrep
-      clang-tools
-      gcc
-      pay-respects
-      devenv
-      nix-your-shell
-      dua
-      lazyssh
-      flake-inputs.isd.packages.${system}.default
-      lazydocker
-      dig
-      cowsay
-      lolcat
-      fortune
-      cbonsai
-      fireplace
-      asciiquarium
-      pipes
-      tree
-      fx
-    ] ++ [
-      pkgs-temp.gitmux
-      pkgs-temp.bitwarden-desktop
-    ];
+    packages =
+      with pkgs;
+      [
+        bottles
+        micro
+        super-productivity
+        # bitwarden-desktop
+        vivaldi
+        eza
+        # vim
+        ssh-agents
+        tldr
+        # bitwarden-cli
+        fzf
+        fd
+        zip
+        unzip
+        git-crypt
+        gnupg
+        pinentry-curses
+        # fish
+        # starship
+        # chezmoi
+        fira-code
+        fira-code-symbols
+        nerd-fonts.fira-code
+        mc
+        # btop
+        cmatrix
+        gh
+        neofetch
+        distrobox
+        jq
+        qbittorrent
+        xclip
+        zed-editor
+        python3
+        # gitmux
+        zoxide
+        bat
+        nixd
+        ripgrep
+        clang-tools
+        gcc
+        pay-respects
+        devenv
+        nix-your-shell
+        dua
+        lazyssh
+        flake-inputs.isd.packages.${system}.default
+        lazydocker
+        dig
+        cowsay
+        lolcat
+        fortune
+        cbonsai
+        fireplace
+        asciiquarium
+        pipes
+        tree
+        fx
+      ]
+      ++ [
+        pkgs-temp.gitmux
+        pkgs-temp.bitwarden-desktop
+      ];
 
     # fonts.packages = [
     #   pkgs.fira-code
     #   pkgs.fira-code-symbols
     # ];
-
 
     file = {
 
@@ -97,7 +101,7 @@
       PIP_REQUIRE_VIRTUALENV = "true";
 
       ## fzf
-      FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix";
+      FZF_DEFAULT_COMMAND = "fd --type f --strip-cwd-prefix";
     };
 
     shellAliases = {
@@ -108,7 +112,7 @@
       ## Command Presets
       pysrc = ". .venv/bin/activate";
       pynew = "python -m venv .venv && pysrc && pip install -r requirements";
-      
+
       nswitch = "sudo nixos-rebuild switch --flake ~/.dotfiles";
       nupdate = "nix flake update --flake ~/.dotfiles";
       nboot = "sudo nixos-rebuild boot --flake ~/.dotfiles";
@@ -138,7 +142,6 @@
       };
     };
 
-
     ### Bash Shell
     bash = {
       enable = true;
@@ -166,35 +169,49 @@
       '';
       plugins = [
         # Enable a plugin (here grc for colorized command output) from nixpkgs
-        { name = "grc"; src = pkgs.fishPlugins.grc.src; }
-        { name = "done"; src = pkgs.fishPlugins.done; }
-        { name = "fzf-fish"; src = pkgs.fishPlugins.fzf-fish; }
-        { name = "forgit"; src = pkgs.fishPlugins.forgit; }
+        {
+          name = "grc";
+          src = pkgs.fishPlugins.grc.src;
+        }
+        {
+          name = "done";
+          src = pkgs.fishPlugins.done;
+        }
+        {
+          name = "fzf-fish";
+          src = pkgs.fishPlugins.fzf-fish;
+        }
+        {
+          name = "forgit";
+          src = pkgs.fishPlugins.forgit;
+        }
       ];
     };
 
     starship = {
       enable = true;
       # Configuration written to ~/.config/starship.toml
-      settings = (with builtins; fromTOML (readFile ../programs/starship/bracketed-segments.toml)) // {
+      settings = (with builtins; fromTOML (readFile ../../programs/starship/bracketed-segments.toml)) // {
         # overrides here, may be empty
       };
       #settings = {
-        # add_newline = false;
+      # add_newline = false;
 
-        # character = {
-        #   success_symbol = "[➜](bold green)";
-        #   error_symbol = "[➜](bold red)";
-        # };
+      # character = {
+      #   success_symbol = "[➜](bold green)";
+      #   error_symbol = "[➜](bold red)";
+      # };
 
-        # package.disabled = true;
+      # package.disabled = true;
     };
 
     ## Vim Config
     vim = {
       enable = true;
       plugins = with pkgs.vimPlugins; [ vim-airline ];
-      settings = { ignorecase = true; };
+      settings = {
+        ignorecase = true;
+      };
       extraConfig = ''
         set mouse=a
         set cursorline
@@ -207,17 +224,16 @@
       shell = "${pkgs.zsh}/bin/zsh";
       terminal = "xterm-256color";
       historyLimit = 100000;
-      plugins = with pkgs;
-        [
-          {
-            # plugin = tmuxPlugins.catppuccin;
-            plugin = tmuxPlugins.nord;
-          }
-          
-          tmuxPlugins.resurrect
-          tmuxPlugins.continuum
+      plugins = with pkgs; [
+        {
+          # plugin = tmuxPlugins.catppuccin;
+          plugin = tmuxPlugins.nord;
+        }
 
-        ];
+        tmuxPlugins.resurrect
+        tmuxPlugins.continuum
+
+      ];
       extraConfig = ''
         set -g mouse
         unbind r
@@ -235,8 +251,8 @@
         theme = "nord";
         font = "FiraCode Nerd Font";
         keybinds = {
-          normal = {};
-          pane = {};
+          normal = { };
+          pane = { };
         };
       };
     };
@@ -248,11 +264,11 @@
   };
 
   services = {
-      
+
     # Configure gpg-agent
     gpg-agent = {
       enable = true;
-      
+
       # Specify default caching time for the passphrase (in seconds)
       defaultCacheTtl = 600; # 10 minutes
 

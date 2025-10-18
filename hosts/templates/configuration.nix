@@ -6,43 +6,39 @@
   ...
 }:
 
+let
+  username = "cyberfighter";
+in
 {
   imports = [
-    # ./docker-desktop-fix.nix
+    ./hardware-configuration.nix
+    ./disko-btrfs-config.nix
     ../../modules/global/default.nix
-    ../../modules/optional/tailscale.nix
-    ../../modules/optional/pkgs.nix
-    ../../modules/optional/docker.nix
-    inputs.nixos-wsl.nixosModules.default
-    inputs.nix-index-database.nixosModules.nix-index
-    inputs.vscode-server.nixosModules.default
+    ../../services/docker/default.nix
+    ../../services/tailscale/defualt.nix
+    ../../services/flatpak/default.nix
   ];
-
-  # WSL Options
-  wsl.enable = true;
-  wsl.defaultUser = "jdguillot";
-  wsl.docker-desktop.enable = true;
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org
     extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-    trusted-users = root jdguillot
+    trusted-users = root ${username}
     keep-outputs = true
     keep-derivations = true
   '';
 
+  # Shell Setup
   programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
 
-  users.users."jdguillot" = {
+  users.users.${username} = {
     extraGroups = [
       "wheel"
       "docker"
     ];
   };
 
-  security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
-
+  # https://github.com/nix-community/nix-ld
   programs.nix-ld = {
     enable = true;
     package = pkgs.nix-ld-rs;
@@ -50,17 +46,6 @@
 
   nixpkgs.config = {
     allowUnfree = true;
-  };
-
-  services.vscode-server.enable = true;
-
-  environment.systemPackages = with pkgs; [
-    moonlight-qt
-    nil
-  ];
-
-  hardware.graphics = {
-    enable = true;
   };
 
   xdg.portal.enable = true;
