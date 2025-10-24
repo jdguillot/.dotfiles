@@ -14,8 +14,8 @@
     geckodriver
   ];
   programs.firefox.package = pkgs.wrapFirefox pkgs.firefox-unwrapped {
-      extraPolicies = {
-      ExtensionSettings = {};
+    extraPolicies = {
+      ExtensionSettings = { };
     };
   };
 
@@ -25,15 +25,17 @@
 
   };
 
-  programs.git = {
-      userName  = "jdguillot";
-      userEmail = "jdguillot@outlook.com";
+  programs.git.settings = {
+    user = {
+      name = "jdguillot";
+      email = "jdguillot@outlook.com";
+    };
   };
 
   home.file = {
-      ".ssh/config".source = ../../secrets/.ssh_config_work;
-      ".config/nix/nix.conf".source = ../../secrets/nix.conf;
-    };
+    ".ssh/config".source = ../../secrets/.ssh_config_work;
+    ".config/nix/nix.conf".source = ../../secrets/nix.conf;
+  };
 
   # programs.vscode = {
   #   enable = true;
@@ -56,9 +58,6 @@
   #     zhuangtongfa.material-theme
   #   ];
   # };
-
-
-  
 
   # # Optionally, start the service automatically on home-manager switch
   # home.activation.install-vscode-extensions = lib.mkAfter ''

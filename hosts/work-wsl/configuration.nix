@@ -1,6 +1,4 @@
 {
-  config,
-  lib,
   pkgs,
   inputs,
   ...
@@ -17,11 +15,14 @@
     inputs.nix-index-database.nixosModules.nix-index
     inputs.vscode-server.nixosModules.default
   ];
+  wsl = {
 
-  # WSL Options
-  wsl.enable = true;
-  wsl.defaultUser = "jdguillot";
-  wsl.docker-desktop.enable = true;
+    # WSL Options
+    enable = true;
+    defaultUser = "jdguillot";
+    docker-desktop.enable = true;
+    wslConf.automount.root = "/";
+  };
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org
@@ -41,6 +42,10 @@
     ];
   };
 
+  environment.variables = {
+    JAVA_HOME = "${pkgs.zulu8}";
+  };
+
   security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
 
   programs.nix-ld = {
@@ -57,19 +62,22 @@
   environment.systemPackages = with pkgs; [
     moonlight-qt
     nil
+    zulu8
+    gradle
   ];
 
   hardware.graphics = {
     enable = true;
   };
-
-  xdg.portal.enable = true;
-
-  xdg.portal.extraPortals = with pkgs; [
-    xdg-desktop-portal-gtk
-  ];
-
-  xdg.portal.config.common.default = "*";
+  xdg = {
+    portal = {
+      enable = true;
+      extraPortals = with pkgs; [
+        xdg-desktop-portal-gtk
+      ];
+      config.common.default = "*";
+    };
+  };
 
   nix.settings.experimental-features = [
     "nix-command"

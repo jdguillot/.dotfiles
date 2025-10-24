@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   ...
@@ -14,6 +13,15 @@
       stylua
       # Telescope
       ripgrep
+
+      nodePackages.typescript-language-server # for JS/TS
+      jdt-language-server # for Java
+      yaml-language-server # for YAML
+      nixd # or nil for Nix LSP
+      # Formatters
+      prettier # for JS/TS/JSON/YAML/etc
+      nixfmt-rfc-style # (you have this in home.packages, could move here)
+      statix
     ];
 
     plugins = with pkgs.vimPlugins; [
@@ -23,7 +31,6 @@
     extraLuaConfig =
       let
         plugins = with pkgs.vimPlugins; [
-          # LazyVim
           LazyVim
           bufferline-nvim
           cmp-buffer
@@ -139,7 +146,7 @@
             -- import/override with your plugins
             { import = "plugins" },
             -- treesitter handled by xdg.configFile."nvim/parser", put this line at the end of spec to clear ensure_installed
-            { "nvim-treesitter/nvim-treesitter", opts = { ensure_installed = {} } },
+            { "nvim-treesitter/nvim-treesitter", opts = { auto_install = false, ensure_installed = {} } },
           },
         })
       '';
@@ -155,6 +162,18 @@
             plugins: with plugins; [
               c
               lua
+              nix
+              yaml
+              javascript
+              java
+              typescript
+              tsx
+              json
+              markdown
+              markdown_inline
+              bash
+              vim
+              vimdoc
             ]
           )).dependencies;
       };
@@ -165,7 +184,7 @@
   xdg.configFile."nvim/lua".source = ./lua;
 
   # Additional Nix Home Manager packages needed for within LazyVim
-  home.packages = with pkgs; [
-    nixfmt-rfc-style
-  ];
+  # home.packages = with pkgs; [
+  #   nixfmt-rfc-style
+  # ];
 }

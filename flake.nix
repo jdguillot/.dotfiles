@@ -44,7 +44,6 @@
       ...
     }@inputs:
     let
-      inherit (self) outputs;
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
@@ -80,19 +79,20 @@
             sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
             {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs = {
-                flake-inputs = inputs;
-                inherit pkgs-stable pkgs-temp;
-              };
-              home-manager.backupFileExtension = "backup";
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs pkgs-stable pkgs-temp;
+                };
+                backupFileExtension = "backup";
 
-              home-manager.users."cyberfighter".imports = [
-                ./hosts/razer-nixos/home.nix
-                ./hosts/razer-nixos/flatpak.nix
-                nix-flatpak.homeManagerModules.nix-flatpak
-              ];
+                users."cyberfighter".imports = [
+                  ./hosts/razer-nixos/home.nix
+                  ./hosts/razer-nixos/flatpak.nix
+                  nix-flatpak.homeManagerModules.nix-flatpak
+                ];
+              };
             }
           ];
         };
@@ -107,16 +107,17 @@
             ./hosts/work-wsl/configuration.nix
             home-manager.nixosModules.home-manager
             {
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs = {
-                flake-inputs = inputs;
-                inherit pkgs-stable pkgs-temp;
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs pkgs-stable pkgs-temp;
+                };
+                backupFileExtension = "backup";
+                users."jdguillot".imports = [
+                  ./home/jdguillot/home.nix
+                ];
               };
-              home-manager.backupFileExtension = "backup";
-              home-manager.users."jdguillot".imports = [
-                ./home/jdguillot/home.nix
-              ];
             }
           ];
         };

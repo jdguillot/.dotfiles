@@ -1,16 +1,11 @@
 {
   pkgs,
   pkgs-temp,
-  flake-inputs,
+  inputs,
   ...
 }:
 
 {
-
-  imports = [
-    ../features/cli/zsh/default.nix
-    ../features/cli/btop/btop.nix
-  ];
 
   home = {
     stateVersion = "24.11"; # Please read the comment before changing.
@@ -66,7 +61,7 @@
         nix-your-shell
         dua
         lazyssh
-        flake-inputs.isd.packages.${system}.default
+        inputs.isd.packages.${system}.default
         lazydocker
         dig
         cowsay
@@ -78,6 +73,7 @@
         pipes
         tree
         fx
+        powershell
       ]
       ++ [
         pkgs-temp.gitmux
@@ -95,7 +91,7 @@
 
     sessionVariables = {
       ## Editor
-      EDITOR = "code --wait";
+      EDITOR = "nvim";
 
       ## Python
       PIP_REQUIRE_VIRTUALENV = "true";
@@ -128,7 +124,7 @@
 
     git = {
       enable = true;
-      extraConfig = {
+      settings = {
         init.defaultBranch = "main";
         pull.rebase = true;
         diff.tool = "nvimdiff";

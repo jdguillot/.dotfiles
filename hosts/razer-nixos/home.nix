@@ -15,7 +15,6 @@
   #   package = pkgs.emacsSebastiant;
   # };
 
-
   home.file = {
     "generate_ssh_key.sh".source = ../../scripts/generate_ssh_key.sh;
   };
@@ -30,9 +29,11 @@
 
   };
 
-  programs.git = {
-      userName  = "jdguillot";
-      userEmail = "jdguillot@outlook.com";
+  programs.git.settings = {
+    user = {
+      name = "jdguillot";
+      email = "jdguillot@outlook.com";
+    };
   };
 
   # home.file.".xsessionrc".text = ''

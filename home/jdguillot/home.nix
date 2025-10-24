@@ -10,15 +10,30 @@
     ../features/cli/lazyvim/lazyvim.nix
     ../../programs/lazygit.nix
   ];
+  home = {
 
-  home.username = lib.mkDefault "jdguillot";
-  home.homeDirectory = lib.mkDefault "/home/${config.home.username}";
+    username = lib.mkDefault "jdguillot";
+    homeDirectory = lib.mkDefault "/home/${config.home.username}";
 
-  home.packages = with pkgs; [
-    avahi
-    firefox
-    geckodriver
-  ];
+    packages = with pkgs; [
+      avahi
+      firefox
+      geckodriver
+    ];
+
+    sessionVariables = {
+      ## Github
+      GITHUB_USERNAME = "jonathan-guillot_emcor";
+
+    };
+
+    file = {
+      ".ssh/config".source = ../../secrets/.ssh_config_work;
+      ".config/nix/nix.conf".source = ../../secrets/nix.conf;
+    };
+
+    stateVersion = "24.11";
+  };
 
   programs.firefox.package = pkgs.wrapFirefox pkgs.firefox-unwrapped {
     extraPolicies = {
@@ -26,22 +41,11 @@
     };
   };
 
-  home.sessionVariables = {
-    ## Github
-    GITHUB_USERNAME = "jonathan-guillot_emcor";
-
+  programs.git.settings = {
+    user = {
+      name = "jonathan-guillot_emcor";
+      email = "jonathan_guillot@emcor.net";
+    };
   };
-
-  programs.git = {
-    userName = "jonathan-guillot_emcor";
-    userEmail = "jonathan_guillot@emcor.net";
-  };
-
-  home.file = {
-    ".ssh/config".source = ../../secrets/.ssh_config_work;
-    ".config/nix/nix.conf".source = ../../secrets/nix.conf;
-  };
-
-  home.stateVersion = "24.11";
 
 }
