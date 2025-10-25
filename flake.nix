@@ -122,6 +122,31 @@
           ];
         };
 
+        ryzn-nix-wsl = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs system;
+            inherit secrets;
+          };
+          modules = [
+            ./hosts/ryzn-wsl/configuration.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs pkgs-stable pkgs-temp;
+                };
+                backupFileExtension = "backup";
+                users."cyberfighter".imports = [
+                  ./home/cyberfighter/home.nix
+                ];
+              };
+            }
+          ];
+        };
+
         nixos-portable = nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {

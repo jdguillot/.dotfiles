@@ -5,5 +5,7 @@
     wget
     cifs-utils
     lshw
+    git
+    gh
   ];
 }
