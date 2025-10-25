@@ -24,7 +24,10 @@ in
     defaultUser = "${username}";
     # docker-desktop.enable = true;
     wslConf.automount.root = "/";
+
   };
+
+  networking.hostName = "ryzn-nix-wsl"; # Define your hostname.
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org

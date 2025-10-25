@@ -169,11 +169,6 @@
       #     extraSpecialArgs = { inherit inputs outputs; };
       #     modules = [ ./home/jdguillot/home.nix ];
       #   };
-      # "test@nixos" = home-manager.lib.homeManagerConfiguration {
-      #   pkgs = nixpkgs.legacyPackages.${system};
-      #   extraSpecialArgs = { inherit inputs outputs; };
-      #   modules = [ ./home/jdguillot/home.nix ];
-      # };
       # };
     };
 
