@@ -1,16 +1,39 @@
-{ ... }:
+{
+  config,
+  lib,
+  ...
+}:
+
+let
+  cfg = config.cyberfighter.features.flatpak;
+in
 {
 
-  services.flatpak.packages = [
-    "com.github.tchx84.Flatseal"
-    "io.github.zen_browser.zen"
-    "org.openscad.OpenSCAD"
-    "org.freecadweb.FreeCAD"
-    "org.libreoffice.LibreOffice"
-    "org.videolan.VLC"
-    "cc.arduino.arduinoide"
-    "org.fritzing.Fritzing"
-    "org.chromium.Chromium"
+  config = lib.mkMerge [
+    (lib.mkIf cfg.desktop {
+      services.flatpak.packages = [
+        "com.github.tchx84.Flatseal"
+        "org.libreoffice.LibreOffice"
+        "org.videolan.VLC"
+      ];
+    })
+    (lib.mkIf cfg.browsers {
+      services.flatpak.packages = [
+        "io.github.zen_browser.zen"
+        "org.chromium.Chromium"
+      ];
+    })
+    (lib.mkIf cfg.cad {
+      services.flatpak.packages = [
+        "org.openscad.OpenSCAD"
+        "org.freecadweb.FreeCAD"
+      ];
+    })
+    (lib.mkIf cfg.electronics {
+      services.flatpak.packages = [
+        "cc.arduino.arduinoide"
+        "org.fritzing.Fritzing"
+      ];
+    })
   ];
-
 }

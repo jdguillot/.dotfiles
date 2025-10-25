@@ -10,13 +10,24 @@ in
   imports = [
     # ./docker-desktop-fix.nix
     ../../modules/global/default.nix
-    # ../../modules/optional/tailscale.nix
     # ../../modules/optional/pkgs.nix
-    # ../../modules/optional/docker.nix
     inputs.nixos-wsl.nixosModules.default
     inputs.nix-index-database.nixosModules.nix-index
     # inputs.vscode-server.nixosModules.default
   ];
+
+  cyberfighter.features = {
+    graphics = {
+      enable = true;
+    };
+    flatpak = {
+      enable = true;
+    };
+    docker = {
+      enable = false;
+    };
+  };
+
   wsl = {
 
     # WSL Options
@@ -71,9 +82,6 @@ in
     gradle
   ];
 
-  hardware.graphics = {
-    enable = true;
-  };
   xdg = {
     portal = {
       enable = true;

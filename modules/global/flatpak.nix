@@ -1,16 +1,26 @@
 # home.nix
-{ pkgs, ... }:
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
-  # nix-flatpak setup
-  services.flatpak.enable = true;
+let
+  cfg = config.cyberfighter.features.flatpak;
+in
+{
+  config = lib.mkIf cfg.enable {
+    # nix-flatpak setup
+    services.flatpak.enable = true;
 
-  systemd.services.flatpak-repo = {
-    wantedBy = [ "multi-user.target" ];
-    path = [ pkgs.flatpak ];
-    script = ''
-      flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    '';
+    systemd.services.flatpak-repo = {
+      wantedBy = [ "multi-user.target" ];
+      path = [ pkgs.flatpak ];
+      script = ''
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      '';
+    };
   };
 
 }
