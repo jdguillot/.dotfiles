@@ -102,7 +102,7 @@
 
     shellAliases = {
       ## Overriding default operations
-      ls = "eza --icons -F -H --group-directories-first --git -1  --tree --level=1 --ignore-glob='node_modules*'";
+      ls = "eza --icons -F -H -g -h -o --group-directories-first --git -1  --tree --level=1 --ignore-glob='node_modules*'";
       ll = "ls -la";
 
       ## Command Presets
@@ -116,6 +116,8 @@
       myip = "curl http://ip-api.com/json/ -s | jq";
 
       dadjoke = "curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f sus | lolcat";
+
+      bwu = "export BW_SESSION=$(bw unlock --raw)";
     };
   };
 

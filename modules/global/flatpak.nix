@@ -1,4 +1,3 @@
-# home.nix
 {
   config,
   lib,
