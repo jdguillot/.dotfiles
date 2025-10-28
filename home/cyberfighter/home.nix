@@ -11,6 +11,7 @@ in
     ../common/default.nix
     ../features/cli/lazyvim/lazyvim.nix
     ../../programs/lazygit.nix
+    ../features/cli/jujutsu.nix
   ];
   home = {
 
