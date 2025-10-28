@@ -10,6 +10,7 @@
     pciutils
     git
     gh
+    lazyjj
     bitwarden-cli
     appimage-run
     xclip
