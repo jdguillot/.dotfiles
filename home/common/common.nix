@@ -236,7 +236,19 @@
         set -g mouse
         unbind r
         bind r source-file ~/.config/tmux/tmux.conf
-        set -g prefix C-d
+        # set -g prefix C-d
+
+        # Set prefix key to Ctrl-a
+        set -g prefix C-a
+        unbind C-b
+        bind C-a send-prefix
+
+        # Seamless pane navigation with Ctrl-h,j,k,l
+        bind-key h select-pane -L
+        bind-key j select-pane -D
+        bind-key k select-pane -U
+        bind-key l select-pane -R
+
         set -ga terminal-overrides ',xterm-256color:Tc'
         set -g @resurrect-processes 'pipes asciiquarium cbonsai fireplace cmatrix pipes'
       '';
