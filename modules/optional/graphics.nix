@@ -27,6 +27,18 @@ in
       # Load nvidia driver for Xorg and Wayland
       services.xserver.videoDrivers = [ "nvidia" ];
 
+      environment.sessionVariables = {
+        CUDA_PATH = "${pkgs.cudatoolkit}";
+        EXTRA_LDFLAGS = "-L/lib -L${pkgs.linuxPackages.nvidia_x11}/lib";
+        EXTRA_CCFLAGS = "-I/usr/include";
+        LD_LIBRARY_PATH = [
+          "/usr/lib/wsl/lib"
+          "${pkgs.linuxPackages.nvidia_x11}/lib"
+          "${pkgs.ncurses5}/lib"
+        ];
+        MESA_D3D12_DEFAULT_ADAPTER_NAME = "Nvidia";
+      };
+
       hardware.nvidia = {
 
         # Modesetting is required.
@@ -56,6 +68,9 @@ in
 
         # Optionally, you may need to select the appropriate driver version for your specific GPU.
         package = config.boot.kernelPackages.nvidiaPackages.stable;
+      };
+      hardware.opengl = {
+        enable = true;
       };
     })
     (lib.mkIf (cfg.enable && cfg.amd) {

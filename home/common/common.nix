@@ -221,18 +221,24 @@
     tmux = {
       enable = true;
       shell = "${pkgs.zsh}/bin/zsh";
-      terminal = "xterm-256color";
+      terminal = "tmux-256color";
       historyLimit = 100000;
-      plugins = with pkgs; [
+      escapeTime = 300;
+      plugins = with pkgs.tmuxPlugins; [
+        catppuccin
+        # nord
+        resurrect
+        continuum
+        tmux-floax
         {
-          # plugin = tmuxPlugins.catppuccin;
-          plugin = tmuxPlugins.nord;
+          plugin = tmux-which-key;
+          extraConfig = ''
+            set -g @tmux-which-key-xdg-enable 1
+            set -g @tmux-which-key-disable-autobuild 1
+          '';
         }
-
-        tmuxPlugins.resurrect
-        tmuxPlugins.continuum
-
       ];
+
       extraConfig = ''
         set -g mouse
         unbind r
@@ -250,8 +256,70 @@
         bind-key k select-pane -U
         bind-key l select-pane -R
 
+        # Floax
+        unbind C-t
+        set -g @floax-bind 't'
+
+        # Visuals
+        set -g @catppuccin_flavor 'frappe'
+        set -g @catppuccin_window_status_style "slant"
+        set -g @catppuccin_status_background "none"
+        set -g @catppuccin_window_status_style "none"
+        set -g @catppuccin_pane_status_enabled "off"
+        set -g @catppuccin_pane_border_status "off"
+
+
+        # Configure left look and feel
+        set -g status-left-length 100
+        set -g status-left ""
+        set -ga status-left "#{?client_prefix,#{#[bg=#{@thm_red},fg=#{@thm_bg},bold]  #S },#{#[bg=#{@thm_bg},fg=#{@thm_green}]  #S }}"
+        set -ga status-left "#[bg=#{@thm_bg},fg=#{@thm_overlay_0},none]│"
+        set -ga status-left "#[bg=#{@thm_bg},fg=#{@thm_maroon}]  #{pane_current_command} "
+        set -ga status-left "#[bg=#{@thm_bg},fg=#{@thm_overlay_0},none]│"
+        set -ga status-left "#[bg=#{@thm_bg},fg=#{@thm_blue}]  #{=/-32/...:#{s|$USER|~|:#{b:pane_current_path}}} "
+        set -ga status-left "#[bg=#{@thm_bg},fg=#{@thm_overlay_0},none]#{?window_zoomed_flag,│,}"
+        set -ga status-left "#[bg=#{@thm_bg},fg=#{@thm_yellow}]#{?window_zoomed_flag,  zoom ,}"
+        set -g @catppuccin_directory_text "#{pane_current_path}"
+        set -g @catppuccin_date_time_text "%H:%M:%S"
+
+
+        # status right look and feel
+        set -g status-right-length 100
+        set -g status-right ""
+        # set -ga status-right "#{?#{e|>=:10,#{battery_percentage}},#{#[bg=#{@thm_red},fg=#{@thm_bg}]},#{#[bg=#{@thm_bg},fg=#{@thm_pink}]}} #{battery_icon} #{battery_percentage} "
+        set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_overlay_0}, none]│"
+        # set -ga status-right "#[bg=#{@thm_bg}]#{?#{==:#{online_status},ok},#[fg=#{@thm_mauve}] 󰖩 on ,#[fg=#{@thm_red},bold]#[reverse] 󰖪 off }"
+        set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_overlay_0}, none]│"
+        set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_blue}] 󰭦 %Y-%m-%d 󰅐 %H:%M "
+
         set -ga terminal-overrides ',xterm-256color:Tc'
         set -g @resurrect-processes 'pipes asciiquarium cbonsai fireplace cmatrix pipes'
+
+        # Configure Tmux
+        set -g status-position top
+        set -g status-style "bg=#{@thm_bg}"
+        set -g status-justify "absolute-centre"
+
+        # pane border look and feel
+        setw -g pane-border-status top
+        setw -g pane-border-format ""
+        setw -g pane-active-border-style "bg=#{@thm_bg},fg=#{@thm_overlay_0}"
+        setw -g pane-border-style "bg=#{@thm_bg},fg=#{@thm_surface_0}"
+        setw -g pane-border-lines single
+
+        # window look and feel
+        set -wg automatic-rename on
+        set -g automatic-rename-format "Window"
+
+        set -g window-status-format " #I#{?#{!=:#{window_name},Window},: #W,} "
+        set -g window-status-style "bg=#{@thm_bg},fg=#{@thm_rosewater}"
+        set -g window-status-last-style "bg=#{@thm_bg},fg=#{@thm_peach}"
+        set -g window-status-activity-style "bg=#{@thm_red},fg=#{@thm_bg}"
+        set -g window-status-bell-style "bg=#{@thm_red},fg=#{@thm_bg},bold"
+        set -gF window-status-separator "#[bg=#{@thm_bg},fg=#{@thm_overlay_0}]│"
+
+        set -g window-status-current-format " #I#{?#{!=:#{window_name},Window},: #W,} "
+        set -g window-status-current-style "bg=#{@thm_peach},fg=#{@thm_bg},bold"
       '';
     };
 

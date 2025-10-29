@@ -22,6 +22,7 @@ in
   cyberfighter.features = {
     graphics = {
       enable = true;
+      nvidia = true;
     };
     flatpak = {
       enable = true;
@@ -42,8 +43,12 @@ in
     enable = true;
     defaultUser = "${username}";
     docker-desktop.enable = true;
+    useWindowsDriver = true;
     wslConf.automount.root = "/";
   };
+
+  # Set your time zone.
+  time.timeZone = "America/Los_Angeles";
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org
