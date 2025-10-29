@@ -55,11 +55,11 @@
           nvim-lspconfig
           nvim-notify
           nvim-spectre
-          nvim-treesitter
-          nvim-treesitter-context
-          nvim-treesitter-textobjects
-          nvim-ts-autotag
-          nvim-ts-context-commentstring
+          # nvim-treesitter
+          # nvim-treesitter-context
+          # nvim-treesitter-textobjects
+          # nvim-ts-autotag
+          # nvim-ts-context-commentstring
           nvim-web-devicons
           persistence-nvim
           plenary-nvim
@@ -146,7 +146,7 @@
             -- import/override with your plugins
             { import = "plugins" },
             -- treesitter handled by xdg.configFile."nvim/parser", put this line at the end of spec to clear ensure_installed
-            { "nvim-treesitter/nvim-treesitter", opts = { auto_install = false, ensure_installed = {} } },
+            { "nvim-treesitter/nvim-treesitter", opts = { ensure_installed = {} } },
           },
         })
       '';
@@ -174,6 +174,7 @@
               bash
               vim
               vimdoc
+              regex
             ]
           )).dependencies;
       };
@@ -183,8 +184,4 @@
   # Normal LazyVim config here, see https://github.com/LazyVim/starter/tree/main/lua
   xdg.configFile."nvim/lua".source = ./lua;
 
-  # Additional Nix Home Manager packages needed for within LazyVim
-  # home.packages = with pkgs; [
-  #   nixfmt-rfc-style
-  # ];
 }

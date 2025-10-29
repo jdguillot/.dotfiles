@@ -74,6 +74,7 @@
         tree
         fx
         powershell
+        tree-sitter
       ]
       ++ [
         pkgs-temp.gitmux
