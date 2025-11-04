@@ -151,6 +151,7 @@
             { import = "lazyvim.plugins.extras.coding.mini-surround" },
             { import = "lazyvim.plugins.extras.editor.overseer" },
             { import = "lazyvim.plugins.extras.coding.yanky" },
+            { import = "lazyvim.plugins.extras.dap.core" },
 
             -- The following configs are needed for fixing lazyvim on nix
             -- force enable telescope-fzf-native.nvim
