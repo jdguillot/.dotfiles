@@ -54,6 +54,8 @@
         bat
         nixd
         ripgrep
+        duf
+        cht-sh
         clang-tools
         gcc
         pay-respects
