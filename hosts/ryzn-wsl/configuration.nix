@@ -10,7 +10,7 @@ in
   imports = [
     # ./docker-desktop-fix.nix
     ../../modules/global/default.nix
-    # ../../modules/optional/pkgs.nix
+    ../../modules/optional/pkgs.nix
     inputs.nixos-wsl.nixosModules.default
     inputs.nix-index-database.nixosModules.nix-index
     # inputs.vscode-server.nixosModules.default
@@ -24,7 +24,7 @@ in
       enable = true;
     };
     docker = {
-      enable = false;
+      enable = true;
     };
   };
 
@@ -34,11 +34,15 @@ in
     enable = true;
     defaultUser = "${username}";
     # docker-desktop.enable = true;
+    useWindowsDriver = true;
     wslConf.automount.root = "/";
 
   };
 
   networking.hostName = "ryzn-nix-wsl"; # Define your hostname.
+
+  # Set your time zone.
+  time.timeZone = "America/Los_Angeles";
 
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org
