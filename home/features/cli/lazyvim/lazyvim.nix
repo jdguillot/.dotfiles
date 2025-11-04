@@ -137,6 +137,21 @@
           },
           spec = {
             { "LazyVim/LazyVim", import = "lazyvim.plugins" },
+
+            -- Nix-managed extras (must come after lazyvim.plugins but before your plugins)
+            { import = "lazyvim.plugins.extras.util.dot" },
+            { import = "lazyvim.plugins.extras.ai.copilot" },
+            { import = "lazyvim.plugins.extras.ai.copilot-chat" },
+            { import = "lazyvim.plugins.extras.ui.edgy" },
+            { import = "lazyvim.plugins.extras.editor.harpoon2" },
+            { import = "lazyvim.plugins.extras.lang.markdown" },
+            { import = "lazyvim.plugins.extras.lang.nix" },
+            { import = "lazyvim.plugins.extras.lang.yaml" },
+            { import = "lazyvim.plugins.extras.lang.java" },
+            { import = "lazyvim.plugins.extras.coding.mini-surround" },
+            { import = "lazyvim.plugins.extras.editor.overseer" },
+            { import = "lazyvim.plugins.extras.coding.yanky" },
+
             -- The following configs are needed for fixing lazyvim on nix
             -- force enable telescope-fzf-native.nvim
             { "nvim-telescope/telescope-fzf-native.nvim", enabled = true },
@@ -175,6 +190,7 @@
               vim
               vimdoc
               regex
+              dockerfile
             ]
           )).dependencies;
       };
