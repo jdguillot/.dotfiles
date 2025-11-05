@@ -8,6 +8,8 @@
     enableZshIntegration = true;
     settings = {
       theme = "catppuccin-frappe.conf";
+      fullscreen = "true";
+      command = "tmux";
     };
   };
 }
