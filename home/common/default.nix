@@ -9,6 +9,7 @@
     ../features/desktop/ghostty/default.nix
     ../features/cli/lazygit/default.nix
     ../features/cli/starship/default.nix
+    ../features/cli/tmux/default.nix
   ];
 
 }
