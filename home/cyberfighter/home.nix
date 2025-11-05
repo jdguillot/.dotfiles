@@ -8,11 +8,11 @@ let
 in
 {
   imports = [
+    # ../../programs/vscode.nix
     ../common/default.nix
-    ../features/cli/lazyvim/lazyvim.nix
-    ../../programs/lazygit.nix
     ../features/cli/jujutsu.nix
   ];
+
   home = {
 
     username = lib.mkDefault "${username}";

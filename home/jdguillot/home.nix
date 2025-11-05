@@ -8,7 +8,6 @@
   imports = [
     ../common/default.nix
     ../features/cli/lazyvim/lazyvim.nix
-    ../../programs/lazygit.nix
   ];
   home = {
 

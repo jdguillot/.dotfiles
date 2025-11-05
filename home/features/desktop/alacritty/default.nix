@@ -7,5 +7,6 @@
       selection.save_to_clipboard = true;
       env.term = "xterm-256color";
     };
+    theme = "catppuccin_frappe";
   };
 }

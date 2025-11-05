@@ -64,17 +64,17 @@
 
       nixosConfigurations = {
         razer-nixos = nixpkgs.lib.nixosSystem {
+          inherit system;
           specialArgs = {
             inherit
               inputs
               system
-              pkgs
               secrets
               ;
           };
           modules = [
             ./hosts/razer-nixos/configuration.nix
-            nix-index-database.nixosModules.nix-index
+            # nix-index-database.nixosModules.nix-index
             # nix-flatpak.nixosModules.nix-flatpak
             sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
@@ -88,8 +88,8 @@
                 backupFileExtension = "backup";
 
                 users."cyberfighter".imports = [
-                  ./hosts/razer-nixos/home.nix
-                  ./hosts/razer-nixos/flatpak.nix
+                  ./home/cyberfighter/home.nix
+                  # ./hosts/razer-nixos/flatpak.nix
                   nix-flatpak.homeManagerModules.nix-flatpak
                 ];
               };
