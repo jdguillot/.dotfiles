@@ -9,7 +9,8 @@
     settings = {
       theme = "catppuccin-frappe.conf";
       fullscreen = "true";
-      command = "tmux";
+      command = "tmux new-session -A -s new-session";
+      confirm-close-surface = "false";
     };
   };
 }

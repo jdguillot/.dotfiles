@@ -4,7 +4,6 @@
   programs.tmux = {
     enable = true;
     shell = "${pkgs.zsh}/bin/zsh";
-    terminal = "xterm-256color";
     historyLimit = 100000;
     escapeTime = 300;
     plugins = with pkgs.tmuxPlugins; [
