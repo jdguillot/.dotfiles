@@ -20,22 +20,22 @@
           set -g @catppuccin_date_time_text "%H:%M:%S"
         '';
       }
+      {
+        plugin = weather;
+        extraConfig = ''
+          set -g @tmux-weather-units "u"
+        '';
+      }
       # nord
       resurrect
       continuum
+      vim-tmux-navigator
+      fpp
       {
         plugin = tmux-floax;
         extraConfig = ''
           unbind C-t
           set -g @floax-bind 't'
-        '';
-      }
-      vim-tmux-navigator
-      {
-        plugin = tmux-which-key;
-        extraConfig = ''
-          set -g @tmux-which-key-xdg-enable 1
-          set -g @tmux-which-key-disable-autobuild 1
         '';
       }
     ];
