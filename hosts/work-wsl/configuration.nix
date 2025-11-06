@@ -77,6 +77,7 @@ in
 
   environment.variables = {
     JAVA_HOME = "${pkgs.zulu8}";
+    WAYLAND_DISPLAY = "";
   };
 
   security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
