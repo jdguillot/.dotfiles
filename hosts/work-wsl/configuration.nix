@@ -45,6 +45,13 @@ in
     docker-desktop.enable = true;
     useWindowsDriver = true;
     wslConf.automount.root = "/";
+    wslConf.interop.appendWindowsPath = false;
+  };
+
+  home-manager.users."${username}" = {
+    home.sessionPath = [
+      "/c/Users/jguillot778e/AppData/Local/Programs/Microsoft VS Code/bin"
+    ];
   };
 
   # Set your time zone.
