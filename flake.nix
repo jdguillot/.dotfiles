@@ -147,6 +147,41 @@
           ];
         };
 
+	sys-galp-nix = nixpkgs.lib.nixosSystem {
+	  inherit system;
+          specialArgs = {
+            inherit
+              inputs
+              system
+              secrets
+              ;
+          };
+          modules = [
+            ./hosts/sys-galp-nix/configuration.nix
+            # nix-index-database.nixosModules.nix-index
+            # nix-flatpak.nixosModules.nix-flatpak
+            sops-nix.nixosModules.sops
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs pkgs-stable pkgs-temp;
+                };
+                backupFileExtension = "backup";
+
+                users."cyberfighter".imports = [
+                  ./home/cyberfighter/home.nix
+                  # ./hosts/razer-nixos/flatpak.nix
+                  nix-flatpak.homeManagerModules.nix-flatpak
+                ];
+              };
+            }
+          ];
+
+	};
+
         nixos-portable = nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {
