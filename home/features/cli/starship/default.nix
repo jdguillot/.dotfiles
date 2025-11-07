@@ -2,7 +2,7 @@
   programs.starship = {
     enable = true;
     # Configuration written to ~/.config/starship.toml
-    settings = (with builtins; fromTOML (readFile ./bracketed-segments.toml)) // {
+    settings = (with builtins; fromTOML (readFile ./starship.toml)) // {
       # overrides here, may be empty
     };
     #settings = {
