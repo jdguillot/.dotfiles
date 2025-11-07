@@ -51,6 +51,7 @@ in
   home-manager.users."${username}" = {
     home.sessionPath = [
       "/c/Users/jguillot778e/AppData/Local/Programs/Microsoft VS Code/bin"
+      "/c/Windows/System32"
     ];
   };
 
