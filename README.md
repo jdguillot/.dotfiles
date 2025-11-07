@@ -4,10 +4,10 @@
 
 ### Get some basic packages
 
-If the system does not already have git, gh, and bitwarden-cli then start with the following command
+If the system does not already have git, gh, and bitwarden-cli then start with the following command.
 
 ```bash
-nix-shell -p git gh bitwarden-cli
+nix-shell -p git gh git-crypt bitwarden-cli jq
 ```
 
 ### Clone the Repo
@@ -18,13 +18,14 @@ git clone https://github.com/jdguillot/.dotfiles.git
 
 ### Download secret key
 
-Get the base64 encoded secret key from Bitwarden. **NOTE:** You will need to be on home network or Tailscale to get secret key.
+Get the base64 encoded secret key from Bitwarden.
+**NOTE:** You will need to be on home network or Tailscale to get secret key.
 
 ```bash
 bw config server https://[SERVER_ADDRESS]
 export BW_SESSION=$(bw login --raw)
 bw sync
-bw get attachment secret-key-base64 --itemid 313a3cf9-365d-4463-9dc1-1a085c182122
+bw get attachment secret-key-base64 --itemid $(bw get item dotfiles --raw | jq -r .id)
 base64 -d secret-key-base64 > secret-key
 ```
 
