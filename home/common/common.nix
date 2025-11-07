@@ -78,6 +78,7 @@
         powershell
         tree-sitter
         posting
+        yazi
       ]
       ++ [
         pkgs-temp.gitmux
@@ -90,7 +91,7 @@
     # ];
 
     file = {
-
+      ".markdownlint.yaml".source = ./configs/.markdownlint.yaml;
     };
 
     sessionVariables = {
@@ -113,9 +114,9 @@
       pysrc = ". .venv/bin/activate";
       pynew = "python -m venv .venv && pysrc && pip install -r requirements";
 
-      nswitch = "sudo nixos-rebuild switch --flake ~/.dotfiles";
-      nupdate = "nix flake update --flake ~/.dotfiles";
-      nboot = "sudo nixos-rebuild boot --flake ~/.dotfiles";
+      ns = "sudo nixos-rebuild switch --flake ~/.dotfiles";
+      nu = "nix flake update --flake ~/.dotfiles";
+      nb = "sudo nixos-rebuild boot --flake ~/.dotfiles";
 
       myip = "curl http://ip-api.com/json/ -s | jq";
 

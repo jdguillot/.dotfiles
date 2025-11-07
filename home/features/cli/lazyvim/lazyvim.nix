@@ -5,6 +5,9 @@
 }:
 
 {
+  home.packages = with pkgs; [
+    markdownlint-cli2
+  ];
   programs.neovim = {
     enable = true;
     extraPackages = with pkgs; [
@@ -152,6 +155,7 @@
             { import = "lazyvim.plugins.extras.editor.overseer" },
             { import = "lazyvim.plugins.extras.coding.yanky" },
             { import = "lazyvim.plugins.extras.dap.core" },
+            { import = "lazyvim.plugins.extras.lang.ember" },
 
             -- The following configs are needed for fixing lazyvim on nix
             -- force enable telescope-fzf-native.nvim
