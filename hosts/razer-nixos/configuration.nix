@@ -39,7 +39,7 @@ in
   nix.extraOptions = ''
     extra-substituters = https://devenv.cachix.org
     extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-    trusted-users = root cyberfighter
+    trusted-users = root ${username}
     keep-outputs = true
     keep-derivations = true
   '';
@@ -54,18 +54,44 @@ in
       generateKey = true;
     };
   };
+  programs = {
 
-  programs.zsh.enable = true;
+    zsh.enable = true;
+    # services.xserver.desktopManager.plasma5.enable = true;
+
+    # Hyperland
+    hyprland = {
+      enable = true;
+      xwayland.enable = true;
+    };
+
+    # Enable automatic login for the user.
+    # services.displayManager.autoLogin.enable = true;
+    # services.displayManager.autoLogin.user = "${username}";
+
+    # Install firefox.
+    firefox.enable = true;
+
+    #  boot.initrd.kernelModules = [ "nvidia" ];
+    #  boot.extraModulePackages = [ config.boot.kernelPackages.nvidia_x11 ];
+
+    ###### End Nvidia
+
+    ###### Fish Shell
+    fish.enable = true;
+  };
 
   nixpkgs.config = {
     allowUnfree = true;
   };
+  boot = {
 
-  # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.initrd.luks.devices."luks-490adcca-e0d1-4876-a6c4-72a61b0652e7".device =
-    "/dev/disk/by-uuid/490adcca-e0d1-4876-a6c4-72a61b0652e7";
+    # Bootloader.
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+    initrd.luks.devices."luks-490adcca-e0d1-4876-a6c4-72a61b0652e7".device =
+      "/dev/disk/by-uuid/490adcca-e0d1-4876-a6c4-72a61b0652e7";
+  };
 
   networking.hostName = "razer-nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -97,72 +123,67 @@ in
     nerd-fonts.fira-code
     nerd-fonts.fira-mono
   ];
+  services = {
 
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
+    # Enable the X11 windowing system.
+    xserver.enable = true;
 
-  # Enable the KDE Plasma Desktop Environment.
-  services.displayManager.sddm.enable = true;
-  services.desktopManager.plasma6.enable = true;
-  # services.xserver.desktopManager.plasma5.enable = true;
+    # Enable the KDE Plasma Desktop Environment.
+    displayManager.sddm.enable = true;
+    desktopManager.plasma6.enable = true;
+    # environment.systemPackages = [ pkgs.kitty ]; # Required for hyperland default
 
-  # Hyperland
-  programs.hyprland = {
-    enable = true;
-    xwayland.enable = true;
-  };
-  # environment.systemPackages = [ pkgs.kitty ]; # Required for hyperland default
+    # virtualisation.virtualbox.host.enable = true;
+    # users.extraGroups.vboxusers.members = [ "user-with-access-to-virtualbox" ];
+    # virtualisation.virtualbox.host.enableExtensionPack = true;
 
-  # virtualisation.virtualbox.host.enable = true;
-  # users.extraGroups.vboxusers.members = [ "user-with-access-to-virtualbox" ];
-  # virtualisation.virtualbox.host.enableExtensionPack = true;
+    # Enable the GNOME Desktop Environment.
+    # services.xserver.displayManager.gdm.enable = true;
+    # services.xserver.desktopManager.gnome.enable = true;
 
-  # Enable the GNOME Desktop Environment.
-  # services.xserver.displayManager.gdm.enable = true;
-  # services.xserver.desktopManager.gnome.enable = true;
+    # Configure keymap in X11
+    xserver.xkb = {
+      layout = "us";
+      variant = "";
+    };
 
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
-  };
+    # Enable CUPS to print documents.
+    printing.enable = false;
 
-  # Enable CUPS to print documents.
-  services.printing.enable = false;
+    # Enable sound with pipewire.
+    pulseaudio.enable = false;
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+      # If you want to use JACK applications, uncomment this
+      #jack.enable = true;
 
-  # Enable sound with pipewire.
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
+      # use the example session manager (no others are packaged yet so this is enabled by default,
+      # no need to redefine it in your config for now)
+      #media-session.enable = true;
+    };
 
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
-  };
-
-  services.openssh = {
-    enable = false;
-    ports = [ 22 ];
-    settings = {
-      PasswordAuthentication = true;
-      AllowUsers = null; # Allows all users by default. Can be [ "user1" "user2" ]
-      UseDns = true;
-      X11Forwarding = false;
-      PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
+    openssh = {
+      enable = false;
+      ports = [ 22 ];
+      settings = {
+        PasswordAuthentication = true;
+        AllowUsers = null; # Allows all users by default. Can be [ "user1" "user2" ]
+        UseDns = true;
+        X11Forwarding = false;
+        PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
+      };
     };
   };
+  security.rtkit.enable = true;
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.cyberfighter = {
+  users.users.${username} = {
     isNormalUser = true;
     description = "Jonathan Guillot";
     extraGroups = [
@@ -176,13 +197,6 @@ in
       kdePackages.kate
     ];
   };
-
-  # Enable automatic login for the user.
-  # services.displayManager.autoLogin.enable = true;
-  # services.displayManager.autoLogin.user = "cyberfighter";
-
-  # Install firefox.
-  programs.firefox.enable = true;
 
   environment.systemPackages = with pkgs; [
     cifs-utils
@@ -261,14 +275,6 @@ in
     nvidiaBusId = "PCI:2:0:0";
     # amdgpuBusId = "PCI:54:0:0"; For AMD GPU
   };
-
-  #  boot.initrd.kernelModules = [ "nvidia" ];
-  #  boot.extraModulePackages = [ config.boot.kernelPackages.nvidia_x11 ];
-
-  ###### End Nvidia
-
-  ###### Fish Shell
-  programs.fish.enable = true;
 
   nix.settings.experimental-features = [
     "nix-command"
