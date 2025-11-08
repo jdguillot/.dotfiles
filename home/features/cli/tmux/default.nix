@@ -35,7 +35,16 @@
           set -g status-right ""
           set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_green}] #{weather} "
           set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_overlay_0}, none]│"
+          set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_maroon}] #{battery_icon} #{battery_percentage} #{battery_remain} "
+          # set -agF status-right "#[bg=#{@thm_bg}] #{E:@catppuccin_status_battery}"
+          set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_overlay_0}, none]│"
           set -ga status-right "#[bg=#{@thm_bg},fg=#{@thm_blue}] 󰭦 %Y-%m-%d 󰅐 %H:%M "
+        '';
+      }
+      {
+        plugin = battery;
+        extraConfig = ''
+          set -g @batt_remain_short "true"
         '';
       }
       {
