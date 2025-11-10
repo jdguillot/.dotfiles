@@ -48,6 +48,8 @@ in
     wslConf.interop.appendWindowsPath = false;
   };
 
+  networking.hostName = "work-nix-wsl"; # Define your hostname.
+
   home-manager.users."${username}" = {
     home.sessionPath = [
       "/c/Users/jguillot778e/AppData/Local/Programs/Microsoft VS Code/bin"

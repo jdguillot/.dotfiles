@@ -97,7 +97,7 @@
           ];
         };
 
-        nixos = nixpkgs.lib.nixosSystem {
+        work-nix-wsl = nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {
             inherit inputs system;
@@ -147,8 +147,8 @@
           ];
         };
 
-	sys-galp-nix = nixpkgs.lib.nixosSystem {
-	  inherit system;
+        sys-galp-nix = nixpkgs.lib.nixosSystem {
+          inherit system;
           specialArgs = {
             inherit
               inputs
@@ -180,7 +180,7 @@
             }
           ];
 
-	};
+        };
 
         nixos-portable = nixpkgs.lib.nixosSystem {
           inherit system;
