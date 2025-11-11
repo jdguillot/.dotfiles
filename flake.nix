@@ -7,7 +7,6 @@
     nixpkgs.url = "nixpkgs/nixos-unstable";
 
     nixpkgs-stable.url = "nixpkgs/nixos-25.05";
-    nixpkgs-temp.url = "github:NixOS/nixpkgs/5a917406275ee76a0ccdd9f598a6eed57d7f5cff";
 
     # Home-manager using the same nixpkgs
     home-manager = {
@@ -39,7 +38,6 @@
       nix-vscode-extensions,
       nix-index-database,
       nixpkgs-stable,
-      nixpkgs-temp,
       sops-nix,
       ...
     }@inputs:
@@ -57,7 +55,6 @@
         ];
       };
       pkgs-stable = import nixpkgs-stable { inherit system; };
-      pkgs-temp = import nixpkgs-temp { inherit system; };
       secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
     in
     {
@@ -74,26 +71,7 @@
           };
           modules = [
             ./hosts/razer-nixos/configuration.nix
-            # nix-index-database.nixosModules.nix-index
-            # nix-flatpak.nixosModules.nix-flatpak
             sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = {
-                  inherit inputs pkgs-stable pkgs-temp;
-                };
-                backupFileExtension = "backup";
-
-                users."cyberfighter".imports = [
-                  ./home/cyberfighter/home.nix
-                  # ./hosts/razer-nixos/flatpak.nix
-                  nix-flatpak.homeManagerModules.nix-flatpak
-                ];
-              };
-            }
           ];
         };
 
@@ -105,20 +83,6 @@
           };
           modules = [
             ./hosts/work-wsl/configuration.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = {
-                  inherit inputs pkgs-stable pkgs-temp;
-                };
-                backupFileExtension = "backup";
-                users."jdguillot".imports = [
-                  ./home/jdguillot/home.nix
-                ];
-              };
-            }
           ];
         };
 
@@ -130,20 +94,6 @@
           };
           modules = [
             ./hosts/ryzn-wsl/configuration.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = {
-                  inherit inputs pkgs-stable pkgs-temp;
-                };
-                backupFileExtension = "backup";
-                users."cyberfighter".imports = [
-                  ./home/cyberfighter/home.nix
-                ];
-              };
-            }
           ];
         };
 
@@ -158,28 +108,8 @@
           };
           modules = [
             ./hosts/sys-galp-nix/configuration.nix
-            # nix-index-database.nixosModules.nix-index
-            # nix-flatpak.nixosModules.nix-flatpak
             sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = {
-                  inherit inputs pkgs-stable pkgs-temp;
-                };
-                backupFileExtension = "backup";
-
-                users."cyberfighter".imports = [
-                  ./home/cyberfighter/home.nix
-                  # ./hosts/razer-nixos/flatpak.nix
-                  nix-flatpak.homeManagerModules.nix-flatpak
-                ];
-              };
-            }
           ];
-
         };
 
         nixos-portable = nixpkgs.lib.nixosSystem {
@@ -196,15 +126,51 @@
             }
           ];
         };
-
       };
-      # homeConfigurations = {
-      #   "jdguillot@nixos" = home-manager.lib.homeManagerConfiguration {
-      #     pkgs = nixpkgs.legacyPackages.${system};
-      #     extraSpecialArgs = { inherit inputs outputs; };
-      #     modules = [ ./home/jdguillot/home.nix ];
-      #   };
-      # };
+
+      homeConfigurations = {
+        "cyberfighter@razer-nixos" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = {
+            inherit inputs pkgs-stable;
+          };
+          modules = [
+            ./home/cyberfighter/home.nix
+            nix-flatpak.homeManagerModules.nix-flatpak
+          ];
+        };
+
+        "jdguillot@work-nix-wsl" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = {
+            inherit inputs pkgs-stable;
+          };
+          modules = [
+            ./home/jdguillot/home.nix
+          ];
+        };
+
+        "cyberfighter@ryzn-nix-wsl" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = {
+            inherit inputs pkgs-stable;
+          };
+          modules = [
+            ./home/cyberfighter/home.nix
+          ];
+        };
+
+        "cyberfighter@sys-galp-nix" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = {
+            inherit inputs pkgs-stable;
+          };
+          modules = [
+            ./home/cyberfighter/home.nix
+            nix-flatpak.homeManagerModules.nix-flatpak
+          ];
+        };
+      };
     };
 
 }

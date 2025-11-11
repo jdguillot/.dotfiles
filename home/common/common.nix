@@ -114,9 +114,10 @@
       pysrc = ". .venv/bin/activate";
       pynew = "python -m venv .venv && pysrc && pip install -r requirements";
 
-      ns = "sudo nixos-rebuild switch --flake ~/.dotfiles";
+      ns = "sudo nixos-rebuild switch --flake ~/.dotfiles && home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
+      hs = "home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
       nu = "nix flake update --flake ~/.dotfiles";
-      nb = "sudo nixos-rebuild boot --flake ~/.dotfiles";
+      nb = "sudo nixos-rebuild boot --flake ~/.dotfiles && home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
 
       myip = "curl http://ip-api.com/json/ -s | jq";
 
