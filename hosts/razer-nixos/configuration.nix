@@ -177,7 +177,10 @@ in
       };
     };
   };
-  security.rtkit.enable = true;
+  security = {
+    rtkit.enable = true;
+    pam.services.sddm.enableKwallet = true;
+  };
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
