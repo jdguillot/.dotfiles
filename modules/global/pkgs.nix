@@ -14,5 +14,6 @@
     bitwarden-cli
     appimage-run
     xclip
+    opencode
   ];
 }
