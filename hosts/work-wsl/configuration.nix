@@ -17,6 +17,7 @@ in
     inputs.nixos-wsl.nixosModules.default
     inputs.nix-index-database.nixosModules.nix-index
     inputs.vscode-server.nixosModules.default
+    inputs.home-manager.nixosModules.home-manager
   ];
 
   cyberfighter.features = {
@@ -51,6 +52,7 @@ in
   networking.hostName = "work-nix-wsl"; # Define your hostname.
 
   home-manager.users."${username}" = {
+    home.stateVersion = "25.05";
     home.sessionPath = [
       "/c/Users/jguillot778e/AppData/Local/Programs/Microsoft VS Code/bin"
       "/c/Windows/System32"
@@ -87,7 +89,6 @@ in
 
   programs.nix-ld = {
     enable = true;
-    package = pkgs.nix-ld-rs;
   };
 
   nixpkgs.config = {

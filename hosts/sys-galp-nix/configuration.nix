@@ -135,7 +135,7 @@ in
       neofetch
       bitwarden-desktop
       mangohud
-      protonup
+      protonup-ng
       # konsole
       dig
       thunderbird

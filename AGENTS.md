@@ -16,6 +16,7 @@
 ### Nix Files
 
 - Use 2-space indentation, NO tabs
+- **CRITICAL**: Always use Unix LF line endings (never CRLF/Windows line endings)
 - Function signatures: parameters on separate lines with closing brace on its own line
 - Imports at top, alphabetically ordered where reasonable
 - Use `with pkgs;` for package lists

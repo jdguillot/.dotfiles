@@ -17,7 +17,6 @@
     # ./docker-desktop-fix.nix
     # ./flatpak.nix
     ./hardware-configuration.nix
-    ../../programs/tailscale/defualt.nix
   ];
 
   # Bootloader.
@@ -136,7 +135,6 @@
 
     nix-ld = {
       enable = true;
-      package = pkgs.nix-ld-rs;
     };
 
     steam = {

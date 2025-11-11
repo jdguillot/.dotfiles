@@ -242,7 +242,7 @@
       # Additional custom options for gpg-agent
       extraConfig = ''
         # Example: Enable pinentry graphical dialog
-        pinentry-program ${pkgs.pinentry}/bin/pinentry-gtk-2
+        pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses
       '';
     };
   };

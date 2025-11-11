@@ -71,7 +71,6 @@ in
 
   programs.nix-ld = {
     enable = true;
-    package = pkgs.nix-ld-rs;
   };
 
   nixpkgs.config = {
