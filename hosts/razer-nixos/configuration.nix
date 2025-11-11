@@ -15,6 +15,7 @@ in
     # "${(import ./nix/sources.nix).sops-nix}/modules/sops"
     ../../programs/pia/pia.nix
     ../../programs/firejail.nix
+    ./flatpak.nix
   ];
 
   cyberfighter.features = {
