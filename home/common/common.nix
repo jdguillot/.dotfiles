@@ -1,11 +1,11 @@
 {
   pkgs,
-  pkgs-temp,
   inputs,
   ...
 }:
 
 {
+  nixpkgs.config.allowUnfree = true;
 
   home = {
     stateVersion = "24.11"; # Please read the comment before changing.
@@ -81,8 +81,8 @@
         yazi
       ]
       ++ [
-        pkgs-temp.gitmux
-        pkgs-temp.bitwarden-desktop
+        gitmux
+        bitwarden-desktop
       ];
 
     # fonts.packages = [
