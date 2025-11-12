@@ -65,14 +65,30 @@ If you've just installed NixOS and want to use this configuration:
    cd ~/dotfiles
    ```
 
-4. **Generate hardware configuration**:
+4. **Register your host in hosts/default.nix** (IMPORTANT - do this first):
+   ```nix
+   # Edit hosts/default.nix and add your host:
+   {
+     # ... existing hosts ...
+     
+     your-hostname = {
+       profile = "desktop";  # or "wsl", "minimal"
+       system = {
+         hostname = "your-hostname";
+         username = "yourusername";
+         userDescription = "Your Full Name";
+       };
+     };
+   }
+   ```
+
+5. **Generate hardware configuration**:
    ```bash
-   # For a new host
    mkdir -p hosts/<your-hostname>
    sudo nixos-generate-config --dir hosts/<your-hostname>
    ```
 
-5. **Choose a template or create your configuration**:
+6. **Choose a template or create your configuration**:
    ```bash
    # Option 1: Use a template
    cp hosts/templates/desktop-workstation.nix hosts/<your-hostname>/configuration.nix
@@ -80,35 +96,28 @@ If you've just installed NixOS and want to use this configuration:
    # Option 2: Start from scratch (see Configuration System section)
    ```
 
-6. **Edit your configuration**:
-   ```bash
-   # Edit hosts/<your-hostname>/configuration.nix
-   # Set at minimum:
-   # - cyberfighter.system.hostname
-   # - cyberfighter.system.username
-   # - Choose a profile (desktop, wsl, minimal)
-   ```
-
-7. **Add your host to flake.nix**:
+7. **Edit your host configuration** (hosts/<your-hostname>/configuration.nix):
    ```nix
-   # In flake.nix, add to nixosConfigurations:
-   your-hostname = nixpkgs.lib.nixosSystem {
-     inherit system;
-     specialArgs = { inherit inputs; };
-     modules = [
-       ./hosts/your-hostname/configuration.nix
-       home-manager.nixosModules.home-manager
-       {
-         home-manager.useGlobalPkgs = true;
-         home-manager.useUserPackages = true;
-         home-manager.extraSpecialArgs = { inherit inputs; };
-         home-manager.users.${yourUsername} = import ./home/${yourUsername}/home.nix;
-       }
-     ];
-   };
+   # The profile, hostname, and username are already set in hosts/default.nix
+   # Just configure additional features:
+   {
+     imports = [ ../../modules ];
+     
+     cyberfighter.features = {
+       desktop.environment = "plasma6";
+       docker.enable = true;
+       # ... other features
+     };
+   }
    ```
 
-8. **Set up home-manager configuration**:
+8. **Add your host to flake.nix**:
+   ```nix
+   # In flake.nix nixosConfigurations section, add:
+   your-hostname = mkNixosSystem "your-hostname" hostConfigs.your-hostname;
+   ```
+
+9. **Set up home-manager configuration**:
    ```bash
    mkdir -p home/<your-username>
    # Copy from home/cyberfighter/home.nix as a template
@@ -116,10 +125,16 @@ If you've just installed NixOS and want to use this configuration:
    # Edit to match your preferences
    ```
 
-9. **Build and activate**:
-   ```bash
-   sudo nixos-rebuild switch --flake .#your-hostname
-   ```
+10. **Add home-manager to flake.nix**:
+    ```nix
+    # In flake.nix homeConfigurations section, add:
+    "yourusername@your-hostname" = mkHomeConfig "your-hostname" hostConfigs.your-hostname;
+    ```
+
+11. **Build and activate**:
+    ```bash
+    sudo nixos-rebuild switch --flake .#your-hostname
+    ```
 
 ### From a Live CD
 
@@ -183,27 +198,29 @@ Installing NixOS from scratch with this configuration:
    cd /mnt/home/dotfiles
    ```
 
-6. **Generate hardware configuration**:
+6. **Register your host in hosts/default.nix** (see step 4 in "On a Fresh NixOS Installation")
+
+7. **Generate hardware configuration**:
    ```bash
    mkdir -p hosts/<your-hostname>
    sudo nixos-generate-config --root /mnt --dir hosts/<your-hostname>
    ```
 
-7. **Create your configuration** (see "On a Fresh NixOS Installation" step 5-8)
+8. **Create your configuration** (see "On a Fresh NixOS Installation" steps 6-10)
 
-8. **Install NixOS**:
+9. **Install NixOS**:
    ```bash
    sudo nixos-install --flake .#your-hostname
    
    # Set root password when prompted
    ```
 
-9. **Reboot and finish setup**:
-   ```bash
-   reboot
-   # After reboot, log in and run:
-   sudo nixos-rebuild switch --flake ~/dotfiles#your-hostname
-   ```
+10. **Reboot and finish setup**:
+    ```bash
+    reboot
+    # After reboot, log in and run:
+    sudo nixos-rebuild switch --flake ~/dotfiles#your-hostname
+    ```
 
 ### On an Existing System
 
@@ -220,20 +237,24 @@ Migrating an existing NixOS system to this configuration:
    cd ~/dotfiles
    ```
 
-3. **Copy your hardware configuration**:
+3. **Register your host in hosts/default.nix** (see step 4 in "On a Fresh NixOS Installation")
+
+4. **Copy your hardware configuration**:
    ```bash
    mkdir -p hosts/<your-hostname>
    sudo cp /etc/nixos/hardware-configuration.nix hosts/<your-hostname>/
    ```
 
-4. **Create new configuration** based on a template or from scratch
+5. **Create new configuration** based on a template or from scratch
 
-5. **Gradually migrate** your existing settings:
+6. **Add your host to flake.nix** (see steps 8 and 10 in "On a Fresh NixOS Installation")
+
+7. **Gradually migrate** your existing settings:
    - Start with a minimal profile
    - Enable features one at a time
    - Test after each change
 
-6. **Build and test**:
+8. **Build and test**:
    ```bash
    # Test without activating
    sudo nixos-rebuild test --flake .#your-hostname
@@ -241,6 +262,75 @@ Migrating an existing NixOS system to this configuration:
    # If everything works, switch
    sudo nixos-rebuild switch --flake .#your-hostname
    ```
+
+## Host Registration System
+
+This repository uses a centralized host registration system that simplifies configuration management.
+
+### How It Works
+
+1. **hosts/default.nix** - Central registry of all hosts with metadata
+   - Profile (desktop, wsl, minimal)
+   - Hostname
+   - Username
+   - User description
+
+2. **flake.nix** - Imports host metadata and generates configurations
+   - Uses helper functions `mkNixosSystem` and `mkHomeConfig`
+   - Automatically passes profile and metadata to configurations
+
+3. **hosts/<hostname>/configuration.nix** - Host-specific settings
+   - Only needs to configure additional features
+   - Profile, hostname, and username are inherited from hosts/default.nix
+
+### Adding a New Host
+
+**Step 1: Register in hosts/default.nix**
+```nix
+{
+  # ... existing hosts ...
+  
+  my-new-host = {
+    profile = "desktop";  # or "wsl", "minimal"
+    system = {
+      hostname = "my-new-host";
+      username = "myuser";
+      userDescription = "My Full Name";
+    };
+  };
+}
+```
+
+**Step 2: Add to flake.nix**
+```nix
+# In nixosConfigurations:
+my-new-host = mkNixosSystem "my-new-host" hostConfigs.my-new-host;
+
+# In homeConfigurations:
+"myuser@my-new-host" = mkHomeConfig "my-new-host" hostConfigs.my-new-host;
+```
+
+**Step 3: Create host configuration**
+```nix
+# hosts/my-new-host/configuration.nix
+{
+  imports = [ ../../modules ];
+  
+  # Profile, hostname, username already set via hosts/default.nix
+  # Just configure features:
+  cyberfighter.features = {
+    desktop.environment = "plasma6";
+    docker.enable = true;
+  };
+}
+```
+
+### Benefits of This System
+
+- **DRY**: Define hostname and username once in hosts/default.nix
+- **Consistent**: All hosts follow the same pattern
+- **Simple**: Host configs only need feature configuration
+- **Type-safe**: Metadata is validated and passed to all modules
 
 ## Configuration System
 

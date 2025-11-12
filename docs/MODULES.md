@@ -4,6 +4,7 @@ This document provides complete documentation for all NixOS system modules in th
 
 ## Table of Contents
 
+- [Host Registration System](#host-registration-system)
 - [Quick Start](#quick-start)
 - [Core Modules](#core-modules)
   - [Profiles](#cyberfighterprofile)
@@ -32,7 +33,208 @@ This document provides complete documentation for all NixOS system modules in th
 - [Profile Reference](#profile-reference)
 - [Example Configurations](#example-configurations)
 
+## Host Registration System
+
+This repository uses a centralized host registration pattern that keeps configurations DRY and consistent.
+
+### The Three-File Pattern
+
+Every host is defined across three files:
+
+1. **hosts/default.nix** - Host metadata registry
+2. **flake.nix** - Host configuration builder
+3. **hosts/<hostname>/configuration.nix** - Host-specific features
+
+### File 1: hosts/default.nix
+
+This is the **single source of truth** for host metadata. Always start here when adding a new host.
+
+```nix
+{
+  my-new-host = {
+    profile = "desktop";  # or "wsl", "minimal"
+    system = {
+      hostname = "my-new-host";
+      username = "myuser";
+      userDescription = "My Full Name";
+    };
+  };
+}
+```
+
+**What gets set here**:
+- Profile (desktop/wsl/minimal)
+- Hostname
+- Username
+- User description
+
+### File 2: flake.nix
+
+Add your host to the configuration builders. The flake imports `hosts/default.nix` and uses helper functions.
+
+```nix
+# Import at the top (already done)
+hostConfigs = import ./hosts/default.nix;
+
+# Add to nixosConfigurations:
+nixosConfigurations = {
+  # ... existing hosts ...
+  my-new-host = mkNixosSystem "my-new-host" hostConfigs.my-new-host;
+};
+
+# Add to homeConfigurations:
+homeConfigurations = {
+  # ... existing configs ...
+  "myuser@my-new-host" = mkHomeConfig "my-new-host" hostConfigs.my-new-host;
+};
+```
+
+**Helper functions**:
+- `mkNixosSystem` - Creates NixOS configuration with metadata
+- `mkHomeConfig` - Creates home-manager configuration with metadata
+
+### File 3: hosts/<hostname>/configuration.nix
+
+This file only contains **feature configuration**. Profile, hostname, and username are inherited.
+
+```nix
+{
+  imports = [ ../../modules ];
+  
+  # These are automatically set from hosts/default.nix:
+  # - cyberfighter.profile.enable
+  # - cyberfighter.system.hostname
+  # - cyberfighter.system.username
+  # - cyberfighter.system.userDescription
+  
+  # Only configure features and overrides:
+  cyberfighter.features = {
+    desktop.environment = "plasma6";
+    graphics.enable = true;
+    docker.enable = true;
+  };
+}
+```
+
+### Why This Pattern?
+
+**Benefits**:
+1. **DRY** - Define hostname/username once
+2. **Consistent** - All hosts follow same structure
+3. **Simple** - Host configs focus on features only
+4. **Type-safe** - Metadata validated and passed to modules
+5. **Scalable** - Easy to add many hosts
+
+**Before** (old pattern):
+```nix
+# Had to repeat in every host config:
+cyberfighter.system = {
+  hostname = "my-host";
+  username = "myuser";
+  userDescription = "My Full Name";
+};
+cyberfighter.profile.enable = "desktop";
+```
+
+**After** (current pattern):
+```nix
+# Just configure features:
+cyberfighter.features.desktop.environment = "plasma6";
+```
+
+### Example: Adding a New Host
+
+Complete walkthrough:
+
+**Step 1: Edit hosts/default.nix**
+```nix
+{
+  # ... existing hosts ...
+  
+  laptop = {
+    profile = "desktop";
+    system = {
+      hostname = "laptop";
+      username = "john";
+      userDescription = "John Doe";
+    };
+  };
+}
+```
+
+**Step 2: Edit flake.nix**
+```nix
+nixosConfigurations = {
+  # ... existing ...
+  laptop = mkNixosSystem "laptop" hostConfigs.laptop;
+};
+
+homeConfigurations = {
+  # ... existing ...
+  "john@laptop" = mkHomeConfig "laptop" hostConfigs.laptop;
+};
+```
+
+**Step 3: Create hosts/laptop/configuration.nix**
+```nix
+{
+  imports = [ ../../modules ];
+  
+  cyberfighter.features = {
+    desktop.environment = "plasma6";
+    graphics = {
+      enable = true;
+      nvidia = {
+        enable = true;
+        prime = {
+          enable = true;
+          intelBusId = "PCI:0:2:0";
+          nvidiaBusId = "PCI:1:0:0";
+        };
+      };
+    };
+    bluetooth.enable = true;
+  };
+}
+```
+
+**Step 4: Build**
+```bash
+sudo nixos-rebuild switch --flake .#laptop
+```
+
 ## Quick Start
+
+### Host Registration System
+
+This repository uses a centralized host registration system. Before creating host-specific configurations:
+
+**1. Register your host in hosts/default.nix:**
+```nix
+{
+  # ... existing hosts ...
+  
+  my-nixos = {
+    profile = "desktop";  # or "wsl", "minimal"
+    system = {
+      hostname = "my-nixos";
+      username = "myuser";
+      userDescription = "My Full Name";
+    };
+  };
+}
+```
+
+**2. Add to flake.nix:**
+```nix
+# In nixosConfigurations:
+my-nixos = mkNixosSystem "my-nixos" hostConfigs.my-nixos;
+
+# In homeConfigurations:
+"myuser@my-nixos" = mkHomeConfig "my-nixos" hostConfigs.my-nixos;
+```
+
+**3. Create host configuration (hosts/my-nixos/configuration.nix):**
 
 ### Minimal Configuration
 
@@ -40,13 +242,10 @@ This document provides complete documentation for all NixOS system modules in th
 {
   imports = [ ../../modules ];
   
-  cyberfighter = {
-    profile.enable = "desktop";  # or "wsl", "minimal"
-    
-    system = {
-      hostname = "my-nixos";
-      username = "myuser";
-    };
+  # Profile, hostname, username already set via hosts/default.nix
+  # Just configure features:
+  cyberfighter.features = {
+    desktop.environment = "plasma6";
   };
 }
 ```
@@ -57,23 +256,27 @@ This document provides complete documentation for all NixOS system modules in th
 {
   imports = [ ../../modules ];
   
+  # Override profile if needed (usually not necessary)
+  # cyberfighter.profile.enable = lib.mkForce "none";
+  
+  # Configure features and packages
   cyberfighter = {
-    profile.enable = "none";  # Manual configuration
-    
-    system = {
-      hostname = "my-nixos";
-      username = "myuser";
-      bootloader.systemd-boot = true;
-    };
+    packages.extraPackages = with pkgs; [
+      htop
+      neofetch
+    ];
     
     features = {
       desktop.environment = "plasma6";
       graphics.enable = true;
       sound.enable = true;
+      docker.enable = true;
     };
   };
 }
 ```
+
+**Note**: The profile, hostname, and username are automatically inherited from `hosts/default.nix`. You only need to configure additional features in your host-specific configuration.
 
 ## Core Modules
 
