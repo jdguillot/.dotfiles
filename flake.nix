@@ -29,12 +29,9 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       home-manager,
       nix-flatpak,
-      nixos-wsl,
-      vscode-server,
       nix-vscode-extensions,
       nix-index-database,
       nixpkgs-stable,
@@ -45,166 +42,81 @@
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-
-        config = {
-          allowUnfree = true;
-        };
-
-        overlays = [
-          nix-vscode-extensions.overlays.default
-        ];
+        config.allowUnfree = true;
+        overlays = [ nix-vscode-extensions.overlays.default ];
       };
       pkgs-stable = import nixpkgs-stable { inherit system; };
-      # secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
+
+      # Import centralized host metadata
+      hostConfigs = import ./hosts/default.nix;
+
+      # Helper function to create NixOS system configuration
+      mkNixosSystem =
+        hostname: hostMeta:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit inputs system;
+            inherit (hostMeta) profile;
+            hostProfile = hostMeta.profile;
+            hostMeta = hostMeta;
+          };
+          modules = [
+            ./hosts/${hostname}/configuration.nix
+            sops-nix.nixosModules.sops
+          ];
+        };
+
+      # Helper function to create home-manager configuration
+      mkHomeConfig =
+        hostname: hostMeta:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = {
+            inherit inputs system;
+            inherit (hostMeta) profile;
+            pkgs-stable = pkgs-stable;
+            hostProfile = hostMeta.profile;
+            hostMeta = hostMeta;
+          };
+          modules =
+            [
+              ./home/${hostMeta.system.username}/home.nix
+            ]
+            ++ (
+              if hostname == "razer-nixos" || hostname == "sys-galp-nix" then
+                [ nix-flatpak.homeManagerModules.nix-flatpak ]
+              else
+                [ ]
+            );
+        };
     in
     {
-
       nixosConfigurations = {
-        razer-nixos = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = {
-            inherit
-              inputs
-              system
-              ;
-          };
-          modules = [
-            ./hosts/razer-nixos/configuration.nix
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = { inherit inputs pkgs-stable system; };
-                users.cyberfighter = import ./home/cyberfighter/home.nix;
-                sharedModules = [ nix-flatpak.homeManagerModules.nix-flatpak ];
-              };
-            }
-          ];
-        };
-
-        work-nix-wsl = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = {
-            inherit inputs system;
-          };
-          modules = [
-            ./hosts/work-wsl/configuration.nix
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = { inherit inputs pkgs-stable system; };
-                users.jdguillot = import ./home/jdguillot/home.nix;
-              };
-            }
-          ];
-        };
-
-        ryzn-nix-wsl = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = {
-            inherit inputs system;
-          };
-          modules = [
-            ./hosts/ryzn-wsl/configuration.nix
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = { inherit inputs pkgs-stable system; };
-                users.cyberfighter = import ./home/cyberfighter/home.nix;
-              };
-            }
-          ];
-        };
-
-        sys-galp-nix = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = {
-            inherit
-              inputs
-              system
-              ;
-          };
-          modules = [
-            ./hosts/sys-galp-nix/configuration.nix
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                extraSpecialArgs = { inherit inputs pkgs-stable system; };
-                users.cyberfighter = import ./home/cyberfighter/home.nix;
-                sharedModules = [ nix-flatpak.homeManagerModules.nix-flatpak ];
-              };
-            }
-          ];
-        };
+        razer-nixos = mkNixosSystem "razer-nixos" hostConfigs.razer-nixos;
+        work-nix-wsl = mkNixosSystem "work-wsl" hostConfigs.work-nix-wsl;
+        ryzn-nix-wsl = mkNixosSystem "ryzn-wsl" hostConfigs.ryzn-nix-wsl;
+        sys-galp-nix = mkNixosSystem "sys-galp-nix" hostConfigs.sys-galp-nix;
 
         nixos-portable = nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = {
             inherit inputs system;
+            hostProfile = hostConfigs.nixos-portable.profile;
+            hostMeta = hostConfigs.nixos-portable;
           };
           modules = [
             ./hosts/nixos-portable/configuration.nix
             nix-index-database.nixosModules.nix-index
-            {
-              system.stateVersion = "25.05";
-            }
           ];
         };
       };
 
       homeConfigurations = {
-        "cyberfighter@razer-nixos" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = {
-            inherit inputs pkgs-stable system;
-          };
-          modules = [
-            ./home/cyberfighter/home.nix
-            nix-flatpak.homeManagerModules.nix-flatpak
-          ];
-        };
-
-        "jdguillot@work-nix-wsl" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = {
-            inherit inputs pkgs-stable system;
-          };
-          modules = [
-            ./home/jdguillot/home.nix
-          ];
-        };
-
-        "cyberfighter@ryzn-nix-wsl" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = {
-            inherit inputs pkgs-stable system;
-          };
-          modules = [
-            ./home/cyberfighter/home.nix
-          ];
-        };
-
-        "cyberfighter@sys-galp-nix" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = {
-            inherit inputs pkgs-stable system;
-          };
-          modules = [
-            ./home/cyberfighter/home.nix
-            nix-flatpak.homeManagerModules.nix-flatpak
-          ];
-        };
+        "cyberfighter@razer-nixos" = mkHomeConfig "razer-nixos" hostConfigs.razer-nixos;
+        "jdguillot@work-nix-wsl" = mkHomeConfig "work-nix-wsl" hostConfigs.work-nix-wsl;
+        "cyberfighter@ryzn-nix-wsl" = mkHomeConfig "ryzn-nix-wsl" hostConfigs.ryzn-nix-wsl;
+        "cyberfighter@sys-galp-nix" = mkHomeConfig "sys-galp-nix" hostConfigs.sys-galp-nix;
       };
     };
 

@@ -8,9 +8,10 @@
 {
   config,
   pkgs,
-  inputs,
+  hostProfile ? "desktop",
+  hostMeta ? { },
   ...
-}:
+}@inputs:
 
 {
   imports = [
@@ -149,18 +150,18 @@
     allowUnfree = true;
   };
 
-  environment.systemPackages = with pkgs; [
-    wget
-    cifs-utils
-    appimage-run
-    xclip
-    inputs.nixos-conf-editor.packages.${pkgs.stdenv.hostPlatform.system}.nixos-conf-editor
-    grc
-    nodejs
-    mangohud
-    mangojuice
-    moonlight-qt
-    wakeonlan
+  environment.systemPackages = [
+    pkgs.wget
+    pkgs.cifs-utils
+    pkgs.appimage-run
+    pkgs.xclip
+    inputs.inputs.nixos-conf-editor.packages.${pkgs.stdenv.hostPlatform.system}.nixos-conf-editor
+    pkgs.grc
+    pkgs.nodejs
+    pkgs.mangohud
+    pkgs.mangojuice
+    pkgs.moonlight-qt
+    pkgs.wakeonlan
   ];
 
   # Enable OpenGL

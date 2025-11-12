@@ -1,23 +1,20 @@
 {
-  inputs,
   pkgs,
+  hostProfile,
+  hostMeta,
   ...
-}:
+}@inputs:
 {
   imports = [
     ../../modules
-    inputs.nix-index-database.nixosModules.nix-index
-
+    inputs.inputs.nix-index-database.nixosModules.nix-index
     ./hardware-configuration.nix
   ];
 
   cyberfighter = {
-    profile.enable = "desktop";
+    profile.enable = hostProfile;
 
-    system = {
-      hostname = "razer-nixos";
-      username = "cyberfighter";
-      userDescription = "Jonathan Guillot";
+    system = hostMeta.system // {
       stateVersion = "25.05";
 
       bootloader = {
@@ -39,8 +36,8 @@
 
     packages = {
       includeDev = true;
-      extraPackages = with pkgs; [
-        inputs.nixos-conf-editor.packages.${pkgs.stdenv.hostPlatform.system}.nixos-conf-editor
+      extraPackages = [
+        inputs.inputs.nixos-conf-editor.packages.${pkgs.stdenv.hostPlatform.system}.nixos-conf-editor
       ];
     };
 

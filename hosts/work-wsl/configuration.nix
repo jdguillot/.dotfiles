@@ -1,24 +1,22 @@
 {
   pkgs,
-  inputs,
+  hostProfile,
+  hostMeta,
   ...
-}:
+}@inputs:
 {
   imports = [
     ../../modules
-    inputs.nixos-wsl.nixosModules.default
-    inputs.nix-index-database.nixosModules.nix-index
-    inputs.vscode-server.nixosModules.default
-    inputs.home-manager.nixosModules.home-manager
+    inputs.inputs.nixos-wsl.nixosModules.default
+    inputs.inputs.nix-index-database.nixosModules.nix-index
+    inputs.inputs.vscode-server.nixosModules.default
+    inputs.inputs.home-manager.nixosModules.home-manager
   ];
 
   cyberfighter = {
-    profile.enable = "wsl";
+    profile.enable = hostProfile;
 
-    system = {
-      hostname = "work-nix-wsl";
-      username = "jdguillot";
-      userDescription = "Jonathan Guillot";
+    system = hostMeta.system // {
       stateVersion = "25.05";
       extraGroups = [ "docker" ];
     };

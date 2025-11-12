@@ -3,7 +3,8 @@
   lib,
   pkgs,
   inputs,
-  osConfig,
+  hostProfile,
+  hostMeta,
   ...
 }:
 {
@@ -29,11 +30,11 @@
   # - .markdownlint.yaml file
 
   cyberfighter = {
-    # Profile and desktop features auto-inherit from host configuration
+    profile.enable = hostProfile;
 
     system = {
-      username = "cyberfighter";
-      homeDirectory = "/home/cyberfighter";
+      username = hostMeta.system.username;
+      homeDirectory = "/home/${hostMeta.system.username}";
       stateVersion = "24.11";
     };
 
@@ -82,14 +83,17 @@
       };
 
       terminal = {
+        enable = true;
         zellij.enable = true;
       };
 
-      # Desktop and terminal features auto-enable based on host
+      desktop = {
+        enable = true;
+        bitwarden.enable = true;
+      };
     };
   };
 
-  # User-specific configurations
   # User-specific configurations
   home = {
     file = {

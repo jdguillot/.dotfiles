@@ -1,20 +1,14 @@
-{ config, lib, pkgs, osConfig ? null, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.cyberfighter.features.terminal;
-  # Check if host has desktop environment enabled
-  hostHasDesktop = osConfig != null 
-    && osConfig ? cyberfighter 
-    && osConfig.cyberfighter ? features 
-    && osConfig.cyberfighter.features ? desktop
-    && osConfig.cyberfighter.features.desktop.enable or false;
 in
 {
   options.cyberfighter.features.terminal = {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = hostHasDesktop;
-      description = "Terminal configuration (auto-enabled if host has desktop environment)";
+      default = false;
+      description = "Terminal configuration";
     };
 
     alacritty = {

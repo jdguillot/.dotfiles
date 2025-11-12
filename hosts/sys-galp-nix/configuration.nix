@@ -1,24 +1,21 @@
 {
-  inputs,
   pkgs,
+  hostProfile,
+  hostMeta,
   ...
-}:
+}@inputs:
 {
   imports = [
     ../../modules
-    inputs.nix-index-database.nixosModules.nix-index
-
+    inputs.inputs.nix-index-database.nixosModules.nix-index
     ./hardware-configuration.nix
   ];
 
   cyberfighter = {
 
-    profile.enable = "desktop";
+    profile.enable = hostProfile;
 
-    system = {
-      hostname = "sys-galp-nix";
-      username = "cyberfighter";
-      userDescription = "Jonathan Guillot";
+    system = hostMeta.system // {
       stateVersion = "24.11";
 
       bootloader = {

@@ -3,7 +3,8 @@
   lib,
   pkgs,
   inputs,
-  osConfig,
+  hostProfile,
+  hostMeta,
   ...
 }:
 {
@@ -22,12 +23,11 @@
   ];
 
   cyberfighter = {
-    # Profile automatically inherits from host (desktop/wsl/minimal)
-    # Desktop features auto-enable if host has desktop environment
+    profile.enable = hostProfile;
 
     system = {
-      username = "jdguillot";
-      homeDirectory = "/home/jdguillot";
+      username = hostMeta.system.username;
+      homeDirectory = "/home/${hostMeta.system.username}";
       stateVersion = "24.11";
     };
 

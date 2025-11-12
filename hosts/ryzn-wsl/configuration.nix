@@ -1,22 +1,20 @@
 {
   pkgs,
-  inputs,
+  hostProfile,
+  hostMeta,
   ...
-}:
+}@inputs:
 {
   imports = [
     ../../modules
-    inputs.nixos-wsl.nixosModules.default
-    inputs.nix-index-database.nixosModules.nix-index
+    inputs.inputs.nixos-wsl.nixosModules.default
+    inputs.inputs.nix-index-database.nixosModules.nix-index
   ];
 
   cyberfighter = {
-    profile.enable = "wsl";
+    profile.enable = hostProfile;
 
-    system = {
-      hostname = "ryzn-nix-wsl";
-      username = "cyberfighter";
-      userDescription = "Jonathan Guillot";
+    system = hostMeta.system // {
       stateVersion = "25.05";
       extraGroups = [ "docker" ];
     };
