@@ -3,7 +3,7 @@
 # Also see https://github.com/Mic92/dotfiles/blob/master/nixos/.sops.yaml
 # for a more complex example.
 keys:
-  - &cyberfighter age1059cfeyzas7ug20q7w39vwr8v9vj8rylxmhwl4p4uzh90hknyprq359wyd
+  - &bitwarden age1sw9nqgpj8a0yz55k4ezsl040lx0u5ysqv7qzxkqldcmaugndl5fsqf4lc8
   - &razer-nixos age1g98hga3gn0qmtelwmcm3gpfpjpmt6zs60xww2vj7fk4v8n48qc5shnnvq3
   - &work-wsl age19ajzg046l44kdnmnc67hrffjdk8d4ufhc5luj2cf0zwrdj9ztq3ssw2rqu
   - &work-jdguillot age1exdsgk0hlf47ks2qf7jyls7k7q52e2d82306f3w859vyv3vqna5s4qygyc
@@ -11,7 +11,7 @@ creation_rules:
   - path_regex: secrets/secrets.yaml$
     key_groups:
       - age:
-          - *cyberfighter
+          - *bitwarden
           - *razer-nixos
           - *work-wsl
           - *work-jdguillot

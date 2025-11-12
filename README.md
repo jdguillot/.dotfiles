@@ -55,22 +55,25 @@ If you've just installed NixOS and want to use this configuration:
 1. **Boot into your new NixOS system**
 
 2. **Install required tools** (if not already available):
+
    ```bash
    nix-shell -p git gh
    ```
 
 3. **Clone this repository**:
+
    ```bash
    git clone https://github.com/jdguillot/.dotfiles.git ~/dotfiles
    cd ~/dotfiles
    ```
 
 4. **Register your host in hosts/default.nix** (IMPORTANT - do this first):
+
    ```nix
    # Edit hosts/default.nix and add your host:
    {
      # ... existing hosts ...
-     
+
      your-hostname = {
        profile = "desktop";  # or "wsl", "minimal"
        system = {
@@ -83,26 +86,29 @@ If you've just installed NixOS and want to use this configuration:
    ```
 
 5. **Generate hardware configuration**:
+
    ```bash
    mkdir -p hosts/<your-hostname>
    sudo nixos-generate-config --dir hosts/<your-hostname>
    ```
 
 6. **Choose a template or create your configuration**:
+
    ```bash
    # Option 1: Use a template
    cp hosts/templates/desktop-workstation.nix hosts/<your-hostname>/configuration.nix
-   
+
    # Option 2: Start from scratch (see Configuration System section)
    ```
 
 7. **Edit your host configuration** (hosts/<your-hostname>/configuration.nix):
+
    ```nix
    # The profile, hostname, and username are already set in hosts/default.nix
    # Just configure additional features:
    {
      imports = [ ../../modules ];
-     
+
      cyberfighter.features = {
        desktop.environment = "plasma6";
        docker.enable = true;
@@ -112,12 +118,14 @@ If you've just installed NixOS and want to use this configuration:
    ```
 
 8. **Add your host to flake.nix**:
+
    ```nix
    # In flake.nix nixosConfigurations section, add:
    your-hostname = mkNixosSystem "your-hostname" hostConfigs.your-hostname;
    ```
 
 9. **Set up home-manager configuration**:
+
    ```bash
    mkdir -p home/<your-username>
    # Copy from home/cyberfighter/home.nix as a template
@@ -126,12 +134,14 @@ If you've just installed NixOS and want to use this configuration:
    ```
 
 10. **Add home-manager to flake.nix**:
+
     ```nix
     # In flake.nix homeConfigurations section, add:
     "yourusername@your-hostname" = mkHomeConfig "your-hostname" hostConfigs.your-hostname;
     ```
 
 11. **Build and activate**:
+
     ```bash
     sudo nixos-rebuild switch --flake .#your-hostname
     ```
@@ -143,6 +153,7 @@ Installing NixOS from scratch with this configuration:
 1. **Boot the NixOS installation media**
 
 2. **Connect to the internet**:
+
    ```bash
    # For WiFi
    sudo systemctl start wpa_supplicant
@@ -152,26 +163,27 @@ Installing NixOS from scratch with this configuration:
    > set_network 0 psk "YOUR_PASSWORD"
    > enable_network 0
    > quit
-   
+
    # Or use nmtui for an easier interface
    nmtui
    ```
 
 3. **Partition your disk** (example with UEFI):
+
    ```bash
    # List disks
    lsblk
-   
+
    # Partition (example for /dev/sda)
    sudo parted /dev/sda -- mklabel gpt
    sudo parted /dev/sda -- mkpart ESP fat32 1MiB 512MiB
    sudo parted /dev/sda -- set 1 esp on
    sudo parted /dev/sda -- mkpart primary 512MiB 100%
-   
+
    # Format partitions
    sudo mkfs.fat -F 32 -n boot /dev/sda1
    sudo mkfs.ext4 -L nixos /dev/sda2
-   
+
    # Mount
    sudo mount /dev/disk/by-label/nixos /mnt
    sudo mkdir -p /mnt/boot
@@ -179,18 +191,20 @@ Installing NixOS from scratch with this configuration:
    ```
 
 4. **For encrypted root** (optional):
+
    ```bash
    # Encrypt root partition
    sudo cryptsetup luksFormat /dev/sda2
    sudo cryptsetup open /dev/sda2 cryptroot
    sudo mkfs.ext4 -L nixos /dev/mapper/cryptroot
    sudo mount /dev/mapper/cryptroot /mnt
-   
+
    # Note the UUID for later
    sudo cryptsetup luksUUID /dev/sda2
    ```
 
 5. **Install git and clone dotfiles**:
+
    ```bash
    nix-shell -p git gh
    cd /mnt
@@ -201,6 +215,7 @@ Installing NixOS from scratch with this configuration:
 6. **Register your host in hosts/default.nix** (see step 4 in "On a Fresh NixOS Installation")
 
 7. **Generate hardware configuration**:
+
    ```bash
    mkdir -p hosts/<your-hostname>
    sudo nixos-generate-config --root /mnt --dir hosts/<your-hostname>
@@ -209,13 +224,15 @@ Installing NixOS from scratch with this configuration:
 8. **Create your configuration** (see "On a Fresh NixOS Installation" steps 6-10)
 
 9. **Install NixOS**:
+
    ```bash
    sudo nixos-install --flake .#your-hostname
-   
+
    # Set root password when prompted
    ```
 
 10. **Reboot and finish setup**:
+
     ```bash
     reboot
     # After reboot, log in and run:
@@ -227,11 +244,13 @@ Installing NixOS from scratch with this configuration:
 Migrating an existing NixOS system to this configuration:
 
 1. **Backup your current configuration**:
+
    ```bash
    sudo cp -r /etc/nixos /etc/nixos.backup
    ```
 
 2. **Clone this repository**:
+
    ```bash
    git clone https://github.com/jdguillot/.dotfiles.git ~/dotfiles
    cd ~/dotfiles
@@ -240,6 +259,7 @@ Migrating an existing NixOS system to this configuration:
 3. **Register your host in hosts/default.nix** (see step 4 in "On a Fresh NixOS Installation")
 
 4. **Copy your hardware configuration**:
+
    ```bash
    mkdir -p hosts/<your-hostname>
    sudo cp /etc/nixos/hardware-configuration.nix hosts/<your-hostname>/
@@ -255,10 +275,11 @@ Migrating an existing NixOS system to this configuration:
    - Test after each change
 
 8. **Build and test**:
+
    ```bash
    # Test without activating
    sudo nixos-rebuild test --flake .#your-hostname
-   
+
    # If everything works, switch
    sudo nixos-rebuild switch --flake .#your-hostname
    ```
@@ -286,10 +307,11 @@ This repository uses a centralized host registration system that simplifies conf
 ### Adding a New Host
 
 **Step 1: Register in hosts/default.nix**
+
 ```nix
 {
   # ... existing hosts ...
-  
+
   my-new-host = {
     profile = "desktop";  # or "wsl", "minimal"
     system = {
@@ -302,6 +324,7 @@ This repository uses a centralized host registration system that simplifies conf
 ```
 
 **Step 2: Add to flake.nix**
+
 ```nix
 # In nixosConfigurations:
 my-new-host = mkNixosSystem "my-new-host" hostConfigs.my-new-host;
@@ -311,11 +334,12 @@ my-new-host = mkNixosSystem "my-new-host" hostConfigs.my-new-host;
 ```
 
 **Step 3: Create host configuration**
+
 ```nix
 # hosts/my-new-host/configuration.nix
 {
   imports = [ ../../modules ];
-  
+
   # Profile, hostname, username already set via hosts/default.nix
   # Just configure features:
   cyberfighter.features = {
@@ -341,34 +365,34 @@ This repository uses a modular configuration system under the `cyberfighter` nam
 ```nix
 {
   imports = [ ../../modules ];
-  
+
   cyberfighter = {
     # Choose a profile (optional but recommended)
     profile.enable = "desktop";  # or "wsl", "minimal", "none"
-    
+
     # Core system settings
     system = {
       hostname = "my-nixos";
       username = "myuser";
       userDescription = "My Full Name";
       stateVersion = "25.05";
-      
+
       # Bootloader configuration
       bootloader = {
         systemd-boot = true;
         efiCanTouchVariables = true;
         # luksDevice = "uuid-here";  # Optional: for encrypted disks
       };
-      
+
       extraGroups = [ "docker" ];  # Additional user groups
     };
-    
+
     # Nix configuration
     nix = {
       trustedUsers = [ "root" "myuser" ];
       enableDevenv = true;
     };
-    
+
     # Package selection
     packages = {
       includeBase = true;
@@ -378,7 +402,7 @@ This repository uses a modular configuration system under the `cyberfighter` nam
         # neofetch  # Add your custom packages here
       ];
     };
-    
+
     # Feature modules
     features = {
       # Desktop environment
@@ -386,7 +410,7 @@ This repository uses a modular configuration system under the `cyberfighter` nam
         environment = "plasma6";  # or "gnome", "hyprland", etc.
         firefox = true;
       };
-      
+
       # Graphics drivers
       graphics = {
         enable = true;
@@ -399,19 +423,19 @@ This repository uses a modular configuration system under the `cyberfighter` nam
           # };
         };
       };
-      
+
       # Sound
       sound.enable = true;
-      
+
       # Fonts
       fonts.enable = true;
-      
+
       # Bluetooth
       # bluetooth = {
       #   enable = true;
       #   powerOnBoot = true;
       # };
-      
+
       # Gaming
       # gaming = {
       #   enable = true;
@@ -419,16 +443,16 @@ This repository uses a modular configuration system under the `cyberfighter` nam
       #   gamemode = true;
       #   mangohud = true;
       # };
-      
+
       # Containers
       docker.enable = true;
-      
+
       # VPN
       # tailscale = {
       #   enable = true;
       #   acceptRoutes = true;
       # };
-      
+
       # Flatpak applications
       flatpak = {
         enable = true;
@@ -440,7 +464,7 @@ This repository uses a modular configuration system under the `cyberfighter` nam
           # "us.zoom.Zoom"
         ];
       };
-      
+
       # Network file systems
       # filesystems.truenas = {
       #   enable = true;
@@ -467,18 +491,18 @@ This repository uses a modular configuration system under the `cyberfighter` nam
     # ../features/cli/tmux/default.nix
     # ../features/desktop/alacritty/default.nix
   ];
-  
+
   cyberfighter = {
     # Profile auto-inherits from system (optional override)
     # profile.enable = "desktop";
-    
+
     # User settings
     system = {
       username = "myuser";
       homeDirectory = "/home/myuser";
       stateVersion = "24.11";
     };
-    
+
     # Packages
     packages = {
       includeDev = true;  # Development tools
@@ -486,7 +510,7 @@ This repository uses a modular configuration system under the `cyberfighter` nam
         # Add your custom packages
       ];
     };
-    
+
     # Features
     features = {
       # Git configuration
@@ -494,7 +518,7 @@ This repository uses a modular configuration system under the `cyberfighter` nam
         userName = "Your Name";
         userEmail = "your@email.com";
       };
-      
+
       # Shell configuration
       shell = {
         fish.enable = true;
@@ -503,25 +527,25 @@ This repository uses a modular configuration system under the `cyberfighter` nam
         #   vi = "nvim";
         # };
       };
-      
+
       # Editor configuration
       editor = {
         neovim.enable = true;
         # vscode.enable = true;
       };
-      
+
       # Terminal (auto-enabled on desktop systems)
       terminal = {
         # alacritty.enable = true;
         # tmux.enable = true;
       };
-      
+
       # Desktop apps (auto-enabled on desktop systems)
       desktop = {
         firefox.enable = true;
         bitwarden.enable = true;
       };
-      
+
       # Development tools
       tools = {
         enableDefault = true;  # Includes 40+ CLI tools
@@ -529,7 +553,7 @@ This repository uses a modular configuration system under the `cyberfighter` nam
       };
     };
   };
-  
+
   programs.home-manager.enable = true;
 }
 ```
@@ -542,12 +566,12 @@ This repository uses a modular configuration system under the `cyberfighter` nam
 {
   cyberfighter = {
     profile.enable = "desktop";
-    
+
     system = {
       hostname = "workstation";
       username = "myuser";
     };
-    
+
     features = {
       desktop.environment = "plasma6";
       docker.enable = true;
@@ -563,12 +587,12 @@ This repository uses a modular configuration system under the `cyberfighter` nam
 {
   cyberfighter = {
     profile.enable = "wsl";
-    
+
     system = {
       hostname = "dev-wsl";
       username = "devuser";
     };
-    
+
     features = {
       docker.enable = true;
       tailscale.enable = true;
@@ -583,12 +607,12 @@ This repository uses a modular configuration system under the `cyberfighter` nam
 {
   cyberfighter = {
     profile.enable = "desktop";
-    
+
     system = {
       hostname = "gaming-pc";
       username = "gamer";
     };
-    
+
     features = {
       desktop.environment = "plasma6";
       graphics = {
@@ -616,12 +640,12 @@ This repository uses a modular configuration system under the `cyberfighter` nam
 {
   cyberfighter = {
     profile.enable = "minimal";
-    
+
     system = {
       hostname = "server";
       username = "admin";
     };
-    
+
     features = {
       ssh = {
         enable = true;
@@ -679,10 +703,183 @@ nix flake show
 
 This repository uses **SOPS** (Secrets OPerationS) with age encryption for managing secrets.
 
-### Quick Start with Secrets
+### Setting Up SOPS on a New Host
 
-1. **Secrets are automatically decrypted** at runtime on configured hosts
-2. **No manual unlock required** - SOPS uses SSH host keys
+When setting up a new host, you can add its key to SOPS **directly from that host** using your personal age key stored in Bitwarden. No need to use a separate development machine!
+
+#### Prerequisites
+
+Install required tools on the new host:
+
+```bash
+nix-shell -p bitwarden-cli jq ssh-to-age
+```
+
+#### Step 1: Configure Bitwarden CLI (First Time Only)
+
+If you're using a self-hosted Vaultwarden instance:
+
+```bash
+# Configure your Vaultwarden server
+bw config server https://[YOUR_SERVER_ADDRESS]
+
+# Note: You need to be on your home network or connected via Tailscale
+```
+
+#### Step 2: Authenticate with Bitwarden
+
+```bash
+# Login and get session token
+export BW_SESSION=$(bw login --raw)
+
+# Or if already logged in, just unlock
+export BW_SESSION=$(bw unlock --raw)
+
+# Sync with server
+bw sync
+```
+
+#### Step 3: Set Up SOPS with Your Personal Age Key
+
+```bash
+# Get your personal age private key from Bitwarden and set as environment variable
+export SOPS_AGE_KEY=$(bw get notes "SOPS Age Key")
+
+# Verify it's set (should show your key)
+echo $SOPS_AGE_KEY
+```
+
+**Alternative: Use on-demand key fetching** (more secure):
+
+```bash
+# SOPS will fetch the key automatically when needed
+export SOPS_AGE_KEY_CMD='bw get notes "SOPS Age Key"'
+```
+
+#### Step 4: Get New Host's Age Public Key
+
+```bash
+# Generate age public key from the host's SSH key
+nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
+
+# Output example:
+# age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+#### Step 5: Add New Host Key to .sops.yaml
+
+Edit `.sops.yaml` (now you can use SOPS since you have your personal key):
+
+```yaml
+keys:
+  - &cyberfighter age1059cfeyzas7ug20q7w39vwr8v9vj8rylxmhwl4p4uzh90hknyprq359wyd
+  - &razer-nix age1g98hga3gn0qmtelwmcm3gpfpjpmt6zs60xww2vj7fk4v8n48qc5shnnvq3
+  # Add your new host key:
+  - &my-new-host age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+creation_rules:
+  - path_regex: secrets/secrets.yaml$
+    key_groups:
+      - age:
+          - *cyberfighter
+          - *razer-nix
+          - *my-new-host # Add reference here
+```
+
+#### Step 6: Re-encrypt Secrets with New Host Key
+
+```bash
+# Re-encrypt secrets to include the new host
+sops updatekeys secrets/secrets.yaml
+```
+
+You should see output like:
+
+```
+2022/02/09 16:32:02 Syncing keys for file secrets/secrets.yaml
+The following changes will be made to the file's groups:
+Group 1
+    age1059cfeyzas7ug20q7w39vwr8v9vj8rylxmhwl4p4uzh90hknyprq359wyd
+    age1g98hga3gn0qmtelwmcm3gpfpjpmt6zs60xww2vj7fk4v8n48qc5shnnvq3
++++ age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Is this okay? (y/n): y
+```
+
+#### Step 7: Commit and Push
+
+```bash
+# Commit the updated configuration
+git add .sops.yaml secrets/secrets.yaml
+git commit -m "Add SOPS key for my-new-host"
+git push
+```
+
+#### Step 8: Clean Up Environment Variables
+
+```bash
+# Remove sensitive data from environment
+unset SOPS_AGE_KEY
+unset SOPS_AGE_KEY_CMD
+unset BW_SESSION
+```
+
+#### Step 9: Verify Secrets Work
+
+```bash
+# Rebuild the system
+sudo nixos-rebuild switch --flake .#my-new-host
+
+# Check that secrets are available
+ls -l /run/secrets/
+
+# Test a specific secret
+cat /run/secrets/my-secret
+```
+
+### Quick Reference: One-Command Workflow
+
+```bash
+# Complete workflow in one go:
+nix-shell -p bitwarden-cli jq ssh-to-age --run '
+  export BW_SESSION=$(bw unlock --raw) &&
+  export SOPS_AGE_KEY=$(bw get notes "SOPS Age Key") &&
+  echo "New host key:" &&
+  cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age &&
+  echo "Now edit .sops.yaml to add this key, then run:" &&
+  echo "  sops updatekeys secrets/secrets.yaml"
+'
+```
+
+### Why This Works
+
+- **Your personal age key** (`&cyberfighter`) allows YOU to edit secrets from any machine
+- **Host keys** (like `&razer-nix`, `&my-new-host`) allow HOSTS to decrypt secrets at runtime
+- You use your personal key to edit/re-encrypt, hosts use their keys to decrypt
+- Your personal key retrieved from Bitwarden exists only in memory (environment variable)
+- No sensitive files are created on disk
+
+### Security Benefits of This Approach
+
+✅ **No file cleanup needed** - Age key only exists as environment variable  
+✅ **Secure** - Private key never written to disk on new host  
+✅ **Temporary** - Key only exists for current shell session  
+✅ **Convenient** - Add hosts directly from the host itself, no dev machine needed  
+✅ **Centralized** - Personal key securely stored in Bitwarden  
+✅ **Auditable** - Bitwarden tracks when/where key is accessed
+
+### Alternative: Using SOPS_AGE_KEY_CMD
+
+For even better security, use `SOPS_AGE_KEY_CMD` which fetches the key on-demand:
+
+```bash
+export BW_SESSION=$(bw unlock --raw)
+export SOPS_AGE_KEY_CMD='bw get notes "SOPS Age Key"'
+
+# SOPS will fetch your key automatically when needed
+sops secrets/secrets.yaml
+```
+
+This ensures the key is only retrieved when SOPS actually needs it.
 
 ### Common Operations
 
@@ -691,20 +888,58 @@ This repository uses **SOPS** (Secrets OPerationS) with age encryption for manag
 sops secrets/secrets.yaml
 
 # Add a new secret
-# 1. Edit secrets/secrets.yaml
+# 1. Edit secrets/secrets.yaml with sops
 # 2. Add the secret key-value pair
 # 3. Save and commit
 
-# Configure secrets in your configuration
+# View secrets (decrypted)
+sops secrets/secrets.yaml
+
+# Re-encrypt after adding new host
+sops updatekeys secrets/secrets.yaml
+```
+
+### Using Secrets in Configuration
+
+Enable SOPS in your host configuration:
+
+```nix
 cyberfighter.features.sops = {
   enable = true;
   defaultSopsFile = ../../secrets/secrets.yaml;
 };
-
-# Use secrets in configuration
-config.sops.secrets."my-secret" = { };
-# Secret will be available at: /run/secrets/my-secret
 ```
+
+Define secrets to use:
+
+```nix
+# Make secret available
+config.sops.secrets."my-secret" = { };
+
+# Secret will be available at: /run/secrets/my-secret
+
+# Use in a service
+services.myservice = {
+  passwordFile = config.sops.secrets."my-secret".path;
+};
+```
+
+### Troubleshooting
+
+**Error: "Failed to get the data key"**
+
+- Your host key is not in `.sops.yaml`
+- Run `sops updatekeys secrets/secrets.yaml` after adding the key
+
+**Error: "no such file or directory: /etc/ssh/ssh_host_ed25519_key"**
+
+- Host doesn't have an ed25519 SSH key
+- Generate one: `sudo ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""`
+
+**Secrets not appearing in /run/secrets/**
+
+- SOPS module not enabled in configuration
+- Add: `cyberfighter.features.sops.enable = true;`
 
 See **[docs/SOPS-MIGRATION.md](docs/SOPS-MIGRATION.md)** for complete secrets management guide.
 
@@ -718,26 +953,31 @@ See **[docs/SOPS-MIGRATION.md](docs/SOPS-MIGRATION.md)** for complete secrets ma
 ### Module Organization
 
 **NixOS Modules (22 total)**:
+
 - **Core** (4): profiles, system, users, nix-settings
 - **Features** (18): desktop, graphics, sound, fonts, bluetooth, gaming, networking, printing, ssh, docker, tailscale, flatpak, packages, filesystems, sops, vscode, vpn, security
 
 **Home Manager Modules (10 total)**:
+
 - **Core** (5): common, profiles, system, users, packages
 - **Features** (5): git, shell, editor, terminal, desktop, tools
 
 ### Profile Defaults
 
 **Desktop Profile** enables:
+
 - Desktop environment, Graphics, Sound, NetworkManager
 - Base + Desktop packages, Flatpak with common apps
 - Systemd-boot bootloader
 
 **WSL Profile** enables:
+
 - Graphics (for GUI apps)
 - Base packages only
 - Disables bootloader and NetworkManager
 
 **Minimal Profile** enables:
+
 - NetworkManager, Systemd-boot
 - Base packages only
 
@@ -746,10 +986,6 @@ See **[docs/SOPS-MIGRATION.md](docs/SOPS-MIGRATION.md)** for complete secrets ma
 ### Quick Actions
 
 Press `Ctrl+P` in your terminal for available actions (if using OpenCode)
-
-### Feedback
-
-Report issues at: https://github.com/sst/opencode
 
 ### Learning Resources
 
@@ -790,6 +1026,7 @@ Report issues at: https://github.com/sst/opencode
 ## Contributing
 
 This is a personal dotfiles repository, but feel free to:
+
 - Use it as inspiration for your own configuration
 - Submit issues for bugs or unclear documentation
 - Suggest improvements via pull requests
