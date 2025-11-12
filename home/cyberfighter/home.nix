@@ -1,42 +1,117 @@
 {
   config,
   lib,
+  pkgs,
+  inputs,
+  osConfig,
   ...
 }:
-let
-  username = "cyberfighter";
-in
 {
   imports = [
-    # ../../programs/vscode.nix
-    ../common/default.nix
+    ../modules
     ../features/cli/jujutsu.nix
+    ../features/cli/lazyvim/lazyvim.nix
+    ../features/cli/btop/btop.nix
+    ../features/cli/lazygit/default.nix
+    ../features/cli/starship/default.nix
+    ../features/cli/tmux/default.nix
+    ../features/cli/carapace/default.nix
+    ../features/cli/zsh/default.nix
+    ../features/desktop/alacritty/default.nix
+    ../features/desktop/ghostty/default.nix
+    ../features/desktop/bitwarden.nix
   ];
 
-  home = {
+  # Common module automatically provides:
+  # - nixpkgs.config.allowUnfree
+  # - programs: home-manager, bash, gpg, gh
+  # - services: gpg-agent
+  # - .markdownlint.yaml file
 
-    username = lib.mkDefault "${username}";
-    homeDirectory = lib.mkDefault "/home/${config.home.username}";
+  cyberfighter = {
+    # Profile and desktop features auto-inherit from host configuration
 
-    sessionVariables = {
-      ## Github
-      GITHUB_USERNAME = "jdguillot";
-
+    system = {
+      username = "cyberfighter";
+      homeDirectory = "/home/cyberfighter";
+      stateVersion = "24.11";
     };
 
+    packages = {
+      includeDev = true;
+      extraPackages = with pkgs; [
+        inputs.isd.packages.${pkgs.system}.default
+      ];
+    };
+
+    features = {
+      # Git, shell, editor, tools enabled by default
+      git = {
+        userName = "jdguillot";
+        userEmail = "jdguillot@outlook.com";
+      };
+
+      shell = {
+        fish = {
+          enable = true;
+          plugins = [
+            {
+              name = "grc";
+              src = pkgs.fishPlugins.grc.src;
+            }
+            {
+              name = "done";
+              src = pkgs.fishPlugins.done;
+            }
+            {
+              name = "fzf-fish";
+              src = pkgs.fishPlugins.fzf-fish;
+            }
+            {
+              name = "forgit";
+              src = pkgs.fishPlugins.forgit;
+            }
+          ];
+        };
+        starship.enable = true;
+      };
+
+      editor = {
+        vim.enable = true;
+        neovim.enable = true;
+      };
+
+      terminal = {
+        zellij.enable = true;
+      };
+
+      # Desktop and terminal features auto-enable based on host
+    };
+  };
+
+  # User-specific configurations
+  # User-specific configurations
+  home = {
     file = {
       ".ssh/config".source = ../../secrets/.ssh_config_work;
       ".config/nix/nix.conf".source = ../../secrets/nix.conf;
     };
 
-    stateVersion = "24.11";
-  };
-
-  programs.git.settings = {
-    user = {
-      name = "jdguillot";
-      email = "jdguillot@outlook.com";
+    sessionVariables = {
+      GITHUB_USERNAME = "jdguillot";
     };
   };
 
+  # Additional program configurations
+  programs.zellij = {
+    enable = true;
+    settings = {
+      theme = "nord";
+      font = "FiraCode Nerd Font";
+      keybinds = {
+        normal = { };
+        pane = { };
+      };
+    };
+  };
 }

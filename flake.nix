@@ -55,7 +55,7 @@
         ];
       };
       pkgs-stable = import nixpkgs-stable { inherit system; };
-      secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
+      # secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
     in
     {
 
@@ -66,12 +66,21 @@
             inherit
               inputs
               system
-              secrets
               ;
           };
           modules = [
             ./hosts/razer-nixos/configuration.nix
             sops-nix.nixosModules.sops
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = { inherit inputs pkgs-stable system; };
+                users.cyberfighter = import ./home/cyberfighter/home.nix;
+                sharedModules = [ nix-flatpak.homeManagerModules.nix-flatpak ];
+              };
+            }
           ];
         };
 
@@ -79,10 +88,19 @@
           inherit system;
           specialArgs = {
             inherit inputs system;
-            inherit secrets;
           };
           modules = [
             ./hosts/work-wsl/configuration.nix
+            sops-nix.nixosModules.sops
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = { inherit inputs pkgs-stable system; };
+                users.jdguillot = import ./home/jdguillot/home.nix;
+              };
+            }
           ];
         };
 
@@ -90,10 +108,19 @@
           inherit system;
           specialArgs = {
             inherit inputs system;
-            inherit secrets;
           };
           modules = [
             ./hosts/ryzn-wsl/configuration.nix
+            sops-nix.nixosModules.sops
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = { inherit inputs pkgs-stable system; };
+                users.cyberfighter = import ./home/cyberfighter/home.nix;
+              };
+            }
           ];
         };
 
@@ -103,12 +130,21 @@
             inherit
               inputs
               system
-              secrets
               ;
           };
           modules = [
             ./hosts/sys-galp-nix/configuration.nix
             sops-nix.nixosModules.sops
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = { inherit inputs pkgs-stable system; };
+                users.cyberfighter = import ./home/cyberfighter/home.nix;
+                sharedModules = [ nix-flatpak.homeManagerModules.nix-flatpak ];
+              };
+            }
           ];
         };
 
@@ -116,7 +152,6 @@
           inherit system;
           specialArgs = {
             inherit inputs system;
-            inherit secrets;
           };
           modules = [
             ./hosts/nixos-portable/configuration.nix
@@ -132,7 +167,7 @@
         "cyberfighter@razer-nixos" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = {
-            inherit inputs pkgs-stable;
+            inherit inputs pkgs-stable system;
           };
           modules = [
             ./home/cyberfighter/home.nix
@@ -143,7 +178,7 @@
         "jdguillot@work-nix-wsl" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = {
-            inherit inputs pkgs-stable;
+            inherit inputs pkgs-stable system;
           };
           modules = [
             ./home/jdguillot/home.nix
@@ -153,7 +188,7 @@
         "cyberfighter@ryzn-nix-wsl" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = {
-            inherit inputs pkgs-stable;
+            inherit inputs pkgs-stable system;
           };
           modules = [
             ./home/cyberfighter/home.nix
@@ -163,7 +198,7 @@
         "cyberfighter@sys-galp-nix" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = {
-            inherit inputs pkgs-stable;
+            inherit inputs pkgs-stable system;
           };
           modules = [
             ./home/cyberfighter/home.nix

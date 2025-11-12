@@ -3,63 +3,51 @@
   inputs,
   ...
 }:
-let
-  username = "cyberfighter";
-in
 {
   imports = [
-    # ./docker-desktop-fix.nix
-    ../../modules/global/default.nix
-    ../../modules/optional/pkgs.nix
+    ../../modules
     inputs.nixos-wsl.nixosModules.default
     inputs.nix-index-database.nixosModules.nix-index
-    # inputs.vscode-server.nixosModules.default
   ];
 
-  cyberfighter.features = {
-    graphics = {
-      enable = true;
+  cyberfighter = {
+    profile.enable = "wsl";
+
+    system = {
+      hostname = "ryzn-nix-wsl";
+      username = "cyberfighter";
+      userDescription = "Jonathan Guillot";
+      stateVersion = "25.05";
+      extraGroups = [ "docker" ];
     };
-    flatpak = {
-      enable = true;
+
+    nix = {
+      enableDevenv = true;
+      trustedUsers = [ "root" "cyberfighter" ];
     };
-    docker = {
-      enable = true;
+
+    packages = {
+      includeDev = true;
+      extraPackages = with pkgs; [
+        moonlight-qt
+        nil
+        zulu8
+        gradle
+      ];
+    };
+
+    features = {
+      graphics.enable = true;
+      flatpak.enable = true;
+      docker.enable = true;
     };
   };
 
   wsl = {
-
-    # WSL Options
     enable = true;
-    defaultUser = "${username}";
-    # docker-desktop.enable = true;
+    defaultUser = "cyberfighter";
     useWindowsDriver = true;
     wslConf.automount.root = "/";
-
-  };
-
-  networking.hostName = "ryzn-nix-wsl"; # Define your hostname.
-
-  # Set your time zone.
-  time.timeZone = "America/Los_Angeles";
-
-  nix.extraOptions = ''
-    extra-substituters = https://devenv.cachix.org
-    extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-    trusted-users = root ${username}
-    keep-outputs = true
-    keep-derivations = true
-  '';
-
-  programs.zsh.enable = true;
-  users.defaultUserShell = pkgs.zsh;
-
-  users.users."${username}" = {
-    extraGroups = [
-      "wheel"
-      "docker"
-    ];
   };
 
   environment.variables = {
@@ -69,22 +57,7 @@ in
 
   security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
 
-  programs.nix-ld = {
-    enable = true;
-  };
-
-  nixpkgs.config = {
-    allowUnfree = true;
-  };
-
-  # services.vscode-server.enable = true;
-
-  environment.systemPackages = with pkgs; [
-    moonlight-qt
-    nil
-    zulu8
-    gradle
-  ];
+  programs.nix-ld.enable = true;
 
   xdg = {
     portal = {
@@ -95,11 +68,4 @@ in
       config.common.default = "*";
     };
   };
-
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
-  system.stateVersion = "25.05"; # Did you read the comment?
 }
