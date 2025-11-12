@@ -59,7 +59,7 @@
             inherit inputs system;
             inherit (hostMeta) profile;
             hostProfile = hostMeta.profile;
-            hostMeta = hostMeta;
+            inherit hostMeta;
           };
           modules = [
             ./hosts/${hostname}/configuration.nix
@@ -75,20 +75,16 @@
           extraSpecialArgs = {
             inherit inputs system;
             inherit (hostMeta) profile;
-            pkgs-stable = pkgs-stable;
+            inherit pkgs-stable;
             hostProfile = hostMeta.profile;
-            hostMeta = hostMeta;
+            inherit hostMeta;
           };
-          modules =
-            [
-              ./home/${hostMeta.system.username}/home.nix
-            ]
-            ++ (
-              if hostname == "razer-nixos" || hostname == "sys-galp-nix" then
-                [ nix-flatpak.homeManagerModules.nix-flatpak ]
-              else
-                [ ]
-            );
+          modules = [
+            ./home/${hostMeta.system.username}/home.nix
+            nix-flatpak.homeManagerModules.nix-flatpak
+          ]
+          # ++ (if hostname == "razer-nixos" || hostname == "sys-galp-nix" then [ ] else [ ])
+          ;
         };
     in
     {

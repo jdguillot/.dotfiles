@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.cyberfighter.features.editor;
@@ -52,7 +57,7 @@ in
     (lib.mkIf (cfg.enable && cfg.vim.enable) {
       programs.vim = {
         enable = true;
-        plugins = cfg.vim.plugins;
+        inherit (cfg.vim) plugins;
         settings = {
           ignorecase = true;
         };
@@ -74,8 +79,9 @@ in
     (lib.mkIf (cfg.enable && cfg.vscode.enable) {
       programs.vscode = {
         enable = true;
-        extensions = cfg.vscode.extensions;
+        inherit (cfg.vscode) extensions;
       };
     })
   ];
 }
+

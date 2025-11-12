@@ -29,7 +29,7 @@ in
   config = lib.mkIf cfg.enable {
     hardware.bluetooth = {
       enable = true;
-      powerOnBoot = cfg.powerOnBoot;
+      inherit (cfg) powerOnBoot;
       settings = {
         General = {
           Enable = "Source,Sink,Media,Socket";
@@ -40,9 +40,12 @@ in
 
     services.blueman.enable = lib.mkDefault true;
 
-    environment.systemPackages = with pkgs; [
-      bluez
-      bluez-tools
-    ] ++ cfg.extraPackages;
+    environment.systemPackages =
+      with pkgs;
+      [
+        bluez
+        bluez-tools
+      ]
+      ++ cfg.extraPackages;
   };
 }

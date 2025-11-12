@@ -1,6 +1,4 @@
 {
-  config,
-  lib,
   pkgs,
   inputs,
   hostProfile,
@@ -33,7 +31,7 @@
     profile.enable = hostProfile;
 
     system = {
-      username = hostMeta.system.username;
+      inherit (hostMeta.system) username;
       homeDirectory = "/home/${hostMeta.system.username}";
       stateVersion = "24.11";
     };
@@ -58,7 +56,7 @@
           plugins = [
             {
               name = "grc";
-              src = pkgs.fishPlugins.grc.src;
+              inherit (pkgs.fishPlugins.grc) src;
             }
             {
               name = "done";

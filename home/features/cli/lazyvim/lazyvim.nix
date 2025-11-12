@@ -29,6 +29,7 @@
 
     plugins = with pkgs.vimPlugins; [
       lazy-nvim
+      markdown-preview-nvim
     ];
 
     extraLuaConfig =
