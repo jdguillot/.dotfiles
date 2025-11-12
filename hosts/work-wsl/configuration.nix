@@ -10,7 +10,6 @@
     inputs.inputs.nixos-wsl.nixosModules.default
     inputs.inputs.nix-index-database.nixosModules.nix-index
     inputs.inputs.vscode-server.nixosModules.default
-    inputs.inputs.home-manager.nixosModules.home-manager
   ];
 
   cyberfighter = {
@@ -23,7 +22,10 @@
 
     nix = {
       enableDevenv = true;
-      trustedUsers = [ "root" "jdguillot" ];
+      trustedUsers = [
+        "root"
+        "jdguillot"
+      ];
     };
 
     packages = {
@@ -64,14 +66,6 @@
     useWindowsDriver = true;
     wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;
-  };
-
-  home-manager.users.jdguillot = {
-    home.stateVersion = "25.05";
-    home.sessionPath = [
-      "/c/Users/jguillot778e/AppData/Local/Programs/Microsoft VS Code/bin"
-      "/c/Windows/System32"
-    ];
   };
 
   environment.variables = {

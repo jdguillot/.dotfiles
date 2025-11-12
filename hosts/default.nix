@@ -14,6 +14,7 @@
       hostname = "work-nix-wsl";
       username = "jdguillot";
       userDescription = "Jonathan Guillot";
+      wslOptions.windowsUsername = "jguillot778e";
     };
   };
 
@@ -23,6 +24,7 @@
       hostname = "ryzn-nix-wsl";
       username = "cyberfighter";
       userDescription = "Jonathan Guillot";
+      wslOptions.windowsUsername = "jdguillot";
     };
   };
 

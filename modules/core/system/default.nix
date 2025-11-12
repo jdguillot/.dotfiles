@@ -7,6 +7,7 @@
 
 let
   cfg = config.cyberfighter.system;
+  inherit (config.cyberfighter) profile;
 in
 {
   options.cyberfighter.system = {
@@ -64,6 +65,15 @@ in
         description = "LUKS device UUID for encrypted root";
       };
     };
+
+    wslOptions = {
+      windowsUsername = lib.mkOption {
+        type = lib.types.str;
+        default = "cyberfighter";
+        description = "Username for the Windows user that will be utilizing WSL";
+      };
+    };
+
   };
 
   config = {
@@ -111,5 +121,12 @@ in
     ];
 
     nixpkgs.config.allowUnfree = true;
+
+    assertions = lib.mkIf (profile.enable != "wsl") [
+      {
+        assertion = cfg.wslOptions.windowsUsername == "cyberfighter";
+        message = "wslOptions.windowsUsername can only be set when profile.enable is 'wsl'";
+      }
+    ];
   };
 }

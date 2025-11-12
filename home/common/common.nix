@@ -1,6 +1,9 @@
 {
+  lib,
   pkgs,
   inputs,
+  hostProfile,
+  hostMeta,
   ...
 }:
 
@@ -247,4 +250,12 @@
     };
   };
 
+  home = {
+    inherit (hostMeta.system) username;
+
+    sessionPath = lib.mkIf (hostProfile == "wsl") [
+      "/c/Users/${hostMeta.system.wslOptions.windowsUsername}/AppData/Local/Programs/Microsoft VS Code/bin"
+      "/c/Windows/System32"
+    ];
+  };
 }
