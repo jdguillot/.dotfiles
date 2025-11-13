@@ -74,11 +74,11 @@
   };
 
   environment.shellAliases = {
-    dadjoke = "curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f fox | lolcat";
+    dadjoke = "curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f sus | lolcat";
   };
 
   programs.bash.interactiveShellInit = ''
-    curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f fox | lolcat
+    curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f sus | lolcat
   '';
 
   virtualisation.waydroid.enable = true;
