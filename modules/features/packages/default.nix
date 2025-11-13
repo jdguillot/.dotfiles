@@ -34,6 +34,7 @@ let
     nil
     esphome
     platformio
+    gcc
   ];
 
   desktopPackages = with pkgs; [
