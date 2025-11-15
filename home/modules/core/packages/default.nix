@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.cyberfighter.packages;
@@ -23,6 +28,7 @@ in
       home.packages = with pkgs; [
         python3
         gitmux
+        lsof
       ];
     })
 
@@ -31,3 +37,4 @@ in
     }
   ];
 }
+

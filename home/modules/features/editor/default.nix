@@ -9,6 +9,12 @@ let
   cfg = config.cyberfighter.features.editor;
 in
 {
+  imports = [
+    ./lazyvim/default.nix
+    ./micro/default.nix
+    ./zed/default.nix
+  ];
+
   options.cyberfighter.features.editor = {
     enable = lib.mkOption {
       type = lib.types.bool;
@@ -84,4 +90,3 @@ in
     })
   ];
 }
-

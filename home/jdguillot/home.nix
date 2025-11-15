@@ -8,16 +8,8 @@
 {
   imports = [
     ../modules
-    ../features/cli/lazyvim/lazyvim.nix
-    ../features/cli/btop/btop.nix
-    ../features/cli/lazygit/default.nix
-    ../features/cli/starship/default.nix
-    ../features/cli/tmux/default.nix
-    ../features/cli/carapace/default.nix
-    ../features/cli/zsh/default.nix
-    ../features/desktop/alacritty/default.nix
-    ../features/desktop/ghostty/default.nix
-    ../features/desktop/bitwarden.nix
+    ./files.nix
+    ./variables.nix
   ];
 
   cyberfighter = {
@@ -46,36 +38,14 @@
       };
 
       shell = {
-        fish = {
-          enable = true;
-          plugins = [
-            {
-              name = "grc";
-              inherit (pkgs.fishPlugins.grc) src;
-            }
-            {
-              name = "done";
-              src = pkgs.fishPlugins.done;
-            }
-            {
-              name = "fzf-fish";
-              src = pkgs.fishPlugins.fzf-fish;
-            }
-            {
-              name = "forgit";
-              src = pkgs.fishPlugins.forgit;
-            }
-          ];
-        };
+        fish.enable = true;
         starship.enable = true;
+        zsh.enable = true;
       };
 
       editor = {
         neovim.enable = true;
-      };
-
-      terminal = {
-        zellij.enable = true;
+        lazyvim.enable = true;
       };
 
       desktop = {
@@ -84,30 +54,13 @@
           package = pkgs.firefox;
         };
       };
-    };
-  };
 
-  # User-specific configurations
-  home = {
-    file = {
-      ".ssh/config".source = ../../secrets/.ssh_config_work;
-      ".config/nix/nix.conf".source = ../../secrets/nix.conf;
-    };
-
-    sessionVariables = {
-      GITHUB_USERNAME = "jonathan-guillot_emcor";
-    };
-  };
-
-  # Additional program configurations
-  programs.zellij = {
-    enable = true;
-    settings = {
-      theme = "nord";
-      font = "FiraCode Nerd Font";
-      keybinds = {
-        normal = { };
-        pane = { };
+      tools = {
+        btop.enable = true;
+        lazygit.enable = true;
+        tmux.enable = true;
+        zellij.enable = true;
+        carapace.enable = true;
       };
     };
   };

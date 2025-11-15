@@ -1,9 +1,19 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.cyberfighter.features.shell;
 in
 {
+  imports = [
+    ./zsh/default.nix
+    ./starship/default.nix
+  ];
+
   options.cyberfighter.features.shell = {
     enable = lib.mkOption {
       type = lib.types.bool;
@@ -33,22 +43,6 @@ in
       };
     };
 
-    zsh = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable Zsh shell";
-      };
-    };
-
-    starship = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable Starship prompt";
-      };
-    };
-
     extraSessionVariables = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -70,28 +64,15 @@ in
           set fish_greeting # Disable greeting
         '';
         shellInit = ''
-          ${lib.optionalString cfg.starship.enable "eval (starship init fish)"}
           zoxide init fish | source
           fzf --fish | source
         '';
-        plugins = cfg.fish.plugins;
+        inherit (cfg.fish) plugins;
       };
     })
 
     (lib.mkIf (cfg.enable && cfg.bash.enable) {
       programs.bash = {
-        enable = true;
-      };
-    })
-
-    (lib.mkIf (cfg.enable && cfg.zsh.enable) {
-      programs.zsh = {
-        enable = true;
-      };
-    })
-
-    (lib.mkIf (cfg.enable && cfg.starship.enable) {
-      programs.starship = {
         enable = true;
       };
     })
@@ -107,7 +88,8 @@ in
 
           ## fzf
           FZF_DEFAULT_COMMAND = "fd --type f --strip-cwd-prefix";
-        } // cfg.extraSessionVariables;
+        }
+        // cfg.extraSessionVariables;
 
         shellAliases = {
           ## Overriding default operations
@@ -128,8 +110,10 @@ in
           dadjoke = "curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f sus | lolcat";
 
           bwu = "export BW_SESSION=$(bw unlock --raw)";
-        } // cfg.extraAliases;
+        }
+        // cfg.extraAliases;
       };
     })
   ];
 }
+

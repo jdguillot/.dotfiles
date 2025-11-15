@@ -45,7 +45,7 @@
     home = {
       inherit (hostMeta.system) username;
       file = {
-        ".markdownlint.yaml".source = ../../../common/configs/.markdownlint.yaml;
+        ".markdownlint.yaml".source = ./.markdownlint.yaml;
       };
 
       sessionPath = lib.mkIf (hostProfile == "wsl") [

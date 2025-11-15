@@ -27,10 +27,6 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = with pkgs;
       lib.optionals cfg.enableDefault [
-        # Editors
-        micro
-        zed-editor
-        
         # File management & navigation
         eza
         fd
