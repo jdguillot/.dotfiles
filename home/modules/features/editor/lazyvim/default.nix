@@ -75,9 +75,13 @@ in
       viAlias = true;
       vimAlias = true;
 
-      extraPackages = with pkgs; [
-        ripgrep
-      ] ++ cfg.languageServers ++ cfg.formatters;
+      extraPackages =
+        with pkgs;
+        [
+          ripgrep
+        ]
+        ++ cfg.languageServers
+        ++ cfg.formatters;
 
       plugins = with pkgs.vimPlugins; [
         lazy-nvim
@@ -205,6 +209,7 @@ in
               { import = "lazyvim.plugins.extras.coding.yanky" },
               { import = "lazyvim.plugins.extras.dap.core" },
               { import = "lazyvim.plugins.extras.lang.ember" },
+              { import = "lazyvim.plugins.extras.formatting.prettier" },
 
               -- The following configs are needed for fixing lazyvim on nix
               -- force enable telescope-fzf-native.nvim
@@ -226,12 +231,10 @@ in
       let
         parsers = pkgs.symlinkJoin {
           name = "treesitter-parsers";
-          paths = (
-            pkgs.vimPlugins.nvim-treesitter.withPlugins (
-              plugins:
-              builtins.map (parser: plugins.${parser}) cfg.treesitterParsers
-            )
-          ).dependencies;
+          paths =
+            (pkgs.vimPlugins.nvim-treesitter.withPlugins (
+              plugins: builtins.map (parser: plugins.${parser}) cfg.treesitterParsers
+            )).dependencies;
         };
       in
       "${parsers}/parser";
