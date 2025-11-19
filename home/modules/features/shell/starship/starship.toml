@@ -1,7 +1,7 @@
 palette = "catppuccin_frappe"
 
 format = """
-$directory$fill$all
+$shell$directory$fill$all
 """
 
 # Right-align everything except directory
@@ -211,6 +211,12 @@ format = '\[[$symbol($version)]($style)\]'
 
 [scala]
 format = '\[[$symbol($version)]($style)\]'
+
+[shell]
+disabled = false
+fish_indicator = '󰈺 '
+zsh_indicator = '󰬡 '
+bash_indicator = ' '
 
 [spack]
 format = '\[[$symbol$environment]($style)\]'
