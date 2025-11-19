@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.cyberfighter.features.tools;
@@ -25,7 +30,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = with pkgs;
+    home.packages =
+      with pkgs;
       lib.optionals cfg.enableDefault [
         # File management & navigation
         eza
@@ -38,7 +44,7 @@ in
         yazi
         dua
         bat
-        
+
         # Shell utilities
         tldr
         fzf
@@ -46,37 +52,41 @@ in
         cht-sh
         pay-respects
         lazyssh
-        
+
         # Version control & development
         gh
         git-crypt
-        
+
         # Security & SSH
         ssh-agents
         gnupg
         pinentry-curses
-        
+
         # Network tools
         dig
-        
+
         # Container & system tools
         distrobox
         lazydocker
-        
+        lazysql
+        rainfrog
+
         # Data & text processing
         jq
+        fq
         fx
         ripgrep
-        
+        csvlens
+
         # Media & clipboard
         xclip
-        
+
         # System monitoring & info
         neofetch
-        
+
         # Nix tools
         nix-your-shell
-        
+
         # Fun & entertainment
         cmatrix
         cowsay
@@ -86,13 +96,14 @@ in
         fireplace
         asciiquarium
         pipes
-        
+
         # Scripting & languages
         powershell
         tree-sitter
-        
+
         # API & HTTP tools
         posting
-      ] ++ cfg.extraPackages;
+      ]
+      ++ cfg.extraPackages;
   };
 }
