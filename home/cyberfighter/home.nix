@@ -50,6 +50,7 @@
       editor = {
         vim.enable = true;
         neovim.enable = true;
+        zed.enable = true;
         lazyvim.enable = true;
       };
 

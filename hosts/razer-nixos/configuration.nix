@@ -63,9 +63,11 @@
 
       gaming.enable = true;
 
-      flatpak.extraPackages = [
-        "org.rncbc.qsynth"
-      ];
+      flatpak = {
+        extraPackages = [
+          "org.rncbc.qsynth"
+        ];
+      };
 
       docker.enable = true;
       tailscale.enable = true;

@@ -7,6 +7,7 @@
 
 let
   cfg = config.cyberfighter.features.flatpak;
+  inherit (config.cyberfighter) features;
 
   browserPackages = [
     "io.github.zen_browser.zen"
@@ -23,10 +24,15 @@ let
     "org.fritzing.Fritzing"
   ];
 
+  gamingPackages = [
+    "com.moonlight_stream.Moonlight"
+  ];
+
   allPackages =
     (lib.optionals cfg.browsers browserPackages)
     ++ (lib.optionals cfg.cad cadPackages)
     ++ (lib.optionals cfg.electronics electronicsPackages)
+    ++ (lib.optionals (features.gaming.enable && cfg.enable) gamingPackages)
     ++ cfg.extraPackages;
 in
 {
@@ -39,11 +45,16 @@ in
 
     electronics = lib.mkEnableOption "Electronics software (Arduino IDE, Fritzing)";
 
+    gaming = lib.mkEnableOption "Gaming packages (Moonlight)";
+
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Additional Flatpak packages to install";
-      example = [ "com.moonlight_stream.Moonlight" "us.zoom.Zoom" ];
+      example = [
+        "com.moonlight_stream.Moonlight"
+        "us.zoom.Zoom"
+      ];
     };
   };
 

@@ -64,6 +64,7 @@ in
 
         # Network tools
         dig
+        mdns-scanner
 
         # Container & system tools
         distrobox
@@ -73,6 +74,7 @@ in
 
         # Data & text processing
         jq
+        yq
         fq
         fx
         ripgrep
