@@ -23,7 +23,11 @@
         luksDevice = "490adcca-e0d1-4876-a6c4-72a61b0652e7";
       };
 
-      extraGroups = [ "docker" ];
+      extraGroups = [
+        "docker"
+        "dialout"
+        "uucp"
+      ];
     };
 
     nix = {
@@ -64,6 +68,7 @@
       gaming.enable = true;
 
       flatpak = {
+        browsers = true;
         extraPackages = [
           "org.rncbc.qsynth"
         ];
