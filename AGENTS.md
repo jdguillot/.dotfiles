@@ -13,6 +13,8 @@
 - Update flake inputs: `nu` (nix flake update)
 - Check flake: `nix flake show`
 - No traditional test suite exists
+- In order to properly build or switch NixOS config or home-manager config, new files must be tracked in git before the rebuild/switch command is run.
+- Before committing and changes to get, do a pass on any new files to see if secrets would be leaked.
 
 ## Code Style
 
@@ -37,7 +39,7 @@
 ### Shell Scripts
 
 - Use `#!/run/current-system/sw/bin/bash` shebang
-- 2-space or 4-space indentation (match existing files)
+- 2-space indentation
 - Quote variables: `"$VARIABLE"`
 - Use `[[ ]]` for conditionals
 
@@ -46,7 +48,7 @@
 - Host configs: `hosts/<hostname>/configuration.nix`
 - Home configs: `home/<username>/home.nix`
 - System modules: `modules/core/` (essential) and `modules/features/` (optional)
-- Home feature modules: `home/features/cli/` or `home/features/desktop/`
+- Home feature modules: `home/modules/core/` or `home/modules/features/`
 - Secrets: encrypted in `secrets/` with git-crypt/sops
 
 ## Configuration Structure
