@@ -35,6 +35,7 @@
         nil
         zulu8
         gradle
+        playwright-driver
       ];
     };
 
@@ -71,6 +72,13 @@
   environment.variables = {
     JAVA_HOME = "${pkgs.zulu8}";
     WAYLAND_DISPLAY = "";
+    PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+    PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
+  };
+
+  environment.sessionVariables = {
+    # Puts gcc libraries in the library path for mkdocs-exporter
+    LD_LIBRARY_PATH = [ "${pkgs.stdenv.cc.cc.lib}/lib" ];
   };
 
   security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
