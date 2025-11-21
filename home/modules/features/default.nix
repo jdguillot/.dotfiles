@@ -12,6 +12,6 @@
     ./tools/carapace/default.nix
     ./tools/tmux/default.nix
     ./tools/zellij/default.nix
+    ./tools/yazi/default.nix
   ];
 }
-

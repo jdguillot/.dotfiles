@@ -41,7 +41,6 @@ in
         mc
         duf
         tree
-        yazi
         dua
         bat
 
