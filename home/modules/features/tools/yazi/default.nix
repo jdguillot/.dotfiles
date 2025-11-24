@@ -20,7 +20,7 @@ in
 
   config = lib.mkIf cfg.enable {
     home.file = {
-      ".config/yazi/theme.toml".source = ./catppuccin-frappe-blue.toml;
+      # ".config/yazi/theme.toml".source = ./catppuccin-frappe-blue.toml;
     };
     programs.yazi = {
       enable = true;

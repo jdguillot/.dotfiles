@@ -25,6 +25,7 @@
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     isd.url = "github:kainctl/isd";
+    catppuccin.url = "github:catppuccin/nix";
   };
 
   outputs =
@@ -36,6 +37,7 @@
       nix-index-database,
       nixpkgs-stable,
       sops-nix,
+      catppuccin,
       ...
     }@inputs:
     let
@@ -64,6 +66,7 @@
           modules = [
             ./hosts/${hostname}/configuration.nix
             sops-nix.nixosModules.sops
+            catppuccin.nixosModules.catppuccin
           ];
         };
 
@@ -82,6 +85,7 @@
           modules = [
             ./home/${hostMeta.system.username}/home.nix
             nix-flatpak.homeManagerModules.nix-flatpak
+            catppuccin.homeManagerModules.catppuccin
           ]
           # ++ (if hostname == "razer-nixos" || hostname == "sys-galp-nix" then [ ] else [ ])
           ;

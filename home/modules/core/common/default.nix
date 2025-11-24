@@ -56,5 +56,10 @@
 
     home.file.".prettierrc".source = ./.prettierrc;
 
+    catppuccin = {
+      enable = true;
+      accent = "blue";
+      flavor = "frappe";
+    };
   };
 }

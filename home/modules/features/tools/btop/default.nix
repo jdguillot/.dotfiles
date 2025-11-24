@@ -22,13 +22,13 @@ in
   config = lib.mkIf cfg.enable {
     home.file = {
       ".config/btop/themes/nord-cold.theme".source = ./nord-cold.theme;
-      ".config/btop/themes/catppuccin_frappe.theme".source = ./catppuccin_frappe.theme;
+      # ".config/btop/themes/catppuccin_frappe.theme".source = ./catppuccin_frappe.theme;
     };
 
     programs.btop = {
       enable = true;
       settings = {
-        color_theme = cfg.theme;
+        # color_theme = cfg.theme;
       };
     };
   };
