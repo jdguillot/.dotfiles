@@ -46,15 +46,24 @@
       inherit (hostMeta.system) username;
       file = {
         ".markdownlint.yaml".source = ./.markdownlint.yaml;
+        ".prettierrc".source = ./.prettierrc;
+
       };
 
       sessionPath = lib.mkIf (hostProfile == "wsl") [
         "/c/Users/${hostMeta.system.wslOptions.windowsUsername}/AppData/Local/Programs/Microsoft VS Code/bin"
         "/c/Windows/System32"
       ];
-    };
 
-    home.file.".prettierrc".source = ./.prettierrc;
+      packages = with pkgs; [
+        (catppuccin-kde.override {
+          flavour = [ "frappe" ];
+          accents = [ "blue" ];
+          winDecStyles = [ "modern" ];
+        })
+      ];
+
+    };
 
     catppuccin = {
       enable = true;
