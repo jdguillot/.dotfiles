@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.cyberfighter.features.desktop;
@@ -54,13 +59,21 @@ in
 
     (lib.mkIf cfg.enable {
       nixpkgs.config.allowUnfree = true;
-      
-      home.packages = with pkgs; [
-        bottles
-        super-productivity
-        vivaldi
-        qbittorrent
-      ] ++ cfg.extraPackages;
+
+      home.packages =
+        with pkgs;
+        [
+          bottles
+          super-productivity
+          vivaldi
+          qbittorrent
+          (catppuccin-kde.override {
+            flavour = [ "frappe" ];
+            accents = [ "blue" ];
+            winDecStyles = [ "modern" ];
+          })
+        ]
+        ++ cfg.extraPackages;
     })
   ];
 }

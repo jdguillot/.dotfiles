@@ -55,14 +55,6 @@
         "/c/Windows/System32"
       ];
 
-      packages = with pkgs; [
-        (catppuccin-kde.override {
-          flavour = [ "frappe" ];
-          accents = [ "blue" ];
-          winDecStyles = [ "modern" ];
-        })
-      ];
-
     };
 
     catppuccin = {
