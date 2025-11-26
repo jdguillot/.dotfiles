@@ -127,6 +127,7 @@ in
             vim-startuptime
             which-key-nvim
             opencode-nvim
+            remote-nvim-nvim
             {
               name = "LuaSnip";
               path = luasnip;
