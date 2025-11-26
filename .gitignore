@@ -3,3 +3,6 @@ secret-key*
 
 ## Flake Result Folders
 result/*
+
+## Generated Nixd config
+.nixd.json

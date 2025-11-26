@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  hostMeta,
   ...
 }:
 
@@ -242,5 +243,33 @@ in
 
     # Normal LazyVim config here, see https://github.com/LazyVim/starter/tree/main/lua
     xdg.configFile."nvim/lua".source = ./lua;
+
+    # Generate .nixd.json dynamically for the current user/host
+    home.file.".dotfiles/.nixd.json".text =
+      let
+        dotfilesPath = "${config.home.homeDirectory}/.dotfiles";
+        hostname = hostMeta.system.hostname;
+        username = hostMeta.system.username;
+        hmConfig = "${username}@${hostname}";
+      in
+      builtins.toJSON {
+        nixos = {
+          expr = "(builtins.getFlake \"${dotfilesPath}\").nixosConfigurations.${hostname}.options";
+        };
+        home-manager = {
+          expr = "(builtins.getFlake \"${dotfilesPath}\").homeConfigurations.\"${hmConfig}\".options";
+        };
+        nixpkgs = {
+          expr = "import (builtins.getFlake \"${dotfilesPath}\").inputs.nixpkgs { }";
+        };
+        options = {
+          nixos = {
+            expr = "(builtins.getFlake \"${dotfilesPath}\").nixosConfigurations.${hostname}.options";
+          };
+          home-manager = {
+            expr = "(builtins.getFlake \"${dotfilesPath}\").homeConfigurations.\"${hmConfig}\".options";
+          };
+        };
+      };
   };
 }
