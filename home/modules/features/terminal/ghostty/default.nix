@@ -56,6 +56,7 @@ in
         fullscreen = if cfg.fullscreen then "true" else "false";
         command = if cfg.launchTmux then "tmux new-session -A -s new-session" else null;
         confirm-close-surface = if cfg.confirmClose then "true" else "false";
+        background-opacity = 0.9;
       };
     };
   };
