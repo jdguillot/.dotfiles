@@ -65,6 +65,8 @@
       fonts.enable = true;
       bluetooth.enable = true;
 
+      wine.enable = true;
+
       gaming.enable = true;
 
       flatpak = {

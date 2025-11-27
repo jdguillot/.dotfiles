@@ -21,7 +21,10 @@
 
     nix = {
       enableDevenv = true;
-      trustedUsers = [ "root" "cyberfighter" ];
+      trustedUsers = [
+        "root"
+        "cyberfighter"
+      ];
     };
 
     packages = {

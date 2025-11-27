@@ -27,6 +27,7 @@
     ./features/vscode
     ./features/vpn
     ./features/security
+    ./features/wine/default.nix
 
     inputs.nix-flatpak.nixosModules.nix-flatpak
   ];
