@@ -47,66 +47,68 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (lib.mkMerge [
-    {
-      hardware.graphics.enable = true;
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        hardware.graphics.enable = true;
 
-      environment.systemPackages = with pkgs; [
-        vulkan-tools
-        vulkan-loader
-        virtualgl
-      ];
-    }
-
-    (lib.mkIf cfg.nvidia.enable {
-      services.xserver.videoDrivers = [ "nvidia" ];
-
-      environment.sessionVariables = {
-        CUDA_PATH = "${pkgs.cudatoolkit}";
-        EXTRA_LDFLAGS = "-L/lib -L${pkgs.linuxPackages.nvidia_x11}/lib";
-        EXTRA_CCFLAGS = "-I/usr/include";
-        LD_LIBRARY_PATH = [
-          "/usr/lib/wsl/lib"
-          "${pkgs.linuxPackages.nvidia_x11}/lib"
-          "${pkgs.ncurses5}/lib"
+        environment.systemPackages = with pkgs; [
+          vulkan-tools
+          vulkan-loader
+          virtualgl
         ];
-        MESA_D3D12_DEFAULT_ADAPTER_NAME = "Nvidia";
-      };
+      }
 
-      hardware.nvidia = {
-        modesetting.enable = true;
-        powerManagement.enable = cfg.nvidia.powerManagement;
-        powerManagement.finegrained = false;
-        open = cfg.nvidia.openDriver;
-        nvidiaSettings = true;
-        package = config.boot.kernelPackages.nvidiaPackages.stable;
-      };
-    })
+      (lib.mkIf cfg.nvidia.enable {
+        services.xserver.videoDrivers = [ "nvidia" ];
 
-    (lib.mkIf (cfg.nvidia.enable && cfg.nvidia.prime.enable) {
-      hardware.nvidia.prime = {
-        sync.enable = true;
-        intelBusId = cfg.nvidia.prime.intelBusId;
-        nvidiaBusId = cfg.nvidia.prime.nvidiaBusId;
-      };
-    })
+        environment.sessionVariables = {
+          CUDA_PATH = "${pkgs.cudatoolkit}";
+          EXTRA_LDFLAGS = "-L/lib -L${pkgs.linuxPackages.nvidia_x11}/lib";
+          EXTRA_CCFLAGS = "-I/usr/include";
+          LD_LIBRARY_PATH = [
+            "/usr/lib/wsl/lib"
+            "${pkgs.linuxPackages.nvidia_x11}/lib"
+            "${pkgs.ncurses5}/lib"
+          ];
+          MESA_D3D12_DEFAULT_ADAPTER_NAME = "Nvidia";
+        };
 
-    (lib.mkIf cfg.amd.enable {
-      boot.initrd.kernelModules = [ "amdgpu" ];
+        hardware.nvidia = {
+          modesetting.enable = true;
+          powerManagement.enable = cfg.nvidia.powerManagement;
+          powerManagement.finegrained = false;
+          open = cfg.nvidia.openDriver;
+          nvidiaSettings = true;
+          package = config.boot.kernelPackages.nvidiaPackages.stable;
+        };
+      })
 
-      services.xserver = {
-        enable = true;
-        videoDrivers = [ "amdgpu" ];
-      };
+      (lib.mkIf (cfg.nvidia.enable && cfg.nvidia.prime.enable) {
+        hardware.nvidia.prime = {
+          sync.enable = true;
+          inherit (cfg.nvidia.prime) intelBusId;
+          inherit (cfg.nvidia.prime) nvidiaBusId;
+        };
+      })
 
-      hardware.graphics.extraPackages = with pkgs; [
-        rocmPackages.clr.icd
-      ];
+      (lib.mkIf cfg.amd.enable {
+        boot.initrd.kernelModules = [ "amdgpu" ];
 
-      environment.systemPackages = with pkgs; [
-        clinfo
-        amdgpu_top
-      ];
-    })
-  ]);
+        services.xserver = {
+          enable = true;
+          videoDrivers = [ "amdgpu" ];
+        };
+
+        hardware.graphics.extraPackages = with pkgs; [
+          rocmPackages.clr.icd
+        ];
+
+        environment.systemPackages = with pkgs; [
+          clinfo
+          amdgpu_top
+        ];
+      })
+    ]
+  );
 }
