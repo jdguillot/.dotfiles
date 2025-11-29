@@ -41,6 +41,9 @@
       graphics.enable = true;
       flatpak.enable = true;
       docker.enable = true;
+      ssh.enable = true;
+      sops.enable = true;
+      cachix.enable = true;
     };
   };
 
