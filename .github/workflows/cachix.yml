@@ -8,8 +8,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        host:
+          [
+            razer-nixos,
+            work-nix-wsl,
+            nixos-portable,
+            ryzn-nix-wsl,
+            sys-galp-nix,
+            thkpd-pve1,
+          ]
+      fail-fast: false # Continue other builds if one fails
     steps:
       - uses: actions/checkout@v3
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - uses: cachix/install-nix-action@v25
         with:
           nix_path: nixpkgs=channel:nixos-unstable
@@ -19,7 +42,6 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix flake check
       - run: |
-          nix flake show --json | jq -r '.nixosConfigurations | keys[]' | while read host; do
-            nix build .#nixosConfigurations.$host.config.system.build.toplevel
-          done
+          nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+          # nix-collect-garbage -d
       - run: nix-shell --run "echo OK"
