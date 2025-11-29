@@ -1,25 +1,22 @@
 # Template for a minimal server
 {
-  inputs,
   pkgs,
+  hostProfile,
+  hostMeta,
   ...
-}:
+}@inputs:
 {
   imports = [
     ../../modules
-    inputs.nix-index-database.nixosModules.nix-index
-    
+    inputs.inputs.nix-index-database.nixosModules.nix-index
     ./hardware-configuration.nix
   ];
 
   cyberfighter = {
-    profile.enable = "minimal";
+    profile.enable = hostProfile;
 
-    system = {
-      hostname = "my-server";
-      username = "admin";
-      userDescription = "System Administrator";
-      stateVersion = "25.05";
+    system = hostMeta.system // {
+      stateVersion = "25.11";
 
       bootloader = {
         systemd-boot = true;
@@ -29,12 +26,15 @@
       extraGroups = [ "docker" ];
     };
 
-    nix.trustedUsers = [ "root" "admin" ];
+    nix.trustedUsers = [
+      "root"
+      "cyberfighter"
+    ];
 
     features = {
       ssh = {
         enable = true;
-        passwordAuth = false;  # Key-only authentication
+        passwordAuth = false; # Key-only authentication
         permitRootLogin = "no";
       };
 
