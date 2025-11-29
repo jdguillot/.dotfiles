@@ -2,7 +2,7 @@
 name: Build and Cache
 on:
   push:
-    branches: [main modularize-host-configs]
+    branches: [main, modularize-host-configs]
   pull_request:
 
 jobs:
