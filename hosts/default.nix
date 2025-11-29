@@ -37,6 +37,15 @@
     };
   };
 
+  thkpd-pve1 = {
+    profile = "minimal";
+    system = {
+      hostname = "thkpd-pve1";
+      username = "cyberfighter";
+      userDescription = "Jonathan Guillot";
+    };
+  };
+
   nixos-portable = {
     profile = "desktop";
     system = {
