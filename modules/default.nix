@@ -28,6 +28,7 @@
     ./features/vpn
     ./features/security
     ./features/wine/default.nix
+    ./features/proxmox/default.nix
     ./features/cachix/default.nix
 
     inputs.nix-flatpak.nixosModules.nix-flatpak
