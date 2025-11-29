@@ -6,7 +6,7 @@
     # # This is the long form of both of below
     nixpkgs.url = "nixpkgs/nixos-unstable";
 
-    nixpkgs-stable.url = "nixpkgs/nixos-25.05";
+    nixpkgs-stable.url = "nixpkgs/nixos-25.11";
 
     # Home-manager using the same nixpkgs
     home-manager = {
@@ -24,11 +24,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    disko = {
+      url = "github:nix-community/disko/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-flatpak.url = "github:gmodena/nix-flatpak";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     vscode-server.url = "github:nix-community/nixos-vscode-server";
 
     catppuccin.url = "github:catppuccin/nix";
+    proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
     isd.url = "github:kainctl/isd";
     #    pst-bin.url = "path:./programs/pst";
     #    tasmotizer.url = "path:./programs/tasmotizer";
@@ -41,7 +47,9 @@
       nix-flatpak,
       nixpkgs-stable,
       sops-nix,
+      disko,
       catppuccin,
+      proxmox-nixos,
       ...
     }@inputs:
     let
@@ -67,11 +75,15 @@
         hostname: hostMeta:
         nixpkgs.lib.nixosSystem {
           inherit system;
-          specialArgs = sharedSpecialArgs hostMeta;
+          specialArgs = (sharedSpecialArgs hostMeta) // {
+            inherit proxmox-nixos;
+          };
           modules = [
             ./hosts/${hostname}/configuration.nix
             sops-nix.nixosModules.sops
+            disko.nixosModules.disko
             catppuccin.nixosModules.catppuccin
+            proxmox-nixos.nixosModules.proxmox-ve
           ];
         };
 
@@ -97,6 +109,7 @@
         ryzn-nix-wsl = mkNixosSystem "ryzn-wsl" hostConfigs.ryzn-nix-wsl;
         sys-galp-nix = mkNixosSystem "sys-galp-nix" hostConfigs.sys-galp-nix;
         nixos-portable = mkNixosSystem "nixos-portable" hostConfigs.nixos-portable;
+        thkpd-pve1 = mkNixosSystem "thkpd-pve1" hostConfigs.thkpd-pve1;
       };
 
       homeConfigurations = {
