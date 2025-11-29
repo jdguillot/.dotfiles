@@ -48,28 +48,27 @@ in
 
   config = lib.mkMerge [
     {
-      nix.extraOptions =
-        let
-          devenvConfig = lib.optionalString cfg.enableDevenv ''
-            extra-substituters = https://devenv.cachix.org
-            extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-          '';
-          trustedUsersConfig = ''
-            trusted-users = ${lib.concatStringsSep " " cfg.trustedUsers}
-          '';
-          outputConfig = ''
-            keep-outputs = ${if cfg.keepOutputs then "true" else "false"}
-            keep-derivations = ${if cfg.keepDerivations then "true" else "false"}
-          '';
-        in
-        lib.concatStringsSep "\n" [
-          devenvConfig
-          trustedUsersConfig
-          outputConfig
-          cfg.extraOptions
-        ];
-    }
+      nix.settings = lib.mkMerge [
+        (lib.mkIf cfg.enableDevenv {
+          substituters = [
+            "https://devenv.cachix.org"
+            "https://jdguillot.cachix.org"
+          ];
+          trusted-public-keys = [
+            "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
+            "jdguillot.cachix.org-1:2blGoWA4jRj/xDiez3FqPE5S/RBNtD8uJUCz7weHNcs="
+          ];
+        })
+        {
+          trusted-users = cfg.trustedUsers;
+          keep-outputs = cfg.keepOutputs;
+          keep-derivations = cfg.keepDerivations;
+        }
+      ];
 
+      # If you have extra options as a string, use extraOptions
+      nix.extraOptions = cfg.extraOptions;
+    }
     (lib.mkIf cfg.garbageCollect {
       nix = {
         settings.auto-optimise-store = true;

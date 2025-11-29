@@ -13,6 +13,7 @@ in
 
     defaultSopsFile = lib.mkOption {
       type = lib.types.path;
+      default = ../../../secrets/secrets.yaml;
       description = "Default SOPS secrets file";
     };
 
