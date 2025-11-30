@@ -7,7 +7,6 @@
 
 let
   cfg = config.cyberfighter.features.cachix;
-  isCI = builtins.getEnv "CI" != "";
 in
 {
   options.cyberfighter.features.cachix = {
@@ -21,7 +20,7 @@ in
         ];
       }
 
-      (lib.mkIf (!isCI) {
+      {
         assertions = [
           {
             assertion = config.cyberfighter.features.sops.enable or false;
@@ -36,7 +35,7 @@ in
         environment.shellInit = ''
           export CACHIX_AUTH_TOKEN=$(cat ${config.sops.secrets."cachix-auth-token".path})
         '';
-      })
+      }
     ]
   );
 
