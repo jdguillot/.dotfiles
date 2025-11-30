@@ -12,7 +12,7 @@ in
   options.cyberfighter.features.cachix = {
     enable = lib.mkEnableOption "Enable devenv cachix substituter";
   };
-  config = lib.mkIf cfg.enable (
+  config = lib.mkIf (cfg.enable && builtins.pathExists ../../../secrets/secrets.yaml) (
     lib.mkMerge [
       {
         environment.systemPackages = with pkgs; [
@@ -28,7 +28,7 @@ in
           }
         ];
 
-        sops.secrets."cachix-auth-token" = lib.mkIf (builtins.pathExists ../../../secrets/secrets.yaml) {
+        sops.secrets."cachix-auth-token" = {
           owner = "${config.cyberfighter.system.username}";
         };
 

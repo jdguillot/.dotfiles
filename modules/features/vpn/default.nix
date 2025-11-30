@@ -38,7 +38,7 @@ in
     };
   };
 
-  config = lib.mkIf cfg.pia.enable {
+  config = lib.mkIf (cfg.pia.enable && builtins.pathExists ../../../secrets/secrets.yaml) {
     assertions = [
       {
         assertion = config.cyberfighter.features.sops.enable or false;
@@ -46,7 +46,7 @@ in
       }
     ];
 
-    sops.secrets.pia-credentials = lib.mkIf (builtins.pathExists ../../../secrets/secrets.yaml) { };
+    sops.secrets.pia-credentials = { };
 
     services.openvpn.servers.pia = {
       autoStart = cfg.pia.autoStart;

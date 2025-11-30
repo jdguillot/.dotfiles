@@ -24,9 +24,9 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf (cfg.enable && builtins.pathExists ../../../secrets/secrets.yaml) {
     sops = {
-      defaultSopsFile = cfg.defaultSopsFile;
+      inherit (cfg) defaultSopsFile;
       age = {
         sshKeyPaths = [ cfg.sshKeyPath ];
         keyFile = "/var/lib/sops-nix/key.txt";
