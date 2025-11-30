@@ -6,6 +6,7 @@
 
 let
   cfg = config.cyberfighter.features.sops;
+  isCI = builtins.getEnv "CI" != "";
 in
 {
   options.cyberfighter.features.sops = {
@@ -24,7 +25,7 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf (cfg.enable && !isCI) {
     sops = {
       defaultSopsFile = cfg.defaultSopsFile;
       age = {
