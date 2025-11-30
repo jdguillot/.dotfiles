@@ -10,14 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        host:
-          [
+        host: [
             razer-nixos,
-            work-nix-wsl,
-            nixos-portable,
-            ryzn-nix-wsl,
-            sys-galp-nix,
-            thkpd-pve1,
+            # work-nix-wsl,
+            # nixos-portable,
+            # ryzn-nix-wsl,
+            # sys-galp-nix,
+            # thkpd-pve1,
           ]
       fail-fast: false # Continue other builds if one fails
     steps:
@@ -41,8 +40,12 @@ jobs:
           name: jdguillot
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: rm -f ./secrets/secrets.yaml
-      - run: nix flake check
-      - run: |
+      - name: Clear Nix store garbage
+        run: nix-collect-garbage -d
+      - name: Perform Flake check before building
+        run: nix flake check
+      - name: Build Systems
+        run: |
           nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
           # nix-collect-garbage -d
       - run: nix-shell --run "echo OK"

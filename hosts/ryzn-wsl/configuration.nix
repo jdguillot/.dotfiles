@@ -59,8 +59,6 @@
     WAYLAND_DISPLAY = "";
   };
 
-  security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
-
   programs.nix-ld.enable = true;
 
   xdg = {
