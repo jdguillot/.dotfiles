@@ -29,18 +29,20 @@ in
       };
 
       mounts = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.submodule {
-          options = {
-            share = lib.mkOption {
-              type = lib.types.str;
-              description = "Share path on the server";
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              share = lib.mkOption {
+                type = lib.types.str;
+                description = "Share path on the server";
+              };
+              mountPoint = lib.mkOption {
+                type = lib.types.str;
+                description = "Local mount point";
+              };
             };
-            mountPoint = lib.mkOption {
-              type = lib.types.str;
-              description = "Local mount point";
-            };
-          };
-        });
+          }
+        );
         default = { };
         description = "TrueNAS shares to mount";
         example = lib.literalExpression ''
@@ -68,7 +70,7 @@ in
   };
 
   config = lib.mkMerge [
-    (lib.mkIf cfg.truenas.enable {
+    (lib.mkIf (cfg.truenas.enable && builtins.pathExists ../../../secrets/secrets.yaml) {
       sops.secrets = {
         smb-username = {
           sopsFile = lib.mkDefault ../../../secrets/secrets.yaml;
@@ -89,13 +91,12 @@ in
         path = "/etc/nixos/smb-secrets";
       };
 
-      fileSystems = lib.mapAttrs'
-        (name: mount:
-          lib.nameValuePair mount.mountPoint (
-            mkCifsMount mount.mountPoint "//${cfg.truenas.server}/${mount.share}"
-          )
+      fileSystems = lib.mapAttrs' (
+        name: mount:
+        lib.nameValuePair mount.mountPoint (
+          mkCifsMount mount.mountPoint "//${cfg.truenas.server}/${mount.share}"
         )
-        cfg.truenas.mounts;
+      ) cfg.truenas.mounts;
     })
 
     {

@@ -46,7 +46,7 @@ in
       }
     ];
 
-    sops.secrets.pia-credentials = { };
+    sops.secrets.pia-credentials = lib.mkIf (builtins.pathExists ../../../secrets/secrets.yaml) { };
 
     services.openvpn.servers.pia = {
       autoStart = cfg.pia.autoStart;

@@ -28,7 +28,7 @@ in
           }
         ];
 
-        sops.secrets."cachix-auth-token" = {
+        sops.secrets."cachix-auth-token" = lib.mkIf (builtins.pathExists ../../../secrets/secrets.yaml) {
           owner = "${config.cyberfighter.system.username}";
         };
 
