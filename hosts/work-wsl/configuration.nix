@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   hostProfile,
   hostMeta,
@@ -81,7 +82,9 @@
     LD_LIBRARY_PATH = [ "${pkgs.stdenv.cc.cc.lib}/lib" ];
   };
 
-  security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
+  security.pki.certificateFiles = lib.mkIf (builtins.pathExists ../../secrets) [
+    ../../secrets/100-PKROOTCA290-CA.crt
+  ];
 
   programs.nix-ld.enable = true;
 
