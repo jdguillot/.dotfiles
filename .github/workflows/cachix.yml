@@ -39,9 +39,8 @@ jobs:
         with:
           name: jdguillot
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: rm -f ./secrets/secrets.yaml
-      - name: Clear Nix store garbage
-        run: nix-collect-garbage -d
+      - name: Remove encyrpted secrets
+        run: rm -rf ./secrets
       - name: Perform Flake check before building
         run: nix flake check
       - name: Build Systems
