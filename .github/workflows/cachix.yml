@@ -45,6 +45,6 @@ jobs:
         run: nix flake check
       - name: Build Systems
         run: |
-          nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+          nix build . --no-build-hook #nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
           # nix-collect-garbage -d
       - run: nix-shell --run "echo OK"
