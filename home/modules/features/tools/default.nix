@@ -79,9 +79,6 @@ in
         ripgrep
         csvlens
 
-        # Media & clipboard
-        xclip
-
         # System monitoring & info
         neofetch
 

@@ -72,7 +72,7 @@
 
   environment.variables = {
     JAVA_HOME = "${pkgs.zulu8}";
-    WAYLAND_DISPLAY = "";
+    # WAYLAND_DISPLAY = "";
     PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
     PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
   };

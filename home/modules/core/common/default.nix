@@ -53,6 +53,7 @@
       sessionPath = lib.mkIf (hostProfile == "wsl") [
         "/c/Users/${hostMeta.system.wslOptions.windowsUsername}/AppData/Local/Programs/Microsoft VS Code/bin"
         "/c/Windows/System32"
+        "/c/Windows/System32/WindowsPowerShell/v1.0"
       ];
 
     };

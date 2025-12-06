@@ -27,6 +27,7 @@ in
     (lib.mkIf cfg.includeDev {
       home.packages = with pkgs; [
         python3
+        python3Packages.pip-tools
         gitmux
         lsof
       ];
@@ -37,4 +38,3 @@ in
     }
   ];
 }
-

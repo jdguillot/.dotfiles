@@ -22,6 +22,8 @@ let
     bitwarden-cli
     appimage-run
     xclip
+    wl-clipboard
+    xwayland
     opencode
     age
     sops
@@ -31,10 +33,12 @@ let
 
   devPackages = with pkgs; [
     nodejs
+    pnpm
     nil
     esphome
     platformio
     gcc
+    vscode-json-languageserver
   ];
 
   desktopPackages = with pkgs; [

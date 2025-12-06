@@ -15,9 +15,7 @@ in
 
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = with pkgs; [
-        markdownlint-cli2
-      ];
+      default = with pkgs; [ ];
       description = "Extra packages to install for LazyVim";
     };
 
@@ -63,13 +61,29 @@ in
         "vimdoc"
         "regex"
         "dockerfile"
+        "html"
+        "css"
+        "regex"
+        "python"
+        "diff"
+        "jsonc"
+        "toml"
+        "xml"
       ];
       description = "Treesitter parsers to install";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = cfg.extraPackages;
+    home.packages =
+      with pkgs;
+      [
+        markdownlint-cli2
+        marksman
+        tailwindcss-language-server
+        vscode-langservers-extracted
+      ]
+      ++ cfg.extraPackages;
 
     programs.neovim = {
       enable = true;
@@ -86,7 +100,6 @@ in
 
       plugins = with pkgs.vimPlugins; [
         lazy-nvim
-        markdown-preview-nvim
       ];
 
       extraLuaConfig =
@@ -169,6 +182,13 @@ in
               name = "mini.surround";
               path = mini-nvim;
             }
+            # {
+            #   name = "mini.hipatterns";
+            #   path = mini-nvim;
+            # }
+            mini-hipatterns
+            markdown-preview-nvim
+            vim-table-mode
           ];
           mkEntryFromDrv =
             drv:
@@ -206,12 +226,17 @@ in
               { import = "lazyvim.plugins.extras.lang.nix" },
               { import = "lazyvim.plugins.extras.lang.yaml" },
               { import = "lazyvim.plugins.extras.lang.java" },
+              { import = "lazyvim.plugins.extras.lang.json" },
+              { import = "lazyvim.plugins.extras.lang.python" },
+              { import = "lazyvim.plugins.extras.lang.typescript" },
               { import = "lazyvim.plugins.extras.coding.mini-surround" },
               { import = "lazyvim.plugins.extras.editor.overseer" },
               { import = "lazyvim.plugins.extras.coding.yanky" },
               { import = "lazyvim.plugins.extras.dap.core" },
               { import = "lazyvim.plugins.extras.lang.ember" },
               { import = "lazyvim.plugins.extras.formatting.prettier" },
+              { import = "lazyvim.plugins.extras.util.mini-hipatterns"},
+              { import = "lazyvim.plugins.extras.lang.tailwind"},
 
               -- The following configs are needed for fixing lazyvim on nix
               -- force enable telescope-fzf-native.nvim
