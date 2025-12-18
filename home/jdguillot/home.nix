@@ -26,7 +26,7 @@
       extraPackages = with pkgs; [
         avahi
         geckodriver
-        inputs.isd.packages.${pkgs.system}.default
+        inputs.isd.packages.${stdenv.hostPlatform.system}.default
       ];
     };
 
