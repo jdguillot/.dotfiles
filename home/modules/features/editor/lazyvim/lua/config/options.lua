@@ -6,11 +6,6 @@
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = { "markdown", "md" },
 	callback = function()
-		-- r: automatically insert comment leader after hitting <Enter> in Insert mode
-		-- o: automatically insert comment leader after hitting 'o' or 'O' in Normal mode
-		vim.opt_local.formatoptions:append("ro")
-		-- Set comment string for markdown lists
-		vim.opt_local.comments = "b:-,b:*,b:+,n:>"
 		-- Enable spellcheck for markdown
 		vim.opt_local.spell = true
 		vim.opt_local.spelllang = "en_us"
