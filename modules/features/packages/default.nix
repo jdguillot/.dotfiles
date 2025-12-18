@@ -29,6 +29,7 @@ let
     sops
     grc
     distrobox
+    nmap
   ];
 
   devPackages = with pkgs; [
