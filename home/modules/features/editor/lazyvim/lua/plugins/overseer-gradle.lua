@@ -1,5 +1,21 @@
 return {
 	"stevearc/overseer.nvim",
+	lazy = true,
+	cmd = {
+		"OverseerOpen",
+		"OverseerClose",
+		"OverseerToggle",
+		"OverseerSaveBundle",
+		"OverseerLoadBundle",
+		"OverseerDeleteBundle",
+		"OverseerRunCmd",
+		"OverseerRun",
+		"OverseerInfo",
+		"OverseerBuild",
+		"OverseerQuickAction",
+		"OverseerTaskAction",
+		"OverseerClearCache",
+	},
 	opts = {
 		templates = { "builtin" },
 	},
@@ -13,9 +29,7 @@ return {
 			if not handle then
 				return
 			end
-
 			local common_tasks = { "build", "test", "clean", "assemble", "run" }
-
 			-- Register common tasks first
 			for _, task in ipairs(common_tasks) do
 				overseer.register_template({
@@ -38,7 +52,6 @@ return {
 					},
 				})
 			end
-
 			-- Register all other discovered tasks
 			for task in handle:lines() do
 				if task ~= "" and not vim.tbl_contains(common_tasks, task) then
@@ -59,10 +72,8 @@ return {
 					})
 				end
 			end
-
 			handle:close()
 		end
-
 		-- Register tasks when entering a Java/Kotlin project
 		vim.api.nvim_create_autocmd("FileType", {
 			pattern = { "java", "kotlin", "groovy" },

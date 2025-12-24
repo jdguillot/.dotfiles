@@ -142,6 +142,8 @@ in
             which-key-nvim
             opencode-nvim
             remote-nvim-nvim
+            nvim-treesitter
+            nvim-treesitter-textobjects
             {
               name = "LuaSnip";
               path = luasnip;
@@ -230,7 +232,6 @@ in
               { import = "lazyvim.plugins.extras.lang.python" },
               { import = "lazyvim.plugins.extras.lang.typescript" },
               { import = "lazyvim.plugins.extras.coding.mini-surround" },
-              { import = "lazyvim.plugins.extras.editor.overseer" },
               { import = "lazyvim.plugins.extras.coding.yanky" },
               { import = "lazyvim.plugins.extras.dap.core" },
               { import = "lazyvim.plugins.extras.lang.ember" },

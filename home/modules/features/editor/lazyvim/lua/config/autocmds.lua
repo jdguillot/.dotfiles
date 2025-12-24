@@ -13,3 +13,14 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.b.autoformat = false
 	end,
 })
+
+vim.api.nvim_create_autocmd({ "VimEnter", "DirChanged" }, {
+	callback = function()
+		local cwd = vim.fn.getcwd()
+		local work_notes = vim.fn.expand("~/projects/work-notes")
+
+		if cwd == work_notes or cwd:find(work_notes, 1, true) == 1 then
+			require("lazy").load({ plugins = { "obsidian.nvim" } })
+		end
+	end,
+})

@@ -6,58 +6,15 @@ return {
 		---@module 'snacks' <- Loads `snacks.nvim` types for configuration intellisense.
 		{ "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
 	},
-	keys = {
-		{
-			"<leader>ao",
-			function()
-				require("opencode").ask("@this: ", { submit = true })
-			end,
-			mode = { "n", "x" },
-			desc = "Ask OpenCode",
-		},
-		{
-			"<leader>aO",
-			function()
-				require("opencode").select()
-			end,
-			mode = { "n", "x" },
-			desc = "OpenCode actions…",
-		},
-		{
-			"<leader>aP",
-			function()
-				require("opencode").prompt("@this")
-			end,
-			mode = { "n", "x" },
-			desc = "Add to OpenCode",
-		},
-		{
-			"<leader>at",
-			function()
-				require("opencode").toggle()
-			end,
-			mode = { "n", "t" },
-			desc = "Toggle OpenCode",
-		},
-		{
-			"<leader>au",
-			function()
-				require("opencode").command("session.half.page.up")
-			end,
-			desc = "OpenCode half page up",
-		},
-		{
-			"<leader>ad",
-			function()
-				require("opencode").command("session.half.page.down")
-			end,
-			desc = "OpenCode half page down",
-		},
-	},
+	lazy = true,
 	config = function()
 		---@type opencode.Opts
 		vim.g.opencode_opts = {
 			-- Your configuration, if any — see `lua/opencode/config.lua`, or "goto definition".
+			provider = {
+				enabled = "tmux",
+				tmux = {},
+			},
 		}
 
 		-- Required for `opts.auto_reload`.
