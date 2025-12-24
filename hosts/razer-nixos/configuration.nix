@@ -75,6 +75,8 @@
         ];
       };
 
+      cachix.enable = true;
+
       docker.enable = true;
       tailscale.enable = true;
 
