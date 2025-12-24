@@ -87,7 +87,11 @@ in
           nix-your-shell zsh | source /dev/stdin
         fi
 
+        # Source your functions file
+        source ${../shell-functions.sh}
+
         ${cfg.extraInitContent}
+
       '';
 
       oh-my-zsh = lib.mkIf cfg.enableOhMyZsh {
