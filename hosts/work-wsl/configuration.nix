@@ -49,6 +49,9 @@
         enable = true;
         browsers = true;
         cad = true;
+        extraPackages = [
+          "md.obsidian.Obsidian"
+        ];
       };
 
       docker.enable = true;
@@ -78,7 +81,10 @@
 
   environment.sessionVariables = {
     # Puts gcc libraries in the library path for mkdocs-exporter
-    LD_LIBRARY_PATH = [ "${pkgs.stdenv.cc.cc.lib}/lib" ];
+    LD_LIBRARY_PATH = [
+      "${pkgs.stdenv.cc.cc.lib}/lib"
+      "${pkgs.glib.out}/lib"
+    ];
   };
 
   security.pki.certificateFiles = lib.mkIf (builtins.pathExists ../../secrets) [
