@@ -40,6 +40,10 @@ let
     platformio
     gcc
     vscode-json-languageserver
+    imagemagick
+    ghostscript
+    mermaid-cli
+    ast-grep
   ];
 
   desktopPackages = with pkgs; [
