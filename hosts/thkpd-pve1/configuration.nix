@@ -1,5 +1,6 @@
 # Template for a minimal server
 {
+  lib,
   hostProfile,
   hostMeta,
   ...
@@ -52,5 +53,12 @@
         defaultSopsFile = ../../secrets/secrets.yaml;
       };
     };
+  };
+
+  services.openssh.settings = {
+    AcceptEnv = lib.mkForce [
+      "LANG"
+      "LC_*"
+    ];
   };
 }
