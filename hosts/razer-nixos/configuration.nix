@@ -63,6 +63,7 @@
 
       fonts.enable = true;
       bluetooth.enable = true;
+      printing.enable = true;
 
       wine.enable = true;
 
