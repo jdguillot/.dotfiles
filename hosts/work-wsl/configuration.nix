@@ -86,7 +86,7 @@
     ];
   };
   sops.secrets.work-ca = {
-    sopsFile = ../../secrets/100-PKROOTCA290-CA.yaml;
+    sopsFile = ./100-PKROOTCA290-CA.yaml;
   };
   security.pki.certificates = lib.mkIf (builtins.pathExists /run/secrets/work-ca) [
     (builtins.readFile /run/secrets/work-ca)
