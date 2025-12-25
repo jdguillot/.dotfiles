@@ -48,6 +48,10 @@ in
 
   config = lib.mkMerge [
     {
+      sops.secrets."github-pat" = { };
+      sops.templates."access-tokens".content = ''
+        access-tokens = github.com=${config.sops.placeholder."github-pat"}
+      '';
       nix.settings = lib.mkMerge [
         (lib.mkIf cfg.enableDevenv {
           substituters = [
@@ -65,11 +69,18 @@ in
           trusted-users = cfg.trustedUsers;
           keep-outputs = cfg.keepOutputs;
           keep-derivations = cfg.keepDerivations;
+
+          download-buffer-size = 524288000;
         }
       ];
+      nix.extraOptions =
+        ''
+          !include ${config.sops.templates."access-tokens".path}
+        ''
+        +
+          # If you have extra options as a string, use extraOptions
+          cfg.extraOptions;
 
-      # If you have extra options as a string, use extraOptions
-      nix.extraOptions = cfg.extraOptions;
     }
     (lib.mkIf cfg.garbageCollect {
       nix = {
