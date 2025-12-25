@@ -9,7 +9,7 @@ keys:
   - &work-jdguillot age1exdsgk0hlf47ks2qf7jyls7k7q52e2d82306f3w859vyv3vqna5s4qygyc
   - &ryzn-nixos-wsl age1qdcaucwsf52y0ak9uv8lr48p20tu407lasw9rlddd894qfluhptsy05adf
 creation_rules:
-  - path_regex: secrets/secrets.yaml$
+  - path_regex: secrets/.*
     key_groups:
       - age:
           - *bitwarden

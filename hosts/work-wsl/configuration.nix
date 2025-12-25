@@ -58,6 +58,8 @@
       tailscale.enable = true;
 
       vscode.enable = true;
+
+      sops.enable = true;
     };
   };
 
@@ -83,9 +85,11 @@
       "${pkgs.glib.out}/lib"
     ];
   };
-
-  security.pki.certificateFiles = lib.mkIf (builtins.pathExists ../../secrets) [
-    ../../secrets/100-PKROOTCA290-CA.crt
+  sops.secrets.work-ca = {
+    sopsFile = ../../secrets/100-PKROOTCA290-CA.yaml;
+  };
+  security.pki.certificates = lib.mkIf (builtins.pathExists /run/secrets/work-ca) [
+    (builtins.readFile /run/secrets/work-ca)
   ];
 
   programs.nix-ld.enable = true;
