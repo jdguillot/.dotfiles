@@ -44,6 +44,7 @@ let
     ghostscript
     mermaid-cli
     ast-grep
+    cargo
   ];
 
   desktopPackages = with pkgs; [

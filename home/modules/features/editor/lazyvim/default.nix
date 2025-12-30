@@ -142,8 +142,6 @@ in
             which-key-nvim
             opencode-nvim
             remote-nvim-nvim
-            nvim-treesitter
-            nvim-treesitter-textobjects
             {
               name = "LuaSnip";
               path = luasnip;
@@ -220,9 +218,8 @@ in
 
               -- Nix-managed extras (must come after lazyvim.plugins but before your plugins)
               { import = "lazyvim.plugins.extras.util.dot" },
-              { import = "lazyvim.plugins.extras.ai.copilot" },
-              { import = "lazyvim.plugins.extras.ai.copilot-chat" },
               { import = "lazyvim.plugins.extras.ui.edgy" },
+              { import = "lazyvim.plugins.extras.ai.copilot" },
               { import = "lazyvim.plugins.extras.editor.harpoon2" },
               { import = "lazyvim.plugins.extras.lang.markdown" },
               { import = "lazyvim.plugins.extras.lang.nix" },
@@ -240,37 +237,36 @@ in
               { import = "lazyvim.plugins.extras.lang.tailwind"},
               { import = "lazyvim.plugins.extras.editor.snacks_explorer"},
               { import = "lazyvim.plugins.extras.util.gh"},
-              { import = "lazyvim.plugins.extras.util.gitui"},
               { import = "lazyvim.plugins.extras.util.octo"},
               { import = "lazyvim.plugins.extras.lang.git"},
 
               -- The following configs are needed for fixing lazyvim on nix
               -- force enable telescope-fzf-native.nvim
-              { "nvim-telescope/telescope-fzf-native.nvim", enabled = true },
+              -- { "nvim-telescope/telescope-fzf-native.nvim", enabled = true },
               -- disable mason.nvim, use programs.neovim.extraPackages
-              { "mason-org/mason-lspconfig.nvim", enabled = false },
-              { "mason-org/mason.nvim", enabled = false },
+              -- { "mason-org/mason-lspconfig.nvim", enabled = false },
+              -- { "mason-org/mason.nvim", enabled = false },
               -- import/override with your plugins
               { import = "plugins" },
               -- treesitter handled by xdg.configFile."nvim/parser", put this line at the end of spec to clear ensure_installed
-              { "nvim-treesitter/nvim-treesitter", opts = { ensure_installed = {} } },
+              -- { "nvim-treesitter/nvim-treesitter", opts = { ensure_installed = {} } },
             },
           })
         '';
     };
 
-    # https://github.com/nvim-treesitter/nvim-treesitter#i-get-query-error-invalid-node-type-at-position
-    xdg.configFile."nvim/parser".source =
-      let
-        parsers = pkgs.symlinkJoin {
-          name = "treesitter-parsers";
-          paths =
-            (pkgs.vimPlugins.nvim-treesitter.withPlugins (
-              plugins: builtins.map (parser: plugins.${parser}) cfg.treesitterParsers
-            )).dependencies;
-        };
-      in
-      "${parsers}/parser";
+    # # https://github.com/nvim-treesitter/nvim-treesitter#i-get-query-error-invalid-node-type-at-position
+    # xdg.configFile."nvim/parser".source =
+    #   let
+    #     parsers = pkgs.symlinkJoin {
+    #       name = "treesitter-parsers";
+    #       paths =
+    #         (pkgs.vimPlugins.nvim-treesitter.withPlugins (
+    #           plugins: builtins.map (parser: plugins.${parser}) cfg.treesitterParsers
+    #         )).dependencies;
+    #     };
+    #   in
+    #   "${parsers}/parser";
 
     # Normal LazyVim config here, see https://github.com/LazyVim/starter/tree/main/lua
     xdg.configFile."nvim/lua".source = ./lua;
