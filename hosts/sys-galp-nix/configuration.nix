@@ -35,7 +35,7 @@
     packages.extraPackages = with pkgs; [
       google-chrome
       htop
-      neofetch
+      fastfetch
       mangohud
       protonup-ng
       dig

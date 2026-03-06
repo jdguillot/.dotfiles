@@ -80,7 +80,7 @@ in
         csvlens
 
         # System monitoring & info
-        neofetch
+        fastfetch
 
         # Nix tools
         nix-your-shell

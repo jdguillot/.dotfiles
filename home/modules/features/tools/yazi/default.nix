@@ -26,6 +26,7 @@ in
       enable = true;
       settings = {
       };
+      shellWrapperName = "y";
     };
   };
 }
