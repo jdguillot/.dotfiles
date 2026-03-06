@@ -14,6 +14,16 @@ return {
 		end,
 	},
 
+	-- Disable marksman due to ICU issues on NixOS - we have markdownlint-cli2 for linting
+	{
+		"neovim/nvim-lspconfig",
+		opts = {
+			servers = {
+				marksman = false,
+			},
+		},
+	},
+
 	{
 		"dhruvasagar/vim-table-mode",
 		dev = true,

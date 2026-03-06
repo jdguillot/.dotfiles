@@ -27,6 +27,7 @@ in
         jdt-language-server
         yaml-language-server
         nixd
+        rust-analyzer
       ];
       description = "Language servers to install";
     };
@@ -69,6 +70,7 @@ in
         "jsonc"
         "toml"
         "xml"
+        "rust"
       ];
       description = "Treesitter parsers to install";
     };
@@ -79,7 +81,11 @@ in
       with pkgs;
       [
         markdownlint-cli2
-        marksman
+        # Wrap marksman with ICU library path for .NET runtime
+        (pkgs.writeShellScriptBin "marksman" ''
+          export LD_LIBRARY_PATH="${pkgs.icu}/lib:$LD_LIBRARY_PATH"
+          exec ${pkgs.marksman}/bin/marksman "$@"
+        '')
         tailwindcss-language-server
         vscode-langservers-extracted
       ]
@@ -228,6 +234,7 @@ in
               { import = "lazyvim.plugins.extras.lang.json" },
               { import = "lazyvim.plugins.extras.lang.python" },
               { import = "lazyvim.plugins.extras.lang.typescript" },
+              { import = "lazyvim.plugins.extras.lang.rust" },
               { import = "lazyvim.plugins.extras.coding.mini-surround" },
               { import = "lazyvim.plugins.extras.coding.yanky" },
               { import = "lazyvim.plugins.extras.dap.core" },

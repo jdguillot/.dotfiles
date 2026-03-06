@@ -7,13 +7,13 @@ local wk = require("which-key")
 
 -- Overseer keymaps
 wk.add({
-	{ "<leader>t", group = "overseer", desc = "Tasks", icon = "󱌢" },
-	{ "<leader>tt", "<cmd>OverseerToggle<cr>", desc = "Toggle Overseer", icon = "󱌢" },
-	{ "<leader>tr", "<cmd>OverseerRun<cr>", desc = "Run task", icon = "󰜎" },
-	{ "<leader>ta", "<cmd>OverseerTaskAction<cr>", desc = "Task action", icon = "󰌆" },
-	{ "<leader>tl", "<cmd>OverseerLoadBundle<cr>", desc = "Load bundle", icon = "󰏖" },
-	{ "<leader>ts", "<cmd>OverseerSaveBundle<cr>", desc = "Save bundle", icon = "󰆓" },
-	{ "<leader>tq", "<cmd>OverseerQuickAction<cr>", desc = "Quick action", icon = "󰓁" },
+	{ "<leader>r", group = "overseer", desc = "Tasks", icon = "󱌢" },
+	{ "<leader>rt", "<cmd>OverseerToggle<cr>", desc = "Toggle Overseer", icon = "󱌢" },
+	{ "<leader>rr", "<cmd>OverseerRun<cr>", desc = "Run task", icon = "󰜎" },
+	{ "<leader>ra", "<cmd>OverseerTaskAction<cr>", desc = "Task action", icon = "󰌆" },
+	{ "<leader>rl", "<cmd>OverseerLoadBundle<cr>", desc = "Load bundle", icon = "󰏖" },
+	{ "<leader>rs", "<cmd>OverseerSaveBundle<cr>", desc = "Save bundle", icon = "󰆓" },
+	{ "<leader>rq", "<cmd>OverseerQuickAction<cr>", desc = "Quick action", icon = "󰓁" },
 })
 
 -- Obsidian keymaps
@@ -61,12 +61,58 @@ wk.add({
 -- OpenCode keymaps
 wk.add({
 	{ "<leader>a", group = "ai", icon = "" },
-	{ "<leader>ao", function() require("opencode").ask("@this: ", { submit = true }) end, mode = { "n", "x" }, desc = "Ask OpenCode", icon = "" },
-	{ "<leader>aO", function() require("opencode").select() end, mode = { "n", "x" }, desc = "OpenCode actions…", icon = "" },
-	{ "<leader>aP", function() require("opencode").prompt("@this") end, mode = { "n", "x" }, desc = "Add to OpenCode", icon = "" },
-	{ "<leader>at", function() require("opencode").toggle() end, mode = { "n", "t" }, desc = "Toggle OpenCode", icon = "" },
-	{ "<leader>au", function() require("opencode").command("session.half.page.up") end, desc = "OpenCode half page up", icon = "" },
-	{ "<leader>ad", function() require("opencode").command("session.half.page.down") end, desc = "OpenCode half page down", icon = "" },
+	{
+		"<leader>ao",
+		function()
+			require("opencode").ask("@this: ", { submit = true })
+		end,
+		mode = { "n", "x" },
+		desc = "Ask OpenCode",
+		icon = "",
+	},
+	{
+		"<leader>aO",
+		function()
+			require("opencode").select()
+		end,
+		mode = { "n", "x" },
+		desc = "OpenCode actions…",
+		icon = "",
+	},
+	{
+		"<leader>aP",
+		function()
+			require("opencode").prompt("@this")
+		end,
+		mode = { "n", "x" },
+		desc = "Add to OpenCode",
+		icon = "",
+	},
+	{
+		"<leader>at",
+		function()
+			require("opencode").toggle()
+		end,
+		mode = { "n", "t" },
+		desc = "Toggle OpenCode",
+		icon = "",
+	},
+	{
+		"<leader>au",
+		function()
+			require("opencode").command("session.half.page.up")
+		end,
+		desc = "OpenCode half page up",
+		icon = "",
+	},
+	{
+		"<leader>ad",
+		function()
+			require("opencode").command("session.half.page.down")
+		end,
+		desc = "OpenCode half page down",
+		icon = "",
+	},
 })
 
 -- Markdown keymaps
@@ -74,7 +120,6 @@ wk.add({
 -- 	{ "<leader>i", "<cmd>PasteImg<cr>", desc = "Paste image", icon = "" },
 -- })
 
-
 wk.add({
-  { "<leader>i", "<cmd>PasteImage<cr>", desc = "Paste image from clipboard", icon = "" },
+	{ "<leader>i", "<cmd>PasteImage<cr>", desc = "Paste image from clipboard", icon = "" },
 })
