@@ -1,5 +1,6 @@
 {
   lib,
+  config,
   pkgs,
   hostProfile,
   hostMeta,
@@ -42,7 +43,7 @@
     features = {
       graphics = {
         enable = true;
-        nvidia.enable = true;
+        # nvidia.enable = true;
       };
 
       flatpak = {
@@ -60,6 +61,7 @@
       vscode.enable = true;
 
       sops.enable = true;
+      ssh.enable = true;
     };
   };
 
@@ -70,7 +72,7 @@
     defaultUser = "jdguillot";
     docker-desktop.enable = true;
     useWindowsDriver = true;
-    wslConf.automount.root = "/";
+    # wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;
   };
 

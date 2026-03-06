@@ -22,7 +22,7 @@ let
     bitwarden-cli
     appimage-run
     xclip
-    wl-clipboard
+    # wl-clipboard
     xwayland
     opencode
     age

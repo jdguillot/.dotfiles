@@ -51,9 +51,11 @@
       };
 
       sessionPath = lib.mkIf (hostProfile == "wsl") [
-        "/c/Users/${hostMeta.system.wslOptions.windowsUsername}/AppData/Local/Programs/Microsoft VS Code/bin"
-        "/c/Windows/System32"
-        "/c/Windows/System32/WindowsPowerShell/v1.0"
+        "/mnt/c/Users/${hostMeta.system.wslOptions.windowsUsername}/AppData/Local/Programs/Microsoft VS Code/bin"
+        "/mnt/c/Windows/System32"
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0"
+        "/mnt/c/Program Files/Docker/Docker/resources/bin"
+        "/mnt/c/Users/${hostMeta.system.wslOptions.windowsUsername}/AppData/Local/Microsoft/WinGet/Packages/equalsraf.win32yank_Microsoft.Winget.Source_8wekyb3d8bbwe"
       ];
 
     };
