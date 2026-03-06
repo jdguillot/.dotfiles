@@ -20,6 +20,7 @@ let
     gh
     lazyjj
     bitwarden-cli
+    _1password-cli
     appimage-run
     xclip
     # wl-clipboard
@@ -52,6 +53,7 @@ let
     wofi
     wineWowPackages.stable
     bitwarden-desktop
+    _1password-gui
   ];
 
   allPackages =
