@@ -52,6 +52,7 @@
         firefox = true;
       };
 
+      ssh.enable = true;
       fonts.enable = true;
       printing.enable = true;
 
@@ -65,6 +66,12 @@
         "net.lutris.Lutris"
         "us.zoom.Zoom"
       ];
+
+      sops = {
+        enable = true;
+        defaultSopsFile = ../../secrets/secrets.yaml;
+      };
+
     };
   };
 

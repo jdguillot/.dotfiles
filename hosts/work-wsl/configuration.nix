@@ -75,24 +75,54 @@
     # wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;
   };
-
-  environment.variables = {
-    JAVA_HOME = "${pkgs.zulu8}";
-  };
-
-  environment.sessionVariables = {
-    # Puts gcc libraries in the library path for mkdocs-exporter
-    LD_LIBRARY_PATH = [
-      "${pkgs.stdenv.cc.cc.lib}/lib"
-      "${pkgs.glib.out}/lib"
-    ];
-  };
-  sops.secrets.work-ca = {
+  sops.secrets."work-ca" = {
     sopsFile = ./100-PKROOTCA290-CA.yaml;
+    key = "data";
+    mode = "0444";
   };
-  security.pki.certificates = lib.mkIf (builtins.pathExists /run/secrets/work-ca) [
-    (builtins.readFile /run/secrets/work-ca)
-  ];
+
+  # Create a systemd service to install the CA certificate after sops decrypts it
+  systemd.services.install-work-ca = {
+    description = "Install work CA certificate to system bundle";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "sops-nix.service" ];
+    before = [ "network-online.target" ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      # Wait for the secret to be available
+      if [ -f ${config.sops.secrets."work-ca".path} ]; then
+        # Create a combined CA bundle
+        mkdir -p /etc/ssl/certs
+        
+        # Combine system CAs with work CA
+        cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt > /etc/ssl/certs/ca-bundle-with-work.crt
+        echo "" >> /etc/ssl/certs/ca-bundle-with-work.crt
+        cat ${config.sops.secrets."work-ca".path} >> /etc/ssl/certs/ca-bundle-with-work.crt
+        
+        chmod 444 /etc/ssl/certs/ca-bundle-with-work.crt
+        
+        echo "Work CA certificate added to system bundle"
+      else
+        echo "Warning: Work CA certificate not found"
+        exit 1
+      fi
+    '';
+  };
+
+  environment = {
+
+    variables = {
+      JAVA_HOME = "${pkgs.zulu8}";
+      SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
+      NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
+    };
+
+  };
 
   programs.nix-ld.enable = true;
 

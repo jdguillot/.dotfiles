@@ -56,6 +56,7 @@ in
           vulkan-tools
           vulkan-loader
           virtualgl
+          mesa
         ];
       }
 
@@ -71,7 +72,7 @@ in
             "${pkgs.linuxPackages.nvidia_x11}/lib"
             "${pkgs.ncurses5}/lib"
           ];
-          MESA_D3D12_DEFAULT_ADAPTER_NAME = "Nvidia";
+          MESA_D3D12_DEFAULT_ADAPTER_NAME = "NVIDIA";
         };
 
         hardware.nvidia = {
