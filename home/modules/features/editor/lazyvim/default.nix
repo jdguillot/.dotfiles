@@ -226,6 +226,7 @@ in
               { import = "lazyvim.plugins.extras.util.dot" },
               { import = "lazyvim.plugins.extras.ui.edgy" },
               { import = "lazyvim.plugins.extras.ai.copilot" },
+              { import = "lazyvim.plugins.extras.ai.sidekick" },
               { import = "lazyvim.plugins.extras.editor.harpoon2" },
               { import = "lazyvim.plugins.extras.lang.markdown" },
               { import = "lazyvim.plugins.extras.lang.nix" },
