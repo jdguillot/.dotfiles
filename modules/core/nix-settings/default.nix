@@ -44,6 +44,12 @@ in
       default = true;
       description = "Setup Automatic Garbage Collect once a week";
     };
+
+    optimize = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Automatic Store Optimization";
+    };
   };
 
   config = lib.mkMerge [
@@ -73,13 +79,12 @@ in
           download-buffer-size = 524288000;
         }
       ];
-      nix.extraOptions =
-        ''
-          !include ${config.sops.templates."access-tokens".path}
-        ''
-        +
-          # If you have extra options as a string, use extraOptions
-          cfg.extraOptions;
+      nix.extraOptions = ''
+        !include ${config.sops.templates."access-tokens".path}
+      ''
+      +
+        # If you have extra options as a string, use extraOptions
+        cfg.extraOptions;
 
     }
     (lib.mkIf cfg.garbageCollect {
@@ -90,6 +95,11 @@ in
           dates = "weekly";
           options = "--delete-older-than 30d";
         };
+      };
+    })
+    (lib.mkIf cfg.optimize {
+      nix.optimise = {
+        automatic = true;
       };
     })
   ];
