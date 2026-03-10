@@ -23,7 +23,7 @@ let
     _1password-cli
     appimage-run
     xclip
-    # wl-clipboard
+    wl-clipboard
     xwayland
     opencode
     age
