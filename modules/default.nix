@@ -30,6 +30,7 @@
     ./features/wine/default.nix
     ./features/proxmox/default.nix
     ./features/cachix/default.nix
+    ./features/1password/default.nix
 
     inputs.nix-flatpak.nixosModules.nix-flatpak
   ];

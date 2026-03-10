@@ -8,30 +8,32 @@
 let
   cfg = config.cyberfighter.packages;
 
-  basePackages = with pkgs; [
-    htop
-    btop
-    vim
-    wget
-    cifs-utils
-    lshw
-    pciutils
-    git
-    gh
-    lazyjj
-    bitwarden-cli
-    _1password-cli
-    appimage-run
-    xclip
-    wl-clipboard
-    xwayland
-    opencode
-    age
-    sops
-    grc
-    distrobox
-    nmap
-  ];
+  basePackages =
+    with pkgs;
+    [
+      htop
+      btop
+      vim
+      wget
+      cifs-utils
+      lshw
+      pciutils
+      git
+      gh
+      lazyjj
+      bitwarden-cli
+      appimage-run
+      xclip
+      wl-clipboard
+      xwayland
+      opencode
+      age
+      sops
+      grc
+      distrobox
+      nmap
+    ]
+    ++ (if config.cyberfighter.profile.enable != "wsl" then [ pkgs._1password-cli ] else [ ]);
 
   devPackages = with pkgs; [
     nodejs
