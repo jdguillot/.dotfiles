@@ -62,6 +62,7 @@
         zellij.enable = true;
         carapace.enable = true;
         yazi.enable = true;
+        direnv.enable = true;
       };
     };
   };
