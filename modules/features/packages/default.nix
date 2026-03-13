@@ -20,6 +20,8 @@ let
       pciutils
       git
       gh
+      diffnav
+      delta
       lazyjj
       bitwarden-cli
       appimage-run

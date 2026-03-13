@@ -36,12 +36,39 @@ in
       settings = {
         init.defaultBranch = "main";
         pull.rebase = true;
-        diff.tool = "nvimdiff";
+        pager = {
+          diff = "delta";
+          log = "delta";
+          reflog = "delta";
+          show = "delta";
+        };
+        status = {
+          branch = true;
+          showStash = true;
+          showUntrackedFiles = "all";
+        };
+
+        diff = {
+          tool = "nvimdiff";
+          context = 3;
+          renames = "copies";
+          interHunkContext = 10;
+        };
+        core.pager = "delta";
+        interactive.diffFilter = "delta --color-only";
+        delta = {
+          features = "catppuccin-frappe";
+          navigate = true;
+          side-by-side = true;
+          line-numbers = true;
+          dark = true;
+        };
         user = {
           name = cfg.userName;
           email = cfg.userEmail;
         };
-      } // cfg.extraSettings;
+      }
+      // cfg.extraSettings;
     };
   };
 }
