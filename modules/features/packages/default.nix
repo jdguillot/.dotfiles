@@ -60,10 +60,20 @@ let
     _1password-gui
   ];
 
+  virtualizationPackages = with pkgs; [
+    qemu
+    realvnc-vnc-viewer
+    nemu
+    virt-viewer
+    quickemu
+    quickgui
+  ];
+
   allPackages =
     (lib.optionals cfg.includeBase basePackages)
     ++ (lib.optionals cfg.includeDev devPackages)
     ++ (lib.optionals cfg.includeDesktop desktopPackages)
+    ++ (lib.optionals cfg.includeVirt virtualizationPackages)
     ++ cfg.extraPackages;
 in
 {
@@ -84,6 +94,12 @@ in
       type = lib.types.bool;
       default = false;
       description = "Include desktop packages (kitty, wofi, etc.)";
+    };
+
+    includeVirt = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Include Virtualization Client Software";
     };
 
     extraPackages = lib.mkOption {
