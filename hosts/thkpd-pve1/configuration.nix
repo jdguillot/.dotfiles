@@ -9,7 +9,7 @@
   imports = [
     ../../modules
     inputs.inputs.nix-index-database.nixosModules.nix-index
-    ./disko-config.nix
+    ./disk-config.nix
     # ./hardware-configuration.nix
   ];
 
@@ -42,7 +42,7 @@
       ssh = {
         enable = true;
         passwordAuth = false; # Key-only authentication
-        permitRootLogin = "no";
+        permitRootLogin = "yes";
       };
 
       docker.enable = true;
@@ -54,6 +54,11 @@
       };
     };
   };
+
+  # TODO: Update this
+  users.users.root.openssh.authorizedKeys.keys = [
+    "CHANGE THIS"
+  ];
 
   services.openssh.settings = {
     AcceptEnv = lib.mkForce [
