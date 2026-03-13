@@ -61,5 +61,9 @@ return {
 				},
 			},
 		},
+		keys = {
+			-- suggested keymap
+			{ "<C-p>", "<cmd>PasteImage<cr>", mode = "i", desc = "Paste image from system clipboard" },
+		},
 	},
 }
