@@ -7,9 +7,9 @@
 let
   cfg = config.cyberfighter.features.onepassword;
   op-wsl = pkgs.writeShellScriptBin "op" (builtins.readFile ./op-wsl.sh);
+  inherit (config.cyberfighter) profile;
 in
 {
-  # environment.systemPackages = [ op-wsl ];
   options.cyberfighter.features.onepassword = {
     enable = lib.mkOption {
       type = lib.types.bool;
@@ -18,9 +18,14 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    programs._1password = {
-      enable = true;
-    };
-  };
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      programs._1password = {
+        enable = true;
+      };
+    })
+
+    (lib.mkIf (profile.enable == "wsl") { environment.systemPackages = [ op-wsl ]; })
+
+  ];
 }
