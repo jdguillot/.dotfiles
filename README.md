@@ -43,7 +43,7 @@ A modular NixOS configuration system with home-manager integration, featuring pr
 - **Editors**: Vim, Neovim, VSCode with LazyVim support
 - **Terminal**: Alacritty, Ghostty, Tmux, Zellij
 - **Tools**: 40+ curated CLI tools (ripgrep, fd, fzf, bat, etc.)
-- **Desktop Apps**: Firefox, Bitwarden, and more
+- **Desktop Apps**: Firefox, 1Password, and more
 - **Git**: Pre-configured with sensible defaults
 
 ## Installation Guide
@@ -705,45 +705,28 @@ This repository uses **SOPS** (Secrets OPerationS) with age encryption for manag
 
 ### Setting Up SOPS on a New Host
 
-When setting up a new host, you can add its key to SOPS **directly from that host** using your personal age key stored in Bitwarden. No need to use a separate development machine!
+When setting up a new host, you can add its key to SOPS **directly from that host** using your personal age key stored in 1Password. No need to use a separate development machine!
 
 #### Prerequisites
 
 Install required tools on the new host:
 
 ```bash
-nix-shell -p bitwarden-cli jq ssh-to-age
+nix-shell -p _1password-cli jq ssh-to-age
 ```
 
-#### Step 1: Configure Bitwarden CLI (First Time Only)
-
-If you're using a self-hosted Vaultwarden instance:
+#### Step 1: Sign In to 1Password CLI
 
 ```bash
-# Configure your Vaultwarden server
-bw config server https://[YOUR_SERVER_ADDRESS]
-
-# Note: You need to be on your home network or connected via Tailscale
+# Sign in and get session token
+eval $(op signin)
 ```
 
-#### Step 2: Authenticate with Bitwarden
+#### Step 2: Set Up SOPS with Your Personal Age Key
 
 ```bash
-# Login and get session token
-export BW_SESSION=$(bw login --raw)
-
-# Or if already logged in, just unlock
-export BW_SESSION=$(bw unlock --raw)
-
-# Sync with server
-bw sync
-```
-
-#### Step 3: Set Up SOPS with Your Personal Age Key
-
-```bash
-# Get your personal age private key from Bitwarden and set as environment variable
-export SOPS_AGE_KEY=$(bw get notes "SOPS Age Key")
+# Get your personal age private key from 1Password and set as environment variable
+export SOPS_AGE_KEY=$(op read "op://Personal/SOPS Age Key/notesPlain")
 
 # Verify it's set (should show your key)
 echo $SOPS_AGE_KEY
@@ -753,7 +736,7 @@ echo $SOPS_AGE_KEY
 
 ```bash
 # SOPS will fetch the key automatically when needed
-export SOPS_AGE_KEY_CMD='bw get notes "SOPS Age Key"'
+export SOPS_AGE_KEY_CMD='op read "op://Personal/SOPS Age Key/notesPlain"'
 ```
 
 #### Step 4: Get New Host's Age Public Key
@@ -820,7 +803,6 @@ git push
 # Remove sensitive data from environment
 unset SOPS_AGE_KEY
 unset SOPS_AGE_KEY_CMD
-unset BW_SESSION
 ```
 
 #### Step 9: Verify Secrets Work
@@ -840,9 +822,9 @@ cat /run/secrets/my-secret
 
 ```bash
 # Complete workflow in one go:
-nix-shell -p bitwarden-cli jq ssh-to-age --run '
-  export BW_SESSION=$(bw unlock --raw) &&
-  export SOPS_AGE_KEY=$(bw get notes "SOPS Age Key") &&
+nix-shell -p _1password-cli ssh-to-age --run '
+  eval $(op signin) &&
+  export SOPS_AGE_KEY=$(op read "op://Personal/SOPS Age Key/notesPlain") &&
   echo "New host key:" &&
   cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age &&
   echo "Now edit .sops.yaml to add this key, then run:" &&
@@ -855,7 +837,7 @@ nix-shell -p bitwarden-cli jq ssh-to-age --run '
 - **Your personal age key** (`&cyberfighter`) allows YOU to edit secrets from any machine
 - **Host keys** (like `&razer-nix`, `&my-new-host`) allow HOSTS to decrypt secrets at runtime
 - You use your personal key to edit/re-encrypt, hosts use their keys to decrypt
-- Your personal key retrieved from Bitwarden exists only in memory (environment variable)
+- Your personal key retrieved from 1Password exists only in memory (environment variable)
 - No sensitive files are created on disk
 
 ### Security Benefits of This Approach
@@ -864,16 +846,16 @@ nix-shell -p bitwarden-cli jq ssh-to-age --run '
 ✅ **Secure** - Private key never written to disk on new host  
 ✅ **Temporary** - Key only exists for current shell session  
 ✅ **Convenient** - Add hosts directly from the host itself, no dev machine needed  
-✅ **Centralized** - Personal key securely stored in Bitwarden  
-✅ **Auditable** - Bitwarden tracks when/where key is accessed
+✅ **Centralized** - Personal key securely stored in 1Password  
+✅ **Auditable** - 1Password tracks when/where key is accessed
 
 ### Alternative: Using SOPS_AGE_KEY_CMD
 
 For even better security, use `SOPS_AGE_KEY_CMD` which fetches the key on-demand:
 
 ```bash
-export BW_SESSION=$(bw unlock --raw)
-export SOPS_AGE_KEY_CMD='bw get notes "SOPS Age Key"'
+eval $(op signin)
+export SOPS_AGE_KEY_CMD='op read "op://Personal/SOPS Age Key/notesPlain"'
 
 # SOPS will fetch your key automatically when needed
 sops secrets/secrets.yaml
