@@ -65,6 +65,7 @@
       bluetooth.enable = true;
       printing.enable = true;
 
+      onepassword.enable = true;
       wine.enable = true;
 
       gaming.enable = true;

@@ -41,6 +41,11 @@
         userEmail = "jdguillot@outlook.com";
       };
 
+      ssh = {
+        enable = true;
+        onepass = true;
+      };
+
       shell = {
         fish.enable = true;
         starship.enable = true;
