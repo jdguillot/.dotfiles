@@ -19,7 +19,7 @@ in
 
     userDescription = lib.mkOption {
       type = lib.types.str;
-      default = "Jonathan Guillot";
+      default = cfg.username;
       description = "Full name of the primary user";
     };
 

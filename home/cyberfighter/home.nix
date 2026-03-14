@@ -9,7 +9,6 @@
   imports = [
     ../modules
     ./files.nix
-    ./variables.nix
   ];
 
   # Common module automatically provides:
@@ -29,7 +28,7 @@
 
     packages = {
       includeDev = true;
-      extraPackages = with pkgs; [
+      extraPackages = [
         inputs.isd.packages.${pkgs.system}.default
       ];
     };
@@ -37,8 +36,7 @@
     features = {
       # Git, shell, editor, tools enabled by default
       git = {
-        userName = "jdguillot";
-        userEmail = "jdguillot@outlook.com";
+        useSecretsForIdentity = true;
       };
 
       ssh = {
@@ -78,8 +76,7 @@
         carapace.enable = true;
         jujutsu = {
           enable = true;
-          userName = "Jonathan Guillot";
-          userEmail = "jdguillot@outlook.com";
+          useSecretsForIdentity = true;
         };
       };
     };

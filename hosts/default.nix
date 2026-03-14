@@ -4,7 +4,6 @@
     system = {
       hostname = "razer-nixos";
       username = "cyberfighter";
-      userDescription = "Jonathan Guillot";
     };
   };
 
@@ -13,8 +12,6 @@
     system = {
       hostname = "work-nix-wsl";
       username = "jdguillot";
-      userDescription = "Jonathan Guillot";
-      wslOptions.windowsUsername = "jguillot778e";
     };
   };
 
@@ -23,8 +20,6 @@
     system = {
       hostname = "ryzn-nix-wsl";
       username = "cyberfighter";
-      userDescription = "Jonathan Guillot";
-      wslOptions.windowsUsername = "jdguillot";
     };
   };
 
@@ -33,7 +28,6 @@
     system = {
       hostname = "sys-galp-nix";
       username = "cyberfighter";
-      userDescription = "Jonathan Guillot";
     };
   };
 
@@ -42,7 +36,6 @@
     system = {
       hostname = "thkpd-pve1";
       username = "cyberfighter";
-      userDescription = "Jonathan Guillot";
     };
   };
 
@@ -51,7 +44,6 @@
     system = {
       hostname = "nixos-portable";
       username = "cyberfighter";
-      userDescription = "cyberfighter";
     };
   };
 }

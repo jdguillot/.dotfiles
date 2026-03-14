@@ -97,6 +97,7 @@
             ./home/${hostMeta.system.username}/home.nix
             nix-flatpak.homeManagerModules.nix-flatpak
             catppuccin.homeModules.catppuccin
+            sops-nix.homeManagerModules.sops
           ]
           # ++ (if hostname == "razer-nixos" || hostname == "sys-galp-nix" then [ ] else [ ])
           ;

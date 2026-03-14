@@ -9,7 +9,6 @@
   imports = [
     ../modules
     ./files.nix
-    ./variables.nix
   ];
 
   cyberfighter = {
@@ -30,11 +29,12 @@
       ];
     };
 
-    features = {
+      features = {
       # Git, shell, editor, and tools are enabled by default
       git = {
-        userName = "jonathan-guillot_emcor";
-        userEmail = "jonathan_guillot@emcor.net";
+        useSecretsForIdentity = true;
+        nameSecretKey = "personal-info/work-github";
+        emailSecretKey = "personal-info/work-email";
       };
 
       shell = {
