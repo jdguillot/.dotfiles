@@ -10,10 +10,10 @@
 let
   isWsl = hostProfile == "wsl";
 
-  # Derive Windows home from $USERPROFILE which WSL sets automatically
+  # Derive Windows home using wslvar (from wslu) which reliably reads Windows env vars
   wslPathsInit = ''
-    if [ -n "$USERPROFILE" ]; then
-      _win_home=$(wslpath "$USERPROFILE")
+    _win_home=$(wslpath "$(wslvar USERPROFILE 2>/dev/null)")
+    if [ -n "$_win_home" ]; then
       export PATH="$_win_home/AppData/Local/Programs/Microsoft VS Code/bin:$_win_home/AppData/Local/Microsoft/WinGet/Packages/equalsraf.win32yank_Microsoft.Winget.Source_8wekyb3d8bbwe:$PATH"
     fi
   '';
@@ -42,10 +42,10 @@ in
       };
 
       bash.initExtra = lib.mkIf isWsl wslPathsInit;
-      zsh.initExtra = lib.mkIf isWsl wslPathsInit;
+      zsh.initContent = lib.mkIf isWsl wslPathsInit;
       fish.interactiveShellInit = lib.mkIf isWsl ''
-        if set -q USERPROFILE
-          set _win_home (wslpath "$USERPROFILE")
+        set _win_home (wslpath (wslvar USERPROFILE 2>/dev/null) 2>/dev/null)
+        if test -n "$_win_home"
           fish_add_path "$_win_home/AppData/Local/Programs/Microsoft VS Code/bin"
           fish_add_path "$_win_home/AppData/Local/Microsoft/WinGet/Packages/equalsraf.win32yank_Microsoft.Winget.Source_8wekyb3d8bbwe"
         end

@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  hostProfile,
   ...
 }:
 
@@ -30,6 +31,12 @@ in
         python3Packages.pip-tools
         gitmux
         lsof
+      ];
+    })
+
+    (lib.mkIf (hostProfile == "wsl") {
+      home.packages = with pkgs; [
+        wslu
       ];
     })
 
