@@ -111,6 +111,7 @@
         sys-galp-nix = mkNixosSystem "sys-galp-nix" hostConfigs.sys-galp-nix;
         nixos-portable = mkNixosSystem "nixos-portable" hostConfigs.nixos-portable;
         thkpd-pve1 = mkNixosSystem "thkpd-pve1" hostConfigs.thkpd-pve1;
+        simple-vm = mkNixosSystem "simple-vm" hostConfigs.simple-vm;
       };
 
       homeConfigurations = {
@@ -118,6 +119,8 @@
         "jdguillot@work-nix-wsl" = mkHomeConfig "work-nix-wsl" hostConfigs.work-nix-wsl;
         "cyberfighter@ryzn-nix-wsl" = mkHomeConfig "ryzn-nix-wsl" hostConfigs.ryzn-nix-wsl;
         "cyberfighter@sys-galp-nix" = mkHomeConfig "sys-galp-nix" hostConfigs.sys-galp-nix;
+        "cyberfighter@thkpd-pve1" = mkHomeConfig "thkpd-pve1" hostConfigs.thkpd-pve1;
+        "cyberfighter@simple-vm" = mkHomeConfig "simple-vm" hostConfigs.simple-vm;
       };
     };
 

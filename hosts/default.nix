@@ -46,4 +46,11 @@
       username = "cyberfighter";
     };
   };
+  simple-vm = {
+    profile = "minimal";
+    system = {
+      hostname = "simple-vm";
+      username = "cyberfighter";
+    };
+  };
 }
