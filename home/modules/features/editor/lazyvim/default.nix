@@ -245,7 +245,6 @@ in
               { import = "lazyvim.plugins.extras.lang.tailwind"},
               { import = "lazyvim.plugins.extras.editor.snacks_explorer"},
               { import = "lazyvim.plugins.extras.util.gh"},
-              { import = "lazyvim.plugins.extras.util.octo"},
               { import = "lazyvim.plugins.extras.lang.git"},
 
               -- The following configs are needed for fixing lazyvim on nix
