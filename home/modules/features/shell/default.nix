@@ -1,12 +1,12 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
 let
   cfg = config.cyberfighter.features.shell;
+  inherit (config.cyberfighter) profile;
 in
 {
   imports = [
@@ -89,6 +89,9 @@ in
           ## fzf
           FZF_DEFAULT_COMMAND = "fd --type f --strip-cwd-prefix";
         }
+        // lib.optionalAttrs (profile.enable == "wsl") {
+          BROWSER = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe --new-tab";
+        }
         // cfg.extraSessionVariables;
 
         shellAliases = {
@@ -107,7 +110,7 @@ in
 
           myip = "curl http://ip-api.com/json/ -s | jq";
 
-          dadjoke = "curl -s -H \"Accept: text/plain\" https://icanhazdadjoke.com | cowsay -f sus | lolcat";
+          dadjoke = "curl -s --max-time 2 -H \"Accept: text/plain\" https://icanhazdadjoke.com || echo 'The internet is not responding' | cowsay -f sus | lolcat";
 
           bwu = "export BW_SESSION=$(bw unlock --raw)";
         }
@@ -116,4 +119,3 @@ in
     })
   ];
 }
-
