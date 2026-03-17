@@ -68,7 +68,7 @@ in
   config = lib.mkIf cfg.enable {
     programs.zsh = {
       enable = true;
-      enableCompletion = cfg.enableCompletion;
+      inherit (cfg) enableCompletion;
       autosuggestion.enable = cfg.enableAutosuggestions;
       syntaxHighlighting.enable = cfg.enableSyntaxHighlighting;
 
@@ -80,7 +80,7 @@ in
         eval "$(starship init zsh)"
         eval "$(zoxide init zsh)"
         ${lib.optionalString cfg.enableStartupJoke ''
-          curl -s -H "Accept: text/plain" https://icanhazdadjoke.com | cowsay -f sus | lolcat
+          { curl -s --max-time 2 -H "Accept: text/plain" https://icanhazdadjoke.com || echo 'The internet is not responding'; } | cowsay -f sus | lolcat
         ''}
 
         if command -v nix-your-shell > /dev/null; then
