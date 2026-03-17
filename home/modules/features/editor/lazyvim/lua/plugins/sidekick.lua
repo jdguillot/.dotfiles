@@ -6,6 +6,9 @@ return {
 				backend = "tmux",
 				enabled = true,
 			},
+			tools = {
+				copilot = { cmd = { "copilot", "--alt-screen" } },
+			},
 		},
 		copilot = {
 			status = {
