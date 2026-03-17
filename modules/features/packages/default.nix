@@ -28,7 +28,6 @@ let
       xclip
       wl-clipboard
       xwayland
-      opencode
       age
       sops
       grc
@@ -50,6 +49,9 @@ let
     mermaid-cli
     ast-grep
     cargo
+    opencode
+    copilot-cli
+    copilot-language-server
   ];
 
   desktopPackages = with pkgs; [
