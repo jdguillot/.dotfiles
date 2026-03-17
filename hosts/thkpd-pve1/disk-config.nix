@@ -4,7 +4,7 @@
       main = {
         type = "disk";
         #TODO: Change the device name to whatever is found via lsblk
-        device = "/dev/vda";
+        device = "/dev/nvme0n1";
         content = {
 
           type = "gpt";
