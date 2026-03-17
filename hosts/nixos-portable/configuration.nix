@@ -2,13 +2,17 @@
   pkgs,
   hostProfile,
   hostMeta,
+  modulesPath,
   ...
 }@inputs:
 {
   imports = [
     ../../modules
     inputs.inputs.nix-index-database.nixosModules.nix-index
-    ./hardware-configuration.nix
+    ./disk-config.nix
+    #TODO: Comment out either the hardware-configuration or qemu-guest depending on what is needed
+    # ./hardware-configuration.nix
+    (modulesPath + "/profiles/qemu-guest.nix")
   ];
 
   cyberfighter = {
