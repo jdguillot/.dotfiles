@@ -8,6 +8,8 @@
 }:
 
 let
+  cfg = config.cyberfighter.common;
+
   isWsl = hostProfile == "wsl";
 
   # Derive Windows home using wslvar (from wslu) which reliably reads Windows env vars
@@ -27,7 +29,7 @@ in
     };
   };
 
-  config = lib.mkIf config.cyberfighter.common.enable {
+  config = lib.mkIf cfg.enable {
     # Allow unfree packages
     nixpkgs.config.allowUnfree = true;
     programs = {
