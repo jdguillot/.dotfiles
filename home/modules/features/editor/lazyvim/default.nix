@@ -146,7 +146,6 @@ in
             vim-illuminate
             vim-startuptime
             which-key-nvim
-            opencode-nvim
             remote-nvim-nvim
             {
               name = "LuaSnip";

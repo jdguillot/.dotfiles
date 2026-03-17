@@ -50,7 +50,8 @@ let
     ast-grep
     cargo
     opencode
-    copilot-cli
+    # copilot-cli
+    github-copilot-cli
     copilot-language-server
   ];
 

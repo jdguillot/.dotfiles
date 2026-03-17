@@ -1,9 +1,12 @@
 return {
 	"zbirenbaum/copilot.lua",
+	requires = {
+		"copilotlsp-nvim/copilot-lsp", -- (optional) for NES functionality
+	},
 	opts = {
-		disable_limit_reached_message = true, -- Set to `true` to suppress completion limit reached popup
+		-- disable_limit_reached_message = true, -- Set to `true` to suppress completion limit reached popup
 		suggestion = {
-			enabled = true,
+			enabled = true, -- Re-enabled for inline suggestions
 			auto_trigger = true,
 			keymap = {
 				-- accept = "<Tab>",
