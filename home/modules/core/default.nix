@@ -5,6 +5,6 @@
     ./system/default.nix
     ./users/default.nix
     ./packages/default.nix
+    ./wsl/default.nix
   ];
 }
-

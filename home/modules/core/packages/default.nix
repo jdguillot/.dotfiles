@@ -34,12 +34,6 @@ in
       ];
     })
 
-    (lib.mkIf (hostProfile == "wsl") {
-      home.packages = with pkgs; [
-        wslu
-      ];
-    })
-
     {
       home.packages = cfg.extraPackages;
     }

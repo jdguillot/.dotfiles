@@ -89,9 +89,6 @@ in
           ## fzf
           FZF_DEFAULT_COMMAND = "fd --type f --strip-cwd-prefix";
         }
-        // lib.optionalAttrs (profile.enable == "wsl") {
-          BROWSER = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe --new-tab";
-        }
         // cfg.extraSessionVariables;
 
         shellAliases = {
@@ -110,7 +107,7 @@ in
 
           myip = "curl http://ip-api.com/json/ -s | jq";
 
-          dadjoke = "curl -s --max-time 2 -H \"Accept: text/plain\" https://icanhazdadjoke.com || echo 'The internet is not responding' | cowsay -f sus | lolcat";
+          dadjoke = "dadjoke"; # Function defined in shell-functions.sh
 
           bwu = "export BW_SESSION=$(bw unlock --raw)";
         }

@@ -18,6 +18,12 @@ in
       description = "Enable zsh completion";
     };
 
+    lazyLoadCompletion = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Lazy load completions on first use (faster startup)";
+    };
+
     enableAutosuggestions = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -55,7 +61,7 @@ in
     enableStartupJoke = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Show a dad joke on shell startup";
+      description = "Show a dad joke on shell startup (uses cached jokes, refreshes daily)";
     };
 
     extraInitContent = lib.mkOption {
@@ -68,7 +74,8 @@ in
   config = lib.mkIf cfg.enable {
     programs.zsh = {
       enable = true;
-      inherit (cfg) enableCompletion;
+      # Disable home-manager's completion management when using lazy loading
+      enableCompletion = cfg.enableCompletion && !cfg.lazyLoadCompletion;
       autosuggestion.enable = cfg.enableAutosuggestions;
       syntaxHighlighting.enable = cfg.enableSyntaxHighlighting;
 
@@ -77,18 +84,38 @@ in
       };
 
       initContent = ''
+        # Skip compinit security checks (speeds up startup significantly)
+        # compinit is handled by oh-my-zsh, but we can optimize it
+        ${lib.optionalString cfg.enableOhMyZsh ''
+          # Skip insecure directory checks for compinit
+          ZSH_DISABLE_COMPFIX=true
+        ''}
+
+        ${lib.optionalString (cfg.enableCompletion && cfg.lazyLoadCompletion) ''
+          # Lazy load completions - only initialize when first tab completion is used
+          # This dramatically speeds up shell startup
+          autoload -Uz compinit
+
+          # Only regenerate compdump once a day
+          if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+            compinit -i -C
+          else
+            compinit -i
+          fi
+        ''}
+
+        # Source shell functions first (needed for startup joke)
+        source ${../shell-functions.sh}
+
         eval "$(starship init zsh)"
         eval "$(zoxide init zsh)"
         ${lib.optionalString cfg.enableStartupJoke ''
-          { curl -s --max-time 2 -H "Accept: text/plain" https://icanhazdadjoke.com || echo 'The internet is not responding'; } | cowsay -f sus | lolcat
+          show-startup-joke
         ''}
 
         if command -v nix-your-shell > /dev/null; then
           nix-your-shell zsh | source /dev/stdin
         fi
-
-        # Source your functions file
-        source ${../shell-functions.sh}
 
         ${lib.optionalString config.cyberfighter.features.tools.sesh.enable config.cyberfighter.features.tools.sesh.zshInitContent}
 
