@@ -10,8 +10,8 @@
     ../../modules
     inputs.inputs.nix-index-database.nixosModules.nix-index
     #TODO: Comment out either the hardware-configuration or qemu-guest depending on what is needed
-    # ./hardware-configuration.nix
-    (modulesPath + "/profiles/qemu-guest.nix")
+    ./hardware-configuration.nix
+    # (modulesPath + "/profiles/qemu-guest.nix")
   ];
 
   cyberfighter = {
