@@ -90,6 +90,8 @@ in
         # Source your functions file
         source ${../shell-functions.sh}
 
+        ${lib.optionalString config.cyberfighter.features.tools.sesh.enable config.cyberfighter.features.tools.sesh.zshInitContent}
+
         ${cfg.extraInitContent}
 
       '';

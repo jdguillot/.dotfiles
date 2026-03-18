@@ -6,10 +6,10 @@
 }:
 
 let
-  cfg = config.cyberfighter.features.sesh;
+  cfg = config.cyberfighter.features.tools.sesh;
 in
 {
-  options.cyberfighter.features.sesh = {
+  options.cyberfighter.features.tools.sesh = {
     enable = lib.mkEnableOption "Enable Sesh, a terminal multiplexer";
 
     useConfigFile = lib.mkOption {
@@ -17,16 +17,41 @@ in
       default = true;
       description = "Use config file for Sesh. If false, Sesh will use default settings.";
     };
+
+    zshInitContent = lib.mkOption {
+      type = lib.types.lines;
+      readOnly = true;
+      description = "Zsh init content for sesh integration (completion + sesh-sessions keybind).";
+      default = ''
+        sesh completion zsh > _sesh
+
+        function sesh-sessions() {
+          {
+            exec </dev/tty
+            exec <&1
+            local session
+            session=$(sesh list -t -c | fzf --height 40% --reverse --border-label ' sesh ' --border --prompt '⚡  ')
+            zle reset-prompt > /dev/null 2>&1 || true
+            [[ -z "$session" ]] && return
+            sesh connect $session
+          }
+        }
+
+        zle     -N             sesh-sessions
+        bindkey -M emacs '\es' sesh-sessions
+        bindkey -M vicmd '\es' sesh-sessions
+        bindkey -M viins '\es' sesh-sessions
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = with pkgs; [
+    home.packages = with pkgs; [
       sesh
     ];
 
-    home.file."sesh.toml" = lib.mkIf cfg.useConfigFile {
+    xdg.configFile."sesh/sesh.toml" = lib.mkIf cfg.useConfigFile {
       source = ./sesh.toml;
     };
-
   };
 }

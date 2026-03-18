@@ -10,6 +10,7 @@
     ./tools/default.nix
     ./tools/btop/default.nix
     ./tools/lazygit/default.nix
+    ./tools/sesh/default.nix
     ./tools/jujutsu/default.nix
     ./tools/carapace/default.nix
     ./tools/tmux/default.nix

@@ -7,10 +7,19 @@ startup_command = "yazi"
 # open a file
 [[session]]
 name = "tmux config"
-path = "~/c/dotfiles/tmux"
-startup_command = "nvim tmux.conf"
+path = "~/.dotfiles/home/modules/features/tools/tmux"
+startup_command = "nvim ~/.dotfiles/home/modules/features/tools/tmux/tmux.conf"
 
 # run a script to startup a node project
 [[session]]
 path = "~/c/joshmedeski.com"
 startup_script = "~/.config/sesh/scripts/node_dev"
+
+# Analyze home directory disk usage
+[[session]]
+name = "Disk Usage 📊"
+path = "~"
+startup_command = "dua i"
+
+[default_session]
+startup_command = ":lua Snacks.picker.pick('files', opts)"
