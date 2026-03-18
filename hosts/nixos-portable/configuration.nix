@@ -9,7 +9,6 @@
   imports = [
     ../../modules
     inputs.inputs.nix-index-database.nixosModules.nix-index
-    ./disk-config.nix
     #TODO: Comment out either the hardware-configuration or qemu-guest depending on what is needed
     # ./hardware-configuration.nix
     (modulesPath + "/profiles/qemu-guest.nix")
