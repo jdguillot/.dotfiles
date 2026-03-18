@@ -23,7 +23,8 @@ in
       readOnly = true;
       description = "Zsh init content for sesh integration (completion + sesh-sessions keybind).";
       default = ''
-        sesh completion zsh > _sesh
+        mkdir -p "$HOME/.zsh/completions" && sesh completion zsh > "$HOME/.zsh/completions/_sesh"
+        fpath=("$HOME/.zsh/completions" $fpath)
 
         function sesh-sessions() {
           {

@@ -29,7 +29,7 @@
       ];
     };
 
-      features = {
+    features = {
       # Git, shell, editor, and tools are enabled by default
       git = {
         useSecretsForIdentity = true;
@@ -59,6 +59,7 @@
         btop.enable = true;
         lazygit.enable = true;
         tmux.enable = true;
+        sesh.enable = true;
         zellij.enable = true;
         carapace.enable = true;
         yazi.enable = true;
