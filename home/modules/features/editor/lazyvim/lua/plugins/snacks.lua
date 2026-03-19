@@ -17,10 +17,10 @@ return {
 					-- or leave it empty to use the default settings
 				},
 			},
-		},
-		terminal = {
-			-- your terminal configuration comes here
-			-- or leave it empty to use the default settings
+			terminal = {
+				-- your terminal configuration comes here
+				-- or leave it empty to use the default settings
+			},
 		},
 	},
 	keys = {

@@ -3,6 +3,8 @@
 -- Add any additional keymaps here
 vim.keymap.set("i", "jj", "<Esc>", { noremap = true, silent = true })
 
+vim.keymap.set({ "n", "i", "t" }, "<c-x>", "<cmd>q<cr>", { noremap = true, silent = true })
+
 local wk = require("which-key")
 
 -- Overseer keymaps
