@@ -49,21 +49,31 @@ in
 
     includeSystemPaths = lib.mkOption {
       type = lib.types.bool;
-      default = false;
+      default = true;
       description = "Include Windows system paths (System32, PowerShell, etc). Warning: Very slow!";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    # Install WSL utilities
-    home.packages = with pkgs; [
-      wslu # WSL utilities (wslpath, wslvar, etc)
-    ];
+    home = {
+      # Install WSL utilities
+      packages = with pkgs; [
+        wslu # WSL utilities (wslpath, wslvar, etc)
+      ];
 
-    # Set WSL-specific environment variables
-    home.sessionVariables = {
-      # Use Windows Chrome as default browser in WSL
-      BROWSER = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe --new-tab";
+      # Set WSL-specific environment variables
+      sessionVariables = {
+        # Use Windows Chrome as default browser in WSL
+        BROWSER = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe --new-tab";
+      };
+
+      # Windows system paths (very slow, only add if explicitly requested)
+      sessionPath = lib.mkIf cfg.includeSystemPaths [
+        "/mnt/c/Windows/System32"
+        "/mnt/c/Windows/System32/OpenSSH"
+        "/mnt/c/Windows/System32/WindowsPowerShell/v1.0"
+        "/mnt/c/Program Files/Docker/Docker/resources/bin"
+      ];
     };
 
     # WSL-specific shell initialization
@@ -98,17 +108,9 @@ in
       );
 
       zsh.initContent = lib.mkIf isWsl (
-        # Remove /mnt/* paths from PATH that were added by system
-        # This prevents slow WSL filesystem access on every command
         ''
-          # WSL optimization: Remove Windows paths from PATH to speed up shell startup
-          # WSL file system access to Windows paths is extremely slow (4+ seconds)
-          if [[ -n "$WSL_DISTRO_NAME" ]]; then
-            # Remove /mnt/c and Windows paths from PATH
-            path=("''${(@)path:#/mnt/*}")
-            # Deduplicate PATH entries to reduce overhead
-            typeset -U path
-          fi
+          # Deduplicate PATH entries to reduce overhead
+          typeset -U path
         ''
         + (
           if cfg.windowsUsername != null then
@@ -171,13 +173,5 @@ in
         )
       );
     };
-
-    # Windows system paths (very slow, only add if explicitly requested)
-    home.sessionPath = lib.mkIf cfg.includeSystemPaths [
-      "/mnt/c/Windows/System32"
-      "/mnt/c/Windows/System32/OpenSSH"
-      "/mnt/c/Windows/System32/WindowsPowerShell/v1.0"
-      "/mnt/c/Program Files/Docker/Docker/resources/bin"
-    ];
   };
 }
