@@ -7,6 +7,17 @@
 
 let
   cfg = config.cyberfighter.features.tools.tmux;
+  tmux-sessionx = pkgs.tmuxPlugins.tmux-sessionx.overrideAttrs (_: {
+    src = pkgs.fetchFromGitHub {
+      owner = "omerxx";
+      repo = "tmux-sessionx";
+      rev = "301ce314c9bd25b803667e00c50a4f57d4b33aa2";
+      hash = "sha256-Iue1Y7WViAm92+qM96EowthpXwYrkeLudlWUXIzk368=";
+    };
+    # New version uses $CURRENT_DIR/$SCRIPTS_DIR dynamically; old nixpkgs
+    # postPatch substitutions no longer match and must be cleared.
+    postPatch = "";
+  });
 in
 {
   options.cyberfighter.features.tools.tmux = {
