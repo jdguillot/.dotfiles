@@ -2,25 +2,22 @@
 # without having to repeat yourself.
 # Also see https://github.com/Mic92/dotfiles/blob/master/nixos/.sops.yaml
 # for a more complex example.
-keys:
+keys: &all
   - &bitwarden age1sw9nqgpj8a0yz55k4ezsl040lx0u5ysqv7qzxkqldcmaugndl5fsqf4lc8
   - &razer-nixos age1g98hga3gn0qmtelwmcm3gpfpjpmt6zs60xww2vj7fk4v8n48qc5shnnvq3
   - &razer-nixos-admin age1w04gmlhglqns8sqvq9e4h85hggph8028n7xn6n7tz20nh23wxezsvm5n0d
   - &work-wsl age15tde43t4ms7k24xhewrt58eznfn6l3vht70gxmmpg4j5ykm2n4uqt20ga0
   - &work-jdguillot age1exdsgk0hlf47ks2qf7jyls7k7q52e2d82306f3w859vyv3vqna5s4qygyc
   - &ryzn-nixos-wsl age1qdcaucwsf52y0ak9uv8lr48p20tu407lasw9rlddd894qfluhptsy05adf
+  - &thkpd-pve1 age1rfh8tflpx2d0j6p00284t4ep7tsqut2c9uz58ljw2k0lvr08vqtqklzqv8
   - &simple-vm age12kq643k846phl8zx4n30q486z2n3wf5y73qvqhd6e8e5ks62tq3sds4xqu
 creation_rules:
   - path_regex: secrets/.*
     key_groups:
-      - age:
-          - *bitwarden
-          - *razer-nixos
-          - *work-wsl
-          - *work-jdguillot
-          - *ryzn-nixos-wsl
-          - *razer-nixos-admin
-          - *simple-vm
+      - age: *all
+  - path_regex: secrets/secrets_common.yaml
+    key_groups:
+      - age: *all
   - path_regex: "hosts/work-wsl/100-PKROOTCA290-CA.yaml"
     key_groups:
       - age:

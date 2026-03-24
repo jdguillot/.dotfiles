@@ -5,7 +5,7 @@
 }:
 
 let
-  secretsFile = ../../../../secrets/secrets.yaml;
+  secretsFile = ../../../../secrets/secrets_common.yaml;
   secretsAvailable = builtins.pathExists secretsFile;
 in
 {
