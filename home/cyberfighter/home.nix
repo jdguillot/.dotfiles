@@ -42,6 +42,10 @@
       ssh = {
         enable = true;
         onepass = true;
+        hosts = [
+          "thkpd-pve1"
+          "simple-vm"
+        ];
       };
 
       shell = {

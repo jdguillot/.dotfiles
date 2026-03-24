@@ -18,6 +18,9 @@ creation_rules:
   - path_regex: secrets/secrets_common.yaml
     key_groups:
       - age: *all
+  - path_regex: home/modules/features/ssh/ssh-hosts.yaml
+    key_groups:
+      - age: *all
   - path_regex: "hosts/work-wsl/100-PKROOTCA290-CA.yaml"
     key_groups:
       - age:
