@@ -1,6 +1,7 @@
 thkpd-pve1: ENC[AES256_GCM,data:aAVQlbT10LkmY03RRiHpPBp2o5D7ny6SVikv24QGen75f8/weEXO1T6c,iv:cmmSBDmUjAMiXybQXz6/+RI9S23GS5LsIt6lDGkQVpo=,tag:QF6o98RK7kKGWuLbcQ0StQ==,type:str]
 simple-vm: ENC[AES256_GCM,data:AwQf2JTPlplD2zhOoofwh2rPEb5BT7bQzYZzLjmfxOTKFEUgGVzaJO7Ec7Kkfs54,iv:E76wloQNGC6IaRGHgt6rUYzcz8Z8TrQIOSZZCL9BLNI=,tag:g7n3A0GdGMoE6jAsZPKr6g==,type:str]
-work-server: ENC[AES256_GCM,data:O/M6hgqVBffOVA85XXUygkeJrhJU/UCJ8jctQWB3wP//,iv:869Urkk6TWpFtb84w6XRYQo1mAamx634q48LuQiJZx0=,tag:+SX1yFgpCjpZKn8guYp20A==,type:str]
+WorkOnlogic: ENC[AES256_GCM,data:8qZGOeHCRYNe8gwgP93ilVR0UZ9ZqcYtjPb64b+65odaTw==,iv:4LizUhQKP30w5B9YfvcDZ7XXTfq0oOWncRtDxx2qlfM=,tag:BfWKI46tlP/suVWbH8u0/w==,type:str]
+linode-work: ENC[AES256_GCM,data:nVV81wNYJJhkp3oaN1y/u3XonuAMosI66114QVeAHxGGoMBEopDs8SpD1LF2tGez5EVOKRyBXoUSSTRU2FzJS856RqnOeIo=,iv:izC4Ye7iNt8YeTOXJ7wnCbzJVHeNTh3DG1N09+W1Kv4=,tag:gPZDICQXo9wDFM5JkI3ZCg==,type:str]
 sops:
     age:
         - recipient: age1sw9nqgpj8a0yz55k4ezsl040lx0u5ysqv7qzxkqldcmaugndl5fsqf4lc8
@@ -75,7 +76,7 @@ sops:
             dWNIeVIrYU5OeDNhc1VOZlZNSGJyWTQKH7uhd4RzfTjIF1EKCiVefpVQNDIUXMu6
             rJsEfOoPdbyZGds10aWXrnJhi8jrNw6A5rTWT/95bMPTbhMw7sFrdg==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-03-24T05:33:52Z"
-    mac: ENC[AES256_GCM,data:mZlhsvAFDfSYIUQLFI3ehFb0upgGeWQPkNxQ9yeyH4erdNRlS7E4quAM7cGHou6p9ediFThSk+z/xOW85Arbf+yQGGSBP22Ji/K6d6M0S6mB+4pRzXcFkAGZPIUMu2uRlPOsvGqCJz3JFXb4JQW3Q7KcQcyVQ8EGB2gmxL52hiY=,iv:lIqPRQOLQJRgnXTXRI1xPCzrxTJoK2ct94BHJBMhyWg=,tag:aWwQGKfo3Tungu527sKiVA==,type:str]
+    lastmodified: "2026-03-24T17:45:18Z"
+    mac: ENC[AES256_GCM,data:Fv0roVvLVVBeWJ0L3tQWhUkq/gyvqqsQmMVkrjSKDzpxcskMIHtIIxgNwO3h2wl9pD9X2G+VIJOsbEGSo15U8En4H2GOvrvMlfWQghp9N8te+S5jnL4v/MMZGAUuFx8nbFElUza90q6UKNazDPd0xcSfPDOMX2zGjTnj/stQuaA=,iv:5jJY7exE0BGMnsETlhaTr81RQd3kl/CVrKLOgHpGScc=,tag:0keftvVKXpwKNrqtdcL79w==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.12.1

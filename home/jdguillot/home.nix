@@ -37,6 +37,14 @@
         emailSecretKey = "personal-info/work-email";
       };
 
+      ssh = {
+        enable = true;
+        hosts = [
+          "WorkOnlogic"
+          "linode-work"
+        ];
+      };
+
       shell = {
         fish.enable = true;
         starship.enable = true;
