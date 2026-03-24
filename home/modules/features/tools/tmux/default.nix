@@ -99,6 +99,7 @@ in
             set -g @floax-bind 't'
           '';
         }
+        tmux-sessionx
       ];
 
       extraConfig = with builtins; (readFile ./tmux.conf);
