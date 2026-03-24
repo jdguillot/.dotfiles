@@ -58,17 +58,28 @@ in
 
     # When using sops secrets, write jj identity via activation script
     (lib.mkIf useSecretsForIdentity {
-      home.activation.jjIdentityFromSops = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        _jj_name=$(cat "${nameSecretPath}")
-        _jj_email=$(cat "${emailSecretPath}")
-        _jj_config="${config.home.homeDirectory}/.config/jj/config.toml"
-        if [ -f "$_jj_config" ]; then
-          $DRY_RUN_CMD ${lib.getExe pkgs.gnused} -i \
-            -e "s|^name = .*|name = \"$_jj_name\"|" \
-            -e "s|^email = .*|email = \"$_jj_email\"|" \
-            "$_jj_config"
-        fi
-      '';
+      home.activation.jjIdentityFromSops = lib.hm.dag.entryAfter [ "writeBoundary" "sops-nix" ] (
+        let
+          systemctl = config.systemd.user.systemctlPath;
+        in
+        ''
+          systemdStatus=$(${systemctl} --user is-system-running 2>&1 || true)
+          if [[ $systemdStatus == 'running' || $systemdStatus == 'degraded' ]]; then
+            ${systemctl} --user start --wait sops-nix || true
+          fi
+          if [ -f "${nameSecretPath}" ] && [ -f "${emailSecretPath}" ]; then
+            _jj_name=$(cat "${nameSecretPath}")
+            _jj_email=$(cat "${emailSecretPath}")
+            _jj_config="${config.home.homeDirectory}/.config/jj/config.toml"
+            if [ -f "$_jj_config" ]; then
+              $DRY_RUN_CMD ${lib.getExe pkgs.gnused} -i \
+                -e "s|^name = .*|name = \"$_jj_name\"|" \
+                -e "s|^email = .*|email = \"$_jj_email\"|" \
+                "$_jj_config"
+            fi
+          fi
+        ''
+      );
     })
   ]);
 }

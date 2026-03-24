@@ -52,6 +52,8 @@ let
     opencode
     github-copilot-cli
     copilot-language-server
+    deploy-rs
+    claude-code
   ];
 
   desktopPackages = with pkgs; [

@@ -38,10 +38,12 @@
     isd.url = "github:kainctl/isd";
     #    pst-bin.url = "path:./programs/pst";
     #    tasmotizer.url = "path:./programs/tasmotizer";
+    deploy-rs.url = "github:serokell/deploy-rs";
   };
 
   outputs =
     {
+      self,
       nixpkgs,
       home-manager,
       nix-flatpak,
@@ -50,6 +52,7 @@
       disko,
       catppuccin,
       proxmox-nixos,
+      deploy-rs,
       ...
     }@inputs:
     let
@@ -87,6 +90,37 @@
           ];
         };
 
+      # Helper function to create a deploy-rs node configuration
+      mkDeployNode =
+        hostname: hostMeta: withHome:
+        let
+          username = hostMeta.system.username;
+        in
+        {
+          inherit hostname;
+        }
+        // (if withHome then { profilesOrder = [ "system" "home" ]; } else { })
+        // {
+          profiles =
+            {
+              system = {
+                user = "root";
+                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.${hostname};
+              };
+            }
+            // (
+              if withHome then
+                {
+                  home = {
+                    user = username;
+                    path = deploy-rs.lib.x86_64-linux.activate.home-manager self.homeConfigurations."${username}@${hostname}";
+                  };
+                }
+              else
+                { }
+            );
+        };
+
       # Helper function to create home-manager configuration
       mkHomeConfig =
         hostname: hostMeta:
@@ -122,6 +156,15 @@
         "cyberfighter@thkpd-pve1" = mkHomeConfig "thkpd-pve1" hostConfigs.thkpd-pve1;
         "cyberfighter@simple-vm" = mkHomeConfig "simple-vm" hostConfigs.simple-vm;
       };
+
+      deploy.nodes = {
+        thkpd-pve1 = mkDeployNode "thkpd-pve1" hostConfigs.thkpd-pve1 true;
+        simple-vm = mkDeployNode "simple-vm" hostConfigs.simple-vm false;
+      };
+
+      # This is highly advised, and will prevent many possible mistakes
+      checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+
     };
 
 }
