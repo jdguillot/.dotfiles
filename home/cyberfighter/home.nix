@@ -45,6 +45,7 @@
         hosts = [
           "thkpd-pve1"
           "simple-vm"
+          "sys-galp-nix"
         ];
       };
 

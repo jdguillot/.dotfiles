@@ -96,11 +96,6 @@
     };
   };
 
-  # TODO: Update this
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBUyIMVw6JsHKA53g8WmxN5gkA0Qy/Gh1lmv8IqiXD5L cyberfighter@razer-nixos"
-  ];
-
   services.openssh.settings = {
     AcceptEnv = lib.mkForce [
       "LANG"

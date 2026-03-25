@@ -99,26 +99,37 @@
         {
           inherit hostname;
         }
-        // (if withHome then { profilesOrder = [ "system" "home" ]; } else { })
-        // {
-          profiles =
+        // (
+          if withHome then
             {
-              system = {
-                user = "root";
-                path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.${hostname};
-              };
+              profilesOrder = [
+                "system"
+                "home"
+              ];
             }
-            // (
-              if withHome then
-                {
-                  home = {
-                    user = username;
-                    path = deploy-rs.lib.x86_64-linux.activate.home-manager self.homeConfigurations."${username}@${hostname}";
-                  };
-                }
-              else
-                { }
-            );
+          else
+            { }
+        )
+        // {
+          profiles = {
+            system = {
+              user = "root";
+              path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.${hostname};
+            };
+          }
+          // (
+            if withHome then
+              {
+                home = {
+                  user = username;
+                  path =
+                    deploy-rs.lib.x86_64-linux.activate.home-manager
+                      self.homeConfigurations."${username}@${hostname}";
+                };
+              }
+            else
+              { }
+          );
         };
 
       # Helper function to create home-manager configuration
@@ -160,6 +171,7 @@
       deploy.nodes = {
         thkpd-pve1 = mkDeployNode "thkpd-pve1" hostConfigs.thkpd-pve1 true;
         simple-vm = mkDeployNode "simple-vm" hostConfigs.simple-vm false;
+        sys-galp-nix = mkDeployNode "sys-galp-nix" hostConfigs.sys-galp-nix true;
       };
 
       # This is highly advised, and will prevent many possible mistakes

@@ -28,9 +28,19 @@ in
       default = "prohibit-password";
       description = "Root login setting";
     };
+
+    authorizedKeys = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBUyIMVw6JsHKA53g8WmxN5gkA0Qy/Gh1lmv8IqiXD5L cyberfighter@razer-nixos"
+      ];
+      description = "SSH public keys authorized for root login";
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    users.users.root.openssh.authorizedKeys.keys = cfg.authorizedKeys;
+
     services.openssh = {
       enable = true;
       ports = cfg.ports;
