@@ -12,7 +12,7 @@ A modular NixOS configuration system with home-manager integration, featuring pr
   - [On a Fresh NixOS Installation (Git Clone Method)](#on-a-fresh-nixos-installation-git-clone-method)
   - [From a Live CD (Manual Partition Method)](#from-a-live-cd-manual-partition-method)
   - [On an Existing System](#on-an-existing-system)
-- [Running simple-vm with quickemu](#running-simple-vm-with-quickemu)
+- [Running VMs with quickemu](#running-vms-with-quickemu)
 - [Configuration System](#configuration-system)
 - [Quick Start Examples](#quick-start-examples)
 - [Building and Deploying](#building-and-deploying)
@@ -1094,61 +1094,59 @@ nix flake show
 | `thkpd-pve1` | minimal | Proxmox VE node |
 | `simple-vm` | minimal | Minimal VM |
 
-## Running simple-vm with quickemu
+## Running VMs with quickemu
 
-The `simple-vm` host is a minimal NixOS configuration designed to run as a local QEMU guest. [quickemu](https://github.com/quickemu-project/quickemu) is included in the virtualization packages and wraps QEMU with sensible defaults, making it easy to spin up and manage VMs.
+[quickemu](https://github.com/quickemu-project/quickemu) wraps QEMU with sensible defaults and includes `quickget`, a companion tool that downloads OS images and generates a ready-to-use VM config file in one step.
 
-### Prerequisites
+`quickemu` is available when `packages.includeVirt = true` is set in your host config, or via `nix-shell -p quickemu`.
 
-- `quickemu` available in your shell (enabled via `packages.includeVirt = true` in your host config, or run `nix-shell -p quickemu`)
-- A NixOS live ISO (download from [nixos.org](https://nixos.org/download))
+### Step 1: Download the VM with quickget
 
-### Step 1: Create a quickemu VM Config
-
-Create a config file for the VM (e.g. `~/vms/simple-vm.conf`):
+Use `quickget` to download the OS image and generate the VM config automatically:
 
 ```bash
 mkdir -p ~/vms && cd ~/vms
-cat > simple-vm.conf <<'EOF'
-#!/usr/bin/quickemu
-guest_os="linux"
-disk_img="simple-vm/disk.qcow2"
-disk_size="20G"
-ram="2G"
-cpu_cores="2"
-iso="nixos-minimal-25.11-x86_64-linux.iso"
-EOF
+
+# NixOS (for simple-vm or any NixOS guest)
+quickget nixos latest minimal
+
+# Or any other distro, e.g.:
+quickget ubuntu 24.04
+quickget debian 12
 ```
 
-> Replace the ISO filename with the exact name of the NixOS ISO you downloaded.
+`quickget` downloads the ISO and creates a config file named `<os>-<release>.conf` (e.g. `nixos-latest-minimal.conf`). No manual config authoring required.
 
-### Step 2: Boot the NixOS Live ISO
+### Step 2: Boot the VM
 
-Place the NixOS ISO in `~/vms/` and start the VM:
+Start the VM using the generated config:
 
 ```bash
-quickemu --vm simple-vm.conf
+quickemu --vm nixos-latest-minimal.conf
 ```
 
-This opens a SPICE/VNC window. Inside the live environment, enable SSH so you can deploy from your host machine:
+This opens a SPICE/VNC window. quickemu maps the VM's SSH port to a host port — find it with:
+
+```bash
+cat ~/vms/nixos-latest-minimal/nixos-latest-minimal.ports
+```
+
+### Step 3: Install — Choose Based on OS
+
+---
+
+#### Option A: NixOS VM (nixos-anywhere)
+
+Use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) to partition the disk and install NixOS in one command, driven by your flake config (e.g. `simple-vm`).
+
+In the live ISO, enable SSH access:
 
 ```bash
 # Inside the live VM
-passwd          # set a temporary root password
-ip addr         # note the IP (usually on the default bridge, e.g. 192.168.122.x)
+passwd   # set a temporary root password
 ```
 
-quickemu maps the VM's SSH port to a random host port. You can find it with:
-
-```bash
-# On your host machine
-quickemu --vm simple-vm.conf --display none &
-cat ~/vms/simple-vm/simple-vm.ports  # lists mapped ports, including SSH
-```
-
-### Step 3: Deploy simple-vm with nixos-anywhere
-
-With SSH available in the live VM, run the nixos-anywhere helper from your dotfiles repo:
+Then from your dotfiles repo on the host machine:
 
 ```bash
 bash scripts/nixos-anywhere.sh
@@ -1156,7 +1154,7 @@ bash scripts/nixos-anywhere.sh
 # Target: root@localhost -p <ssh-port>
 ```
 
-Or directly:
+Or run nixos-anywhere directly:
 
 ```bash
 nix run github:nix-community/nixos-anywhere -- \
@@ -1167,32 +1165,76 @@ nix run github:nix-community/nixos-anywhere -- \
 
 nixos-anywhere will partition the virtual disk using `hosts/simple-vm/disk-config.nix` (targets `/dev/vda` by default) and install NixOS.
 
-### Step 4: Reboot and Deploy
-
-After nixos-anywhere finishes, reboot the VM:
-
-```bash
-# Inside the VM
-reboot
-```
-
-Once it reboots into the installed system, deploy with deploy-rs:
+After it finishes, reboot the VM and deploy with deploy-rs:
 
 ```bash
 deploy .#simple-vm -s
 ```
 
+---
+
+#### Option B: Non-NixOS VM (deploy-rs home-manager)
+
+For any non-NixOS distro, install the OS normally via the VM window, then deploy your home-manager configuration to it using deploy-rs.
+
+**1. Register the VM in `flake.nix`**
+
+Add a home configuration and a deploy node (home profile only) for the VM:
+
+```nix
+# In homeConfigurations:
+"yourusername@my-vm" = mkHomeConfig "my-vm" hostConfigs.my-vm;
+
+# In deploy.nodes:
+my-vm = {
+  hostname = "localhost";
+  profiles.home = {
+    user = "yourusername";
+    sshUser = "yourusername";
+    sshOpts = [ "-p" "<ssh-port>" ];
+    path = deploy-rs.lib.x86_64-linux.activate.home-manager
+      self.homeConfigurations."yourusername@my-vm";
+  };
+};
+```
+
+**2. Install Nix on the VM**
+
+SSH into the VM (using the port from `<vm-name>.ports`):
+
+```bash
+ssh -p <ssh-port> yourusername@localhost
+```
+
+Inside the VM, install Nix using the Determinate Systems installer (supports both NixOS and non-NixOS):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+**3. Deploy home-manager**
+
+From your dotfiles repo on the host machine, deploy the home profile:
+
+```bash
+deploy .#my-vm --profiles home
+```
+
+This installs and activates your full home-manager configuration on the non-NixOS VM. Subsequent changes can be redeployed the same way.
+
+---
+
 ### quickemu Tips
 
 ```bash
 # Start with no display (headless)
-quickemu --vm simple-vm.conf --display none
+quickemu --vm nixos-latest-minimal.conf --display none
 
 # Connect via SSH (after finding the port)
 ssh -p <port> <username>@localhost
 
 # Stop the VM
-quickemu --vm simple-vm.conf --kill
+quickemu --vm nixos-latest-minimal.conf --kill
 ```
 
 ## Secrets Management
