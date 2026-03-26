@@ -39,6 +39,7 @@
 
       ssh = {
         enable = true;
+        onepass = true;
         hosts = [
           "WorkOnlogic"
           "linode-work"
@@ -66,6 +67,7 @@
       tools = {
         btop.enable = true;
         lazygit.enable = true;
+        mc.enable = true;
         tmux.enable = true;
         sesh.enable = true;
         zellij.enable = true;
