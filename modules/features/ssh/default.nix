@@ -33,6 +33,7 @@ in
       type = lib.types.listOf lib.types.str;
       default = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBUyIMVw6JsHKA53g8WmxN5gkA0Qy/Gh1lmv8IqiXD5L cyberfighter@razer-nixos"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJq8jkRxEPluMdKOpipdV3Q3Xk7nVWCat22/viMon2C1"
       ];
       description = "SSH public keys authorized for root login";
     };
