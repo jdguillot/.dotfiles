@@ -46,6 +46,19 @@
           "thkpd-pve1"
           "simple-vm"
           "sys-galp-nix"
+          "homeassistant"
+          "frigate"
+          "vm-docker-pri"
+          "docker1"
+          "docker2"
+          "docker3"
+          "docker4"
+          "opnsense"
+          "docker-pri"
+          "proxmox1"
+          "proxmox2"
+          "truenas"
+          "synlgy-ds918"
         ];
       };
 
