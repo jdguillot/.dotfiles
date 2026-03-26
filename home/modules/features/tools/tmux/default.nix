@@ -51,6 +51,7 @@ in
   config = lib.mkIf cfg.enable {
     programs.tmux = {
       enable = true;
+      tmuxinator.enable = true;
       inherit (cfg) shell historyLimit escapeTime;
 
       plugins = with pkgs.tmuxPlugins; [
@@ -111,6 +112,12 @@ in
           '';
         }
         tmux-sessionx
+        {
+          plugin = tmux-sessionx;
+          extraConfig = ''
+            set -g @sessionx-tmuxinator-mode 'on'
+          '';
+        }
       ];
 
       extraConfig = with builtins; (readFile ./tmux.conf);
