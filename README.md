@@ -1,14 +1,15 @@
 # NixOS Dotfiles - Complete Setup Guide
 
-A modular NixOS configuration system with home-manager integration, featuring profiles, feature modules, and secrets management.
+A modular NixOS configuration system with home-manager integration, featuring profiles, feature modules, secrets management, and deploy-rs for remote deployments.
 
 ## Table of Contents
 
 - [Quick Links](#quick-links)
 - [Features](#features)
 - [Installation Guide](#installation-guide)
-  - [On a Fresh NixOS Installation](#on-a-fresh-nixos-installation)
-  - [From a Live CD](#from-a-live-cd)
+  - [Deploy-rs + Disko (Primary Method)](#deploy-rs--disko-primary-method)
+  - [On a Fresh NixOS Installation (Git Clone Method)](#on-a-fresh-nixos-installation-git-clone-method)
+  - [From a Live CD (Manual Partition Method)](#from-a-live-cd-manual-partition-method)
   - [On an Existing System](#on-an-existing-system)
 - [Configuration System](#configuration-system)
 - [Quick Start Examples](#quick-start-examples)
@@ -24,19 +25,21 @@ A modular NixOS configuration system with home-manager integration, featuring pr
 
 ## Features
 
-### System Features (22 Modules)
+### System Features (26 Modules)
 
 - **Profiles**: Desktop, WSL, Minimal - predefined configurations for common use cases
 - **Desktop Environments**: Plasma6, Plasma5, GNOME, Hyprland
 - **Graphics**: Nvidia (with Prime support) and AMD drivers
-- **Gaming**: Steam, GameMode, MangoHud, ProtonUp-Qt
+- **Gaming**: Steam, GameMode, MangoHud, ProtonUp-Qt, Wine
 - **Containers**: Docker with rootless support
 - **Networking**: NetworkManager, Tailscale VPN
-- **Filesystems**: TrueNAS CIFS mounts with credentials management
+- **Filesystems**: TrueNAS CIFS mounts with credentials management, Disko declarative disk partitioning
 - **Security**: Firejail sandboxing, SOPS secrets management
-- **And more**: Bluetooth, Printing, SSH, Flatpak, Fonts
+- **Proxmox**: Proxmox VE node management via proxmox-nixos
+- **Caching**: Cachix binary cache configuration
+- **And more**: Bluetooth, Printing, SSH, Flatpak, Fonts, 1Password
 
-### Home Manager Features (10 Modules)
+### Home Manager Features (14 Modules)
 
 - **Profiles**: Desktop, Minimal, WSL - automatically inherit from system profile
 - **Shell**: Fish, Bash, Zsh with Starship prompt
@@ -45,12 +48,199 @@ A modular NixOS configuration system with home-manager integration, featuring pr
 - **Tools**: 40+ curated CLI tools (ripgrep, fd, fzf, bat, etc.)
 - **Desktop Apps**: Firefox, 1Password, and more
 - **Git**: Pre-configured with sensible defaults
+- **Secrets**: SOPS home-manager secrets integration
+- **SSH**: SSH client configuration with host management
 
 ## Installation Guide
 
-### On a Fresh NixOS Installation
+### Deploy-rs + Disko (Primary Method)
 
-If you've just installed NixOS and want to use this configuration:
+This is the preferred method for deploying to remote or new systems. It uses **disko** for declarative disk partitioning and **deploy-rs** for atomic deployments with automatic rollback.
+
+#### Prerequisites
+
+- A working NixOS system (or NixOS live ISO) you can SSH into
+- Your dotfiles repo cloned on a machine you'll deploy **from**
+- The target host registered in `hosts/default.nix` and `flake.nix`
+
+#### Step 1: Prepare the Target Host
+
+Boot the target machine from the NixOS live ISO and enable SSH:
+
+```bash
+# On the live ISO - set a temporary root password so you can SSH in
+passwd
+
+# Note the IP address
+ip addr
+```
+
+#### Step 2: Register the New Host
+
+On your local machine, add the host to `hosts/default.nix`:
+
+```nix
+{
+  # ... existing hosts ...
+
+  your-hostname = {
+    profile = "desktop";  # or "wsl", "minimal"
+    system = {
+      hostname = "your-hostname";
+      username = "yourusername";
+    };
+  };
+}
+```
+
+#### Step 3: Create a Disko Disk Configuration
+
+Create `hosts/your-hostname/disk-config.nix` with your disk layout. Use an existing one as a template:
+
+```bash
+cp hosts/simple-vm/disk-config.nix hosts/your-hostname/disk-config.nix
+# Edit to set the correct device (check with lsblk on the target)
+```
+
+A typical disko config (btrfs with subvolumes):
+
+```nix
+{
+  disko.devices = {
+    disk = {
+      main = {
+        type = "disk";
+        device = "/dev/sda";  # Change to your disk (check with lsblk)
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              priority = 1;
+              name = "ESP";
+              start = "1M";
+              end = "128M";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+            root = {
+              size = "100%";
+              name = "root";
+              content = {
+                type = "btrfs";
+                extraArgs = [ "-f" ];
+                subvolumes = {
+                  "/rootfs" = { mountpoint = "/"; };
+                  "/home"   = { mountOptions = [ "compress=zstd" ]; mountpoint = "/home"; };
+                  "/nix"    = { mountOptions = [ "compress=zstd" "noatime" ]; mountpoint = "/nix"; };
+                  "/swap"   = { mountpoint = "/.swapvol"; swap.swapfile.size = "4G"; };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}
+```
+
+#### Step 4: Create the Host Configuration
+
+Create `hosts/your-hostname/configuration.nix`:
+
+```nix
+{ inputs, ... }:
+{
+  imports = [
+    ../../modules
+    ./disk-config.nix
+  ];
+
+  cyberfighter.features = {
+    desktop.environment = "plasma6";
+    docker.enable = true;
+    # ... other features
+  };
+}
+```
+
+#### Step 5: Add the Host to flake.nix
+
+```nix
+# In nixosConfigurations:
+your-hostname = mkNixosSystem "your-hostname" hostConfigs.your-hostname;
+
+# In homeConfigurations:
+"yourusername@your-hostname" = mkHomeConfig "your-hostname" hostConfigs.your-hostname;
+
+# In deploy.nodes (if using deploy-rs):
+your-hostname = mkDeployNode "your-hostname" hostConfigs.your-hostname true;
+```
+
+#### Step 6: Partition and Format with Disko
+
+From your local machine, run disko to partition and format the target disk:
+
+```bash
+# This will wipe and partition the target disk according to disk-config.nix
+nix run github:nix-community/disko/latest -- \
+  --mode destroy,format,mount \
+  --flake .#your-hostname \
+  --ssh-host root@<target-ip>
+```
+
+Or run it directly on the target (from the live ISO):
+
+```bash
+nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- \
+  --mode destroy,format,mount \
+  --flake github:jdguillot/.dotfiles#your-hostname
+```
+
+#### Step 7: Install NixOS
+
+```bash
+# From the live ISO (after disko has partitioned and mounted):
+nixos-install --flake github:jdguillot/.dotfiles#your-hostname --no-root-password
+
+# Reboot into the new system
+reboot
+```
+
+#### Step 8: Deploy with deploy-rs
+
+After the target reboots and SSH is available:
+
+```bash
+# Deploy system profile only
+deploy .#your-hostname
+
+# Deploy with sudo (if not root)
+deploy -s .#your-hostname
+
+# Deploy system + home-manager profiles
+deploy .#your-hostname --profiles system home
+
+# Deploy without automatic rollback (useful for debugging)
+deploy .#your-hostname --auto-rollback false
+
+# Deploy with custom SSH options
+deploy .#your-hostname -- -p 2222
+
+# Dry-run (build but don't activate)
+deploy .#your-hostname --dry-activate
+```
+
+---
+
+### On a Fresh NixOS Installation (Git Clone Method)
+
+If you've just installed NixOS and want to use this configuration without deploy-rs:
 
 1. **Boot into your new NixOS system**
 
@@ -79,7 +269,6 @@ If you've just installed NixOS and want to use this configuration:
        system = {
          hostname = "your-hostname";
          username = "yourusername";
-         userDescription = "Your Full Name";
        };
      };
    }
@@ -146,7 +335,7 @@ If you've just installed NixOS and want to use this configuration:
     sudo nixos-rebuild switch --flake .#your-hostname
     ```
 
-### From a Live CD
+### From a Live CD (Manual Partition Method)
 
 Installing NixOS from scratch with this configuration:
 
@@ -331,6 +520,11 @@ my-new-host = mkNixosSystem "my-new-host" hostConfigs.my-new-host;
 
 # In homeConfigurations:
 "myuser@my-new-host" = mkHomeConfig "my-new-host" hostConfigs.my-new-host;
+
+# Optional: In deploy.nodes (for deploy-rs remote deployment):
+# mkDeployNode "hostname" hostMeta withHome
+# Set withHome = true to also deploy the home-manager profile
+my-new-host = mkDeployNode "my-new-host" hostConfigs.my-new-host true;
 ```
 
 **Step 3: Create host configuration**
@@ -660,16 +854,89 @@ This repository uses a modular configuration system under the `cyberfighter` nam
 
 ## Building and Deploying
 
-### Build Commands
+### deploy-rs (Primary Method)
+
+[deploy-rs](https://github.com/serokell/deploy-rs) is the primary deployment tool for remote hosts. It supports atomic deployments with automatic rollback.
+
+#### Deploy All Profiles for a Node
 
 ```bash
-# Build and activate NixOS + home-manager
+# Deploy system + home-manager profiles (order defined by profilesOrder in flake.nix)
+deploy .#hostname
+```
+
+#### Deploy with sudo (recommended for non-root SSH users)
+
+```bash
+deploy -s .#hostname
+# Equivalent to:
+deploy --sudo .#hostname
+```
+
+#### Deploy a Specific Profile
+
+```bash
+# System profile only
+deploy .#hostname --profiles system
+
+# Home-manager profile only
+deploy .#hostname --profiles home
+
+# Both (explicit order)
+deploy .#hostname --profiles system home
+```
+
+#### Rollback Control
+
+```bash
+# Disable automatic rollback (useful when debugging activation failures)
+deploy .#hostname --auto-rollback false
+
+# Default behavior is to auto-rollback on failure
+deploy .#hostname  # --auto-rollback true is the default
+```
+
+#### Dry Run / Build Only
+
+```bash
+# Build without activating (verify the config builds)
+deploy .#hostname --dry-activate
+```
+
+#### Custom SSH Options
+
+```bash
+# Use a non-standard SSH port
+deploy .#hostname -- -p 2222
+
+# Use a specific SSH key
+deploy .#hostname -- -i ~/.ssh/id_ed25519
+```
+
+#### Deploy All Configured Nodes
+
+```bash
+# Deploy to all nodes defined in deploy.nodes
+deploy .
+```
+
+#### Available Deploy Nodes
+
+| Node | Profiles | Description |
+|------|----------|-------------|
+| `thkpd-pve1` | system + home | Proxmox VE node |
+| `simple-vm` | system | Minimal VM |
+| `sys-galp-nix` | system + home | Laptop |
+
+### Local Build Commands (nixos-rebuild)
+
+For local (on-machine) deployments, use the standard `nixos-rebuild` workflow:
+
+```bash
+# Build and activate NixOS system
 sudo nixos-rebuild switch --flake .#hostname
 # Or use alias:
 ns
-
-# Build NixOS only
-sudo nixos-rebuild switch --flake .#hostname
 
 # Build home-manager only
 home-manager switch --flake .#user@host
@@ -693,11 +960,15 @@ nix flake show
 
 ### Available Hosts
 
-- `razer-nixos` - Desktop workstation
-- `sys-galp-nix` - Laptop
-- `work-wsl` - Work WSL environment
-- `ryzn-wsl` - Personal WSL environment
-- `nixos-portable` - Portable installation
+| Hostname | Profile | Description |
+|----------|---------|-------------|
+| `razer-nixos` | desktop | Desktop workstation |
+| `sys-galp-nix` | desktop | Laptop |
+| `work-nix-wsl` | wsl | Work WSL environment |
+| `ryzn-nix-wsl` | wsl | Personal WSL environment |
+| `nixos-portable` | desktop | Portable installation |
+| `thkpd-pve1` | minimal | Proxmox VE node |
+| `simple-vm` | minimal | Minimal VM |
 
 ## Secrets Management
 
@@ -934,15 +1205,15 @@ See **[docs/SOPS-MIGRATION.md](docs/SOPS-MIGRATION.md)** for complete secrets ma
 
 ### Module Organization
 
-**NixOS Modules (22 total)**:
+**NixOS Modules (26 total)**:
 
 - **Core** (4): profiles, system, users, nix-settings
-- **Features** (18): desktop, graphics, sound, fonts, bluetooth, gaming, networking, printing, ssh, docker, tailscale, flatpak, packages, filesystems, sops, vscode, vpn, security
+- **Features** (22): 1password, bluetooth, cachix, desktop, docker, filesystems, flatpak, fonts, gaming, graphics, networking, packages, printing, proxmox, security, sops, sound, ssh, tailscale, vpn, vscode, wine
 
-**Home Manager Modules (10 total)**:
+**Home Manager Modules (14 total)**:
 
-- **Core** (5): common, profiles, system, users, packages
-- **Features** (5): git, shell, editor, terminal, desktop, tools
+- **Core** (6): common, profiles, system, users, packages, wsl
+- **Features** (8): git, shell, editor, terminal, desktop, tools, sops, ssh
 
 ### Profile Defaults
 
@@ -975,28 +1246,33 @@ Press `Ctrl+P` in your terminal for available actions (if using OpenCode)
 - [Home Manager Manual](https://nix-community.github.io/home-manager/)
 - [Nix Pills](https://nixos.org/guides/nix-pills/)
 - [Zero to Nix](https://zero-to-nix.com/)
+- [deploy-rs Documentation](https://github.com/serokell/deploy-rs)
+- [disko Documentation](https://github.com/nix-community/disko)
 
 ## Repository Structure
 
 ```
 .
-├── flake.nix           # Flake configuration
+├── flake.nix           # Flake configuration (nixosConfigurations, homeConfigurations, deploy.nodes)
 ├── flake.lock          # Locked flake inputs
 ├── README.md           # This file
 ├── hosts/              # Host-specific configurations
-│   ├── razer-nixos/
-│   ├── sys-galp-nix/
-│   ├── work-wsl/
-│   ├── ryzn-wsl/
+│   ├── default.nix     # Centralized host metadata registry
+│   ├── razer-nixos/    # Desktop workstation  (flake key: razer-nixos)
+│   ├── sys-galp-nix/   # Laptop (deploy-rs managed)  (flake key: sys-galp-nix)
+│   ├── thkpd-pve1/     # Proxmox VE node (deploy-rs managed, disko)  (flake key: thkpd-pve1)
+│   ├── simple-vm/      # Minimal VM (deploy-rs managed, disko)  (flake key: simple-vm)
+│   ├── work-wsl/       # Work WSL environment  (flake key: work-nix-wsl)
+│   ├── ryzn-wsl/       # Personal WSL environment  (flake key: ryzn-nix-wsl)
+│   ├── nixos-portable/ # Portable installation  (flake key: nixos-portable)
 │   └── templates/      # Example configurations
 ├── modules/            # NixOS system modules
-│   ├── core/           # Essential modules
-│   └── features/       # Optional features
+│   ├── core/           # Essential modules (profiles, system, users, nix-settings)
+│   └── features/       # Optional features (22 modules)
 ├── home/               # Home-manager configurations
-│   ├── modules/        # Home-manager modules
-│   ├── features/       # Feature implementations
-│   ├── cyberfighter/
-│   └── jdguillot/
+│   ├── modules/        # Home-manager modules (14 total)
+│   ├── cyberfighter/   # cyberfighter user home config
+│   └── jdguillot/      # jdguillot user home config
 ├── secrets/            # SOPS encrypted secrets
 ├── docs/               # Documentation
 │   ├── MODULES.md
