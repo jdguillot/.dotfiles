@@ -7,10 +7,12 @@ A modular NixOS configuration system with home-manager integration, featuring pr
 - [Quick Links](#quick-links)
 - [Features](#features)
 - [Installation Guide](#installation-guide)
-  - [Deploy-rs + Disko (Primary Method)](#deploy-rs--disko-primary-method)
+  - [nixos-anywhere (Preferred Method)](#nixos-anywhere-preferred-method)
+  - [Deploy-rs + Disko](#deploy-rs--disko)
   - [On a Fresh NixOS Installation (Git Clone Method)](#on-a-fresh-nixos-installation-git-clone-method)
   - [From a Live CD (Manual Partition Method)](#from-a-live-cd-manual-partition-method)
   - [On an Existing System](#on-an-existing-system)
+- [Running VMs with quickemu](#running-vms-with-quickemu)
 - [Configuration System](#configuration-system)
 - [Quick Start Examples](#quick-start-examples)
 - [Building and Deploying](#building-and-deploying)
@@ -53,9 +55,131 @@ A modular NixOS configuration system with home-manager integration, featuring pr
 
 ## Installation Guide
 
-### Deploy-rs + Disko (Primary Method)
+### nixos-anywhere (Preferred Method)
 
-This is the preferred method for deploying to remote or new systems. It uses **disko** for declarative disk partitioning and **deploy-rs** for atomic deployments with automatic rollback.
+[nixos-anywhere](https://github.com/nix-community/nixos-anywhere) is the preferred tool for bootstrapping new hosts. It handles disko-based disk partitioning and the full NixOS installation in a single remote command, with built-in support for injecting SSH host keys (required for SOPS secrets).
+
+A helper script at `scripts/nixos-anywhere.sh` automates the full workflow, including 1Password-based SSH host key management and optional SOPS secrets onboarding.
+
+#### Prerequisites
+
+- Your dotfiles repo cloned locally
+- 1Password CLI (`op`) signed in (used to create/retrieve the host SSH key)
+- A target host booted from the NixOS live ISO with SSH enabled (see Step 1)
+
+#### Step 1: Prepare the Target Host
+
+Boot the target machine from the NixOS live ISO and enable SSH:
+
+```bash
+# On the live ISO, set a temporary root password
+passwd
+
+# Note the IP address
+ip addr
+```
+
+#### Step 2: Register the New Host
+
+On your local machine, add the host to `hosts/default.nix`:
+
+```nix
+{
+  # ... existing hosts ...
+
+  your-hostname = {
+    profile = "desktop";  # or "wsl", "minimal"
+    system = {
+      hostname = "your-hostname";
+      username = "yourusername";
+    };
+  };
+}
+```
+
+#### Step 3: Create a Disko Disk Configuration
+
+Create `hosts/your-hostname/disk-config.nix`. Copy an existing one as a starting point and edit the device name:
+
+```bash
+cp hosts/simple-vm/disk-config.nix hosts/your-hostname/disk-config.nix
+# Edit to set the correct device (check with lsblk on the target)
+```
+
+#### Step 4: Create the Host Configuration
+
+Create `hosts/your-hostname/configuration.nix`:
+
+```nix
+{ inputs, ... }:
+{
+  imports = [
+    ../../modules
+    ./disk-config.nix
+  ];
+
+  cyberfighter.features = {
+    desktop.environment = "plasma6";
+    docker.enable = true;
+    # ... other features
+  };
+}
+```
+
+#### Step 5: Add the Host to flake.nix
+
+```nix
+# In nixosConfigurations:
+your-hostname = mkNixosSystem "your-hostname" hostConfigs.your-hostname;
+
+# In homeConfigurations:
+"yourusername@your-hostname" = mkHomeConfig "your-hostname" hostConfigs.your-hostname;
+
+# In deploy.nodes (for subsequent deploy-rs deployments):
+your-hostname = mkDeployNode "your-hostname" hostConfigs.your-hostname true;
+```
+
+#### Step 6: Run the nixos-anywhere Script
+
+From your local machine, run the interactive helper script:
+
+```bash
+bash scripts/nixos-anywhere.sh
+```
+
+The script will prompt for:
+- **Hostname** – must match the key in `hosts/default.nix` and `flake.nix`
+- **Target** – `user@host` or `user@host -p port` (e.g. `root@192.168.1.50`)
+- **Generate hardware-configuration.nix?** – recommended for bare-metal hosts
+- **Set up secrets?** – if yes, the script derives the age key from the injected SSH key, copies it to clipboard, and opens `.sops.yaml` for editing before re-encrypting secrets
+
+Behind the scenes the script:
+1. Creates or retrieves the host SSH key from 1Password (`Dev` vault)
+2. Injects the key into the target so nixos-anywhere can embed it in the new system (enabling SOPS decryption on first boot)
+3. Runs `nix run github:nix-community/nixos-anywhere -- --flake .#your-hostname --target-host <target>`
+
+#### Step 7: Deploy with deploy-rs
+
+After the system reboots and SSH is available using the permanent host key:
+
+```bash
+# Deploy system profile
+deploy .#your-hostname
+
+# Deploy with sudo (if not root)
+deploy -s .#your-hostname
+
+# Deploy system + home-manager
+deploy .#your-hostname --profiles system home
+```
+
+---
+
+### Deploy-rs + Disko
+
+An alternative approach using disko directly on the target followed by `nixos-install`, then managed with deploy-rs. Prefer [nixos-anywhere](#nixos-anywhere-preferred-method) for new hosts — this method is documented here as a reference.
+
+This uses **disko** for declarative disk partitioning and **deploy-rs** for atomic deployments with automatic rollback.
 
 #### Prerequisites
 
@@ -969,6 +1093,149 @@ nix flake show
 | `nixos-portable` | desktop | Portable installation |
 | `thkpd-pve1` | minimal | Proxmox VE node |
 | `simple-vm` | minimal | Minimal VM |
+
+## Running VMs with quickemu
+
+[quickemu](https://github.com/quickemu-project/quickemu) wraps QEMU with sensible defaults and includes `quickget`, a companion tool that downloads OS images and generates a ready-to-use VM config file in one step.
+
+`quickemu` is available when `packages.includeVirt = true` is set in your host config, or via `nix-shell -p quickemu`.
+
+### Step 1: Download the VM with quickget
+
+Use `quickget` to download the OS image and generate the VM config automatically:
+
+```bash
+mkdir -p ~/vms && cd ~/vms
+
+# NixOS (for simple-vm or any NixOS guest)
+quickget nixos latest minimal
+
+# Or any other distro, e.g.:
+quickget ubuntu 24.04
+quickget debian 12
+```
+
+`quickget` downloads the ISO and creates a config file named `<os>-<release>.conf` (e.g. `nixos-latest-minimal.conf`). No manual config authoring required.
+
+### Step 2: Boot the VM
+
+Start the VM using the generated config:
+
+```bash
+quickemu --vm nixos-latest-minimal.conf
+```
+
+This opens a SPICE/VNC window. quickemu maps the VM's SSH port to a host port — find it with:
+
+```bash
+cat ~/vms/nixos-latest-minimal/nixos-latest-minimal.ports
+```
+
+### Step 3: Install — Choose Based on OS
+
+---
+
+#### Option A: NixOS VM (nixos-anywhere)
+
+Use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) to partition the disk and install NixOS in one command, driven by your flake config (e.g. `simple-vm`).
+
+In the live ISO, enable SSH access:
+
+```bash
+# Inside the live VM
+passwd   # set a temporary root password
+```
+
+Then from your dotfiles repo on the host machine:
+
+```bash
+bash scripts/nixos-anywhere.sh
+# Hostname: simple-vm
+# Target: root@localhost -p <ssh-port>
+```
+
+Or run nixos-anywhere directly:
+
+```bash
+nix run github:nix-community/nixos-anywhere -- \
+  --flake .#simple-vm \
+  --target-host "root@localhost" \
+  -p <ssh-port>
+```
+
+nixos-anywhere will partition the virtual disk using `hosts/simple-vm/disk-config.nix` (targets `/dev/vda` by default) and install NixOS.
+
+After it finishes, reboot the VM and deploy with deploy-rs:
+
+```bash
+deploy .#simple-vm -s
+```
+
+---
+
+#### Option B: Non-NixOS VM (deploy-rs home-manager)
+
+For any non-NixOS distro, install the OS normally via the VM window, then deploy your home-manager configuration to it using deploy-rs.
+
+**1. Register the VM in `flake.nix`**
+
+Add a home configuration and a deploy node (home profile only) for the VM:
+
+```nix
+# In homeConfigurations:
+"yourusername@my-vm" = mkHomeConfig "my-vm" hostConfigs.my-vm;
+
+# In deploy.nodes:
+my-vm = {
+  hostname = "localhost";
+  profiles.home = {
+    user = "yourusername";
+    sshUser = "yourusername";
+    sshOpts = [ "-p" "<ssh-port>" ];
+    path = deploy-rs.lib.x86_64-linux.activate.home-manager
+      self.homeConfigurations."yourusername@my-vm";
+  };
+};
+```
+
+**2. Install Nix on the VM**
+
+SSH into the VM (using the port from `<vm-name>.ports`):
+
+```bash
+ssh -p <ssh-port> yourusername@localhost
+```
+
+Inside the VM, install Nix using the Determinate Systems installer (supports both NixOS and non-NixOS):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+**3. Deploy home-manager**
+
+From your dotfiles repo on the host machine, deploy the home profile:
+
+```bash
+deploy .#my-vm --profiles home
+```
+
+This installs and activates your full home-manager configuration on the non-NixOS VM. Subsequent changes can be redeployed the same way.
+
+---
+
+### quickemu Tips
+
+```bash
+# Start with no display (headless)
+quickemu --vm nixos-latest-minimal.conf --display none
+
+# Connect via SSH (after finding the port)
+ssh -p <port> <username>@localhost
+
+# Stop the VM
+quickemu --vm nixos-latest-minimal.conf --kill
+```
 
 ## Secrets Management
 
