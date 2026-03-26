@@ -1,0 +1,22 @@
+{
+  imports = [
+    ./git/default.nix
+    ./shell/default.nix
+    ./sops/default.nix
+    ./editor/default.nix
+    ./terminal/default.nix
+    ./desktop/default.nix
+    ./ssh/default.nix
+    ./tools/default.nix
+    ./tools/btop/default.nix
+    ./tools/lazygit/default.nix
+    ./tools/midnight-commander/default.nix
+    ./tools/sesh/default.nix
+    ./tools/jujutsu/default.nix
+    ./tools/carapace/default.nix
+    ./tools/tmux/default.nix
+    ./tools/zellij/default.nix
+    ./tools/yazi/default.nix
+    ./tools/direnv/default.nix
+  ];
+}

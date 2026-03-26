@@ -1,107 +1,130 @@
 {
+  lib,
+  config,
   pkgs,
-  inputs,
+  hostProfile,
+  hostMeta,
   ...
-}:
-
-let
-  username = "jdguillot";
-in
+}@inputs:
 {
   imports = [
-    # ./docker-desktop-fix.nix
-    ../../modules/global/default.nix
-    # ../../modules/optional/tailscale.nix
-    ../../modules/optional/pkgs.nix
-    # ../../modules/optional/docker.nix
-    inputs.nixos-wsl.nixosModules.default
-    inputs.nix-index-database.nixosModules.nix-index
-    inputs.vscode-server.nixosModules.default
+    ../../modules
+    inputs.inputs.nixos-wsl.nixosModules.default
+    inputs.inputs.nix-index-database.nixosModules.nix-index
+    inputs.inputs.vscode-server.nixosModules.default
   ];
 
-  cyberfighter.features = {
-    graphics = {
-      enable = true;
-      nvidia = true;
+  cyberfighter = {
+    profile.enable = hostProfile;
+
+    system = hostMeta.system // {
+      stateVersion = "25.05";
+      extraGroups = [ "docker" ];
     };
-    flatpak = {
-      enable = true;
-      browsers = true;
-      cad = true;
+
+    nix = {
+      enableDevenv = true;
+      trustedUsers = [
+        "root"
+        "jdguillot"
+      ];
     };
-    docker = {
-      enable = true;
+
+    packages = {
+      includeDev = true;
+      extraPackages = with pkgs; [
+        moonlight-qt
+        nil
+        zulu8
+        gradle
+      ];
     };
-    tailscale = {
-      enable = true;
+
+    features = {
+      graphics = {
+        enable = true;
+        # nvidia.enable = true;
+      };
+
+      flatpak = {
+        enable = true;
+        browsers = true;
+        cad = true;
+        extraPackages = [
+          "md.obsidian.Obsidian"
+        ];
+      };
+
+      docker.enable = true;
+      tailscale.enable = true;
+
+      vscode.enable = true;
+
+      sops.enable = true;
+      ssh.enable = true;
     };
-  };
-
-  wsl = {
-
-    # WSL Options
-    enable = true;
-    defaultUser = "${username}";
-    docker-desktop.enable = true;
-    useWindowsDriver = true;
-    wslConf.automount.root = "/";
-    wslConf.interop.appendWindowsPath = false;
-  };
-
-  networking.hostName = "work-nix-wsl"; # Define your hostname.
-
-  home-manager.users."${username}" = {
-    home.sessionPath = [
-      "/c/Users/jguillot778e/AppData/Local/Programs/Microsoft VS Code/bin"
-      "/c/Windows/System32"
-    ];
-  };
-
-  # Set your time zone.
-  time.timeZone = "America/Los_Angeles";
-
-  nix.extraOptions = ''
-    extra-substituters = https://devenv.cachix.org
-    extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
-    trusted-users = root ${username}
-    keep-outputs = true
-    keep-derivations = true
-  '';
-
-  programs.zsh.enable = true;
-  users.defaultUserShell = pkgs.zsh;
-
-  users.users."${username}" = {
-    extraGroups = [
-      "wheel"
-      "docker"
-    ];
-  };
-
-  environment.variables = {
-    JAVA_HOME = "${pkgs.zulu8}";
-    WAYLAND_DISPLAY = "";
-  };
-
-  security.pki.certificateFiles = [ ../../secrets/100-PKROOTCA290-CA.crt ];
-
-  programs.nix-ld = {
-    enable = true;
-    package = pkgs.nix-ld-rs;
-  };
-
-  nixpkgs.config = {
-    allowUnfree = true;
   };
 
   services.vscode-server.enable = true;
 
-  environment.systemPackages = with pkgs; [
-    moonlight-qt
-    nil
-    zulu8
-    gradle
-  ];
+  wsl = {
+    enable = true;
+    defaultUser = "jdguillot";
+    docker-desktop.enable = true;
+    useWindowsDriver = true;
+    # wslConf.automount.root = "/";
+    wslConf.interop.appendWindowsPath = false;
+  };
+  sops.secrets."work-ca" = {
+    sopsFile = ./100-PKROOTCA290-CA.yaml;
+    key = "data";
+    mode = "0444";
+  };
+
+  # Create a systemd service to install the CA certificate after sops decrypts it
+  systemd.services.install-work-ca = {
+    description = "Install work CA certificate to system bundle";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "sops-nix.service" ];
+    before = [ "network-online.target" ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      # Wait for the secret to be available
+      if [ -f ${config.sops.secrets."work-ca".path} ]; then
+        # Create a combined CA bundle
+        mkdir -p /etc/ssl/certs
+        
+        # Combine system CAs with work CA
+        cat ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt > /etc/ssl/certs/ca-bundle-with-work.crt
+        echo "" >> /etc/ssl/certs/ca-bundle-with-work.crt
+        cat ${config.sops.secrets."work-ca".path} >> /etc/ssl/certs/ca-bundle-with-work.crt
+        
+        chmod 444 /etc/ssl/certs/ca-bundle-with-work.crt
+        
+        echo "Work CA certificate added to system bundle"
+      else
+        echo "Warning: Work CA certificate not found"
+        exit 1
+      fi
+    '';
+  };
+
+  environment = {
+
+    variables = {
+      JAVA_HOME = "${pkgs.zulu8}";
+      SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
+      NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
+    };
+
+  };
+
+  programs.nix-ld.enable = true;
 
   xdg = {
     portal = {
@@ -112,11 +135,4 @@ in
       config.common.default = "*";
     };
   };
-
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
-  system.stateVersion = "25.05"; # Did you read the comment?
 }

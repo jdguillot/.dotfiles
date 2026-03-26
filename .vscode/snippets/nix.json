@@ -1,0 +1,64 @@
+{
+  "Cyberfighter Home Module": {
+    "prefix": "nix-home-mod",
+    "description": "New cyberfighter home-manager feature module",
+    "body": [
+      "{",
+      "  config,",
+      "  lib,",
+      "  pkgs,",
+      "  ...",
+      "}:",
+      "",
+      "let",
+      "  cfg = config.cyberfighter.features.${1:category.name};",
+      "in",
+      "{",
+      "  options.cyberfighter.features.${1} = {",
+      "    enable = lib.mkEnableOption \"${2:module description}\";${3}",
+      "  };",
+      "",
+      "  config = lib.mkIf cfg.enable {",
+      "    $0",
+      "  };",
+      "}"
+    ]
+  },
+
+  "Cyberfighter System Module": {
+    "prefix": "nix-sys-mod",
+    "description": "New cyberfighter NixOS system feature module",
+    "body": [
+      "{",
+      "  config,",
+      "  lib,",
+      "  ...",
+      "}:",
+      "",
+      "let",
+      "  cfg = config.cyberfighter.features.${1:module-name};",
+      "in",
+      "{",
+      "  options.cyberfighter.features.${1} = {",
+      "    enable = lib.mkEnableOption \"${2:module description}\";${3}",
+      "  };",
+      "",
+      "  config = lib.mkIf cfg.enable {",
+      "    $0",
+      "  };",
+      "}"
+    ]
+  },
+
+  "Cyberfighter mkOption": {
+    "prefix": "nix-mkopt",
+    "description": "lib.mkOption block",
+    "body": [
+      "${1:name} = lib.mkOption {",
+      "  type = lib.types.${2:str};",
+      "  default = ${3:\"\"};",
+      "  description = \"${4:description}\";",
+      "};"
+    ]
+  }
+}
