@@ -6,6 +6,7 @@
 
 let
   cfg = config.cyberfighter.features.ssh;
+  systemUser = config.cyberfighter.system.username;
 in
 {
   options.cyberfighter.features.ssh = {
@@ -35,12 +36,13 @@ in
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBUyIMVw6JsHKA53g8WmxN5gkA0Qy/Gh1lmv8IqiXD5L cyberfighter@razer-nixos"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJq8jkRxEPluMdKOpipdV3Q3Xk7nVWCat22/viMon2C1"
       ];
-      description = "SSH public keys authorized for root login";
+      description = "SSH public keys authorized to log in as root and the primary system user";
     };
   };
 
   config = lib.mkIf cfg.enable {
     users.users.root.openssh.authorizedKeys.keys = cfg.authorizedKeys;
+    users.users.${systemUser}.openssh.authorizedKeys.keys = cfg.authorizedKeys;
 
     services.openssh = {
       enable = true;
