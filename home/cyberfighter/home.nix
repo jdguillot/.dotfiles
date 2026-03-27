@@ -62,6 +62,8 @@
         ];
       };
 
+      noctalia.enable = true;
+
       shell = {
         fish.enable = true;
         starship.enable = true;

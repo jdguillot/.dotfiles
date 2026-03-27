@@ -18,6 +18,7 @@ in
         "plasma5"
         "gnome"
         "hyprland"
+        "niri"
         "none"
       ];
       default = "plasma6";
@@ -84,6 +85,11 @@ in
           enable = true;
           xwayland.enable = true;
         };
+      })
+
+      (lib.mkIf (cfg.environment == "niri") {
+        programs.niri.enable = true;
+        services.noctalia-shell.enable = true;
       })
 
       (lib.mkIf cfg.firefox {

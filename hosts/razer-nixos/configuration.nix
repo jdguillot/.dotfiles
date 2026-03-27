@@ -47,7 +47,7 @@
 
     features = {
       desktop = {
-        environment = "plasma6";
+        environment = "niri";
         firefox = true;
       };
 

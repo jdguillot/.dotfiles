@@ -2,6 +2,7 @@
   imports = [
     ./git/default.nix
     ./shell/default.nix
+    ./noctalia/default.nix
     ./sops/default.nix
     ./editor/default.nix
     ./terminal/default.nix

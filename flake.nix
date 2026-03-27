@@ -39,6 +39,11 @@
     #    pst-bin.url = "path:./programs/pst";
     #    tasmotizer.url = "path:./programs/tasmotizer";
     deploy-rs.url = "github:serokell/deploy-rs";
+    niri.url = "github:sodiboo/niri-flake";
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -53,6 +58,8 @@
       catppuccin,
       proxmox-nixos,
       deploy-rs,
+      niri,
+      noctalia,
       ...
     }@inputs:
     let
@@ -87,7 +94,27 @@
             disko.nixosModules.disko
             catppuccin.nixosModules.catppuccin
             proxmox-nixos.nixosModules.proxmox-ve
+            { nixpkgs.overlays = [ niri.overlays.niri ]; }
+            noctalia.nixosModules.default
           ];
+        };
+
+      # Helper function to create home-manager configuration
+      mkHomeConfig =
+        hostname: hostMeta:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = sharedSpecialArgs hostMeta;
+          modules = [
+            ./home/${hostMeta.system.username}/home.nix
+            nix-flatpak.homeManagerModules.nix-flatpak
+            catppuccin.homeModules.catppuccin
+            sops-nix.homeManagerModules.sops
+            niri.homeModules.config
+            noctalia.homeModules.default
+          ]
+          # ++ (if hostname == "razer-nixos" || hostname == "sys-galp-nix" then [ ] else [ ])
+          ;
         };
 
       # Helper function to create a deploy-rs node configuration
@@ -132,21 +159,6 @@
           );
         };
 
-      # Helper function to create home-manager configuration
-      mkHomeConfig =
-        hostname: hostMeta:
-        home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = sharedSpecialArgs hostMeta;
-          modules = [
-            ./home/${hostMeta.system.username}/home.nix
-            nix-flatpak.homeManagerModules.nix-flatpak
-            catppuccin.homeModules.catppuccin
-            sops-nix.homeManagerModules.sops
-          ]
-          # ++ (if hostname == "razer-nixos" || hostname == "sys-galp-nix" then [ ] else [ ])
-          ;
-        };
     in
     {
       nixosConfigurations = {
