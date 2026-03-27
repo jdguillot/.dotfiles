@@ -1,6 +1,5 @@
 # Template for a minimal server
 {
-  config,
   lib,
   hostProfile,
   hostMeta,
@@ -12,6 +11,7 @@
     inputs.inputs.nix-index-database.nixosModules.nix-index
     ./disk-config.nix
     ./hardware-configuration.nix
+    # ./containers
   ];
 
   cyberfighter = {
@@ -46,7 +46,10 @@
         permitRootLogin = "yes";
       };
 
-      docker.enable = true;
+      docker = {
+        enable = true;
+        networks = [ "web" ];
+      };
       tailscale.enable = true;
 
       sops = {
@@ -60,6 +63,7 @@
   services.proxmox-ve.bridges = [
     "vmbr0"
   ];
+  services.resolved.enable = false;
 
   networking.useNetworkd = true;
 
@@ -102,4 +106,5 @@
       "LC_*"
     ];
   };
+
 }
