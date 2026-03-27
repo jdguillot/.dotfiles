@@ -81,12 +81,26 @@
     mode = "0444";
   };
 
+  # Make nix-daemon use the custom bundle (must run after install-work-ca)
+  systemd.services.nix-daemon = {
+    after = [ "install-work-ca.service" ];
+    requires = [ "install-work-ca.service" ];
+    environment.CURL_CA_BUNDLE = lib.mkForce "/etc/ssl/certs/ca-bundle-with-work.crt";
+    environment.NIX_SSL_CERT_FILE = lib.mkForce "/etc/ssl/certs/ca-bundle-with-work.crt";
+  };
+
   # Create a systemd service to install the CA certificate after sops decrypts it
   systemd.services.install-work-ca = {
     description = "Install work CA certificate to system bundle";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = [
+      "multi-user.target"
+      "nix-daemon.service"
+    ];
     after = [ "sops-nix.service" ];
-    before = [ "network-online.target" ];
+    before = [
+      "network-online.target"
+      "nix-daemon.service"
+    ];
 
     serviceConfig = {
       Type = "oneshot";
