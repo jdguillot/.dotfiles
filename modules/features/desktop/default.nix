@@ -88,8 +88,14 @@ in
       })
 
       (lib.mkIf (cfg.environment == "niri") {
-        programs.niri.enable = true;
+        programs.niri = {
+          enable = true;
+        };
         services.noctalia-shell.enable = true;
+        environment.systemPackages = with pkgs; [
+          mako
+          quickshell
+        ];
       })
 
       (lib.mkIf cfg.firefox {
