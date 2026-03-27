@@ -86,6 +86,8 @@ in
         };
 
       };
+
+      boot.loader.timeout = 1;
       systemd.targets = {
         sleep.enable = false;
         suspend.enable = false;
