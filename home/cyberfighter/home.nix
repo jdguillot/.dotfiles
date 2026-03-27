@@ -29,7 +29,7 @@
     packages = {
       includeDev = true;
       extraPackages = [
-        inputs.isd.packages.${pkgs.system}.default
+        inputs.isd.packages.${pkgs.stdenv.hostPlatform.system}.default
       ];
     };
 

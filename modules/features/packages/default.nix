@@ -59,7 +59,7 @@ let
   desktopPackages = with pkgs; [
     kitty
     wofi
-    wineWowPackages.stable
+    wineWow64Packages.stable
     bitwarden-desktop
     _1password-gui
   ];

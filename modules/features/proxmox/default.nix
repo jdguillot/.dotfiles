@@ -1,8 +1,8 @@
 {
   config,
   lib,
+  hostSystem,
   proxmox-nixos,
-  system,
   ...
 }:
 
@@ -22,7 +22,7 @@ in
 
   config = lib.mkIf cfg.enable {
     nixpkgs.overlays = [
-      proxmox-nixos.overlays.${system}
+      proxmox-nixos.overlays.${hostSystem}
     ];
 
     services.proxmox-ve = {

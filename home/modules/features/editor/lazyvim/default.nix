@@ -37,7 +37,7 @@ in
       default = with pkgs; [
         stylua
         prettier
-        nixfmt-rfc-style
+        nixfmt
         statix
       ];
       description = "Code formatters to install";

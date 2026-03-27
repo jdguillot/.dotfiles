@@ -66,10 +66,10 @@
       sharedSpecialArgs = hostMeta: {
         inherit
           inputs
-          system
           pkgs-stable
           hostMeta
           ;
+        hostSystem = system;
         hostProfile = hostMeta.profile;
       };
 
