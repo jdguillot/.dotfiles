@@ -37,6 +37,12 @@ in
             IdentityFile ~/.ssh/id_ed25519
       '';
     };
+
+    authorizedKeys = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "SSH public keys authorized to connect as this user";
+    };
   };
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
@@ -46,6 +52,10 @@ in
         extraConfig = (if cfg.onepass then onepassConfig else "") + cfg.extraConfig;
       };
     }
+
+    (lib.mkIf (cfg.authorizedKeys != [ ]) {
+      home.file.".ssh/authorized_keys".text = lib.concatStringsSep "\n" cfg.authorizedKeys + "\n";
+    })
 
     (lib.mkIf hostsAvailable {
       sops.secrets = lib.listToAttrs (
