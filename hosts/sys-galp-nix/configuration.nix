@@ -70,6 +70,7 @@
       sops = {
         enable = true;
         defaultSopsFile = ../../secrets/secrets.yaml;
+        deployUserAgeKey = true;
       };
 
     };

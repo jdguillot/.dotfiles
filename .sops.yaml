@@ -11,6 +11,7 @@ keys: &all
   - &ryzn-nixos-wsl age1qdcaucwsf52y0ak9uv8lr48p20tu407lasw9rlddd894qfluhptsy05adf
   - &thkpd-pve1 age1rfh8tflpx2d0j6p00284t4ep7tsqut2c9uz58ljw2k0lvr08vqtqklzqv8
   - &simple-vm age12kq643k846phl8zx4n30q486z2n3wf5y73qvqhd6e8e5ks62tq3sds4xqu
+  - &sys-galp-nix age1qfe2h4mxt66lplx3vzcyz88wux0n7vqegy2wu0hg29fy7apjtqlqnr5fw6
 creation_rules:
   - path_regex: secrets/.*
     key_groups:
