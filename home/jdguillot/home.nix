@@ -43,6 +43,7 @@
         hosts = [
           "WorkOnlogic"
           "linode-work"
+          "phoenix-router"
         ];
       };
 
