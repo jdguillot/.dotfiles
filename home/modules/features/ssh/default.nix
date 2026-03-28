@@ -39,44 +39,46 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (lib.mkMerge [
-    {
-      programs.ssh = {
-        enable = true;
-        enableDefaultConfig = false;
-        extraConfig = (if cfg.onepass then onepassConfig else "") + cfg.extraConfig;
-        matchBlocks."*" = {
-          forwardAgent = false;
-          addKeysToAgent = "no";
-          compression = false;
-          serverAliveInterval = 0;
-          serverAliveCountMax = 3;
-          hashKnownHosts = false;
-          userKnownHostsFile = "~/.ssh/known_hosts";
-          controlMaster = "no";
-          controlPath = "~/.ssh/master-%r@%n:%p";
-          controlPersist = "no";
-        };
-      };
-    }
-
-    (lib.mkIf hostsAvailable {
-      sops.secrets = lib.listToAttrs (
-        map (alias: {
-          name = alias;
-          value = {
-            sopsFile = secretsFile;
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        programs.ssh = {
+          enable = true;
+          enableDefaultConfig = false;
+          extraConfig = (if cfg.onepass then onepassConfig else "") + cfg.extraConfig;
+          matchBlocks."*" = {
+            forwardAgent = false;
+            addKeysToAgent = "no";
+            compression = false;
+            serverAliveInterval = 0;
+            serverAliveCountMax = 3;
+            hashKnownHosts = false;
+            userKnownHostsFile = "~/.ssh/known_hosts";
+            controlMaster = "no";
+            controlPath = "~/.ssh/master-%r@%n:%p";
+            controlPersist = "no";
           };
-        }) cfg.hosts
-      );
+        };
+      }
 
-      sops.templates.${templateName}.content = lib.concatMapStrings (
-        alias: "Host ${alias}\n${config.sops.placeholder.${alias}}\n"
-      ) cfg.hosts;
+      (lib.mkIf hostsAvailable {
+        sops.secrets = lib.listToAttrs (
+          map (alias: {
+            name = alias;
+            value = {
+              sopsFile = secretsFile;
+            };
+          }) cfg.hosts
+        );
 
-      programs.ssh.extraConfig = ''
-        Include ${config.sops.templates.${templateName}.path}
-      '';
-    })
-  ]);
+        sops.templates.${templateName}.content = lib.concatMapStrings (
+          alias: "Host ${alias}\n${config.sops.placeholder.${alias}}\n"
+        ) cfg.hosts;
+
+        programs.ssh.extraConfig = ''
+          Include ${config.sops.templates.${templateName}.path}
+        '';
+      })
+    ]
+  );
 }

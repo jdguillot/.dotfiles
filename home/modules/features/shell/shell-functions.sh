@@ -159,7 +159,13 @@ setup-wsl-windows-paths() {
     # Only add paths that exist
     [ -d "$win_home/AppData/Local/Programs/Microsoft VS Code/bin" ] && \
       export PATH="$win_home/AppData/Local/Programs/Microsoft VS Code/bin:$PATH"
-    
+
+    [ -d "$win_home/AppData/Local/Microsoft/WindowsApps" ] && \
+      export PATH="$win_home/AppData/Local/Microsoft/WindowsApps:$PATH"
+
+    [ -d "$win_home/AppData/Local/Microsoft/WinGet/Links" ] && \
+      export PATH="$win_home/AppData/Local/Microsoft/WinGet/Links:$PATH"
+
     [ -d "$win_home/AppData/Local/Microsoft/WinGet/Packages/equalsraf.win32yank_Microsoft.Winget.Source_8wekyb3d8bbwe" ] && \
       export PATH="$win_home/AppData/Local/Microsoft/WinGet/Packages/equalsraf.win32yank_Microsoft.Winget.Source_8wekyb3d8bbwe:$PATH"
   fi
