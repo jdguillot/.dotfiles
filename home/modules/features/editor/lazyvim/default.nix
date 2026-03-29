@@ -147,6 +147,7 @@ in
             vim-startuptime
             which-key-nvim
             remote-nvim-nvim
+            colorful-winsep-nvim
             {
               name = "LuaSnip";
               path = luasnip;
