@@ -93,7 +93,6 @@
         btop.enable = true;
         lazygit.enable = true;
         tmux.enable = true;
-        sesh.enable = true;
         zellij.enable = true;
         yazi.enable = true;
         carapace.enable = true;

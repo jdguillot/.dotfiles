@@ -70,7 +70,6 @@
         lazygit.enable = true;
         mc.enable = true;
         tmux.enable = true;
-        sesh.enable = true;
         zellij.enable = true;
         carapace.enable = true;
         yazi.enable = true;

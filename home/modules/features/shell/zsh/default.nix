@@ -117,8 +117,6 @@ in
           nix-your-shell zsh | source /dev/stdin
         fi
 
-        ${lib.optionalString config.cyberfighter.features.tools.sesh.enable config.cyberfighter.features.tools.sesh.zshInitContent}
-
         ${cfg.extraInitContent}
 
       '';

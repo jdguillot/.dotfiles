@@ -12,10 +12,10 @@
     ./tools/btop/default.nix
     ./tools/lazygit/default.nix
     ./tools/midnight-commander/default.nix
-    ./tools/sesh/default.nix
     ./tools/jujutsu/default.nix
     ./tools/carapace/default.nix
     ./tools/tmux/default.nix
+    ./tools/tmux/tmuxinator.nix
     ./tools/zellij/default.nix
     ./tools/yazi/default.nix
     ./tools/direnv/default.nix

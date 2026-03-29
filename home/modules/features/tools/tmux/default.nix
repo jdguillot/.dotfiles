@@ -112,7 +112,6 @@ in
             set -g @floax-bind 't'
           '';
         }
-        tmux-sessionx
         {
           plugin = tmux-sessionx;
           extraConfig = lib.optionalString tmuxinator ''
