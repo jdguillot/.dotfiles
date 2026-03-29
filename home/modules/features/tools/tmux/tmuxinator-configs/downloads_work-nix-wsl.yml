@@ -1,0 +1,14 @@
+# /home/jdguillot/.config/tmuxinator/downloads.yml
+
+name: downloads
+root: ~/Downloads/
+
+windows:
+  - mc:
+      panes:
+        - mc ./ /mnt/c/Users/jguillot778e/Downloads/
+  - yazi:
+      layout: even-horizontal
+      panes:
+        - yazi
+        - yazi /mnt/c/Users/jguillot778e/Downloads

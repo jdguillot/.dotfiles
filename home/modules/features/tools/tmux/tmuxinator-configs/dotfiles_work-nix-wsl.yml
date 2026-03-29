@@ -1,0 +1,10 @@
+---
+name: dotfiles
+project_root: "/home/jdguillot/.dotfiles"
+windows:
+  - main:
+      layout: dd48,252x65,0,0{220x65,0,0[220x54,0,0,0,220x10,0,55,4],31x65,221,0,3}
+      panes:
+        - nvim
+        - pwd
+        - copilot

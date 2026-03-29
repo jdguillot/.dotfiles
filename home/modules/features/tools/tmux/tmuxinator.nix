@@ -13,6 +13,11 @@ let
     razer-nixos = {
       "tmuxinator/dotfiles.yml".source = ./tmuxinator-configs/dotfiles_razer-nixos.yml;
     };
+    work-nix-wsl = {
+      "tmuxinator/dotfiles.yml".source = ./tmuxinator-configs/dotfiles_work-nix-wsl.yml;
+      "tmuxinator/docs.yml".source = ./tmuxinator-configs/docs_work-nix-wsl.yml;
+      "tmuxinator/downloads.yml".source = ./tmuxinator-configs/downloads_work-nix-wsl.yml;
+    };
   };
   tmuxinatorConfigs =
     tmuxinatorFiles.${hostMeta.system.hostname} or {

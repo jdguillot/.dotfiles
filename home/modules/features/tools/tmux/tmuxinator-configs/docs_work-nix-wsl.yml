@@ -1,0 +1,12 @@
+---
+name: docs
+project_root: "/home/jdguillot/projects/778-Mesa-Chino-Automation-Docs"
+windows:
+  - main:
+      # layout: ac5c,252x65,0,0{188x65,0,0[188x54,0,0,0,188x10,0,55,15],63x65,189,0,14}
+      layout: 5ffb,380x65,0,0{295x65,0,0[295x56,0,0,7,295x8,0,57{181x8,0,57,8,113x8,182,57,16}],84x65,296,0,9}
+      panes:
+        - nvim
+        - ms
+        - echo "example. python ../utilities/cleanup-images.py docs/Training-Center ../.trash"
+        - copilot
