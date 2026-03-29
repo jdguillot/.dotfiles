@@ -22,7 +22,10 @@ let
   # npiperelay.exe (Windows) + socat (Linux). Starts once per shell session.
   npiperelayBridge = ''
     export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
-    if ! ss -xlp 2>/dev/null | grep -qF "$SSH_AUTH_SOCK"; then
+    # Probe agent: exit 0/1 = responsive, exit 2 = unreachable (stale or missing)
+    timeout 2 ssh-add -l >/dev/null 2>&1
+    if [ $? -eq 2 ]; then
+      pkill -f "socat.*agent\\.sock" 2>/dev/null
       rm -f "$SSH_AUTH_SOCK"
       (setsid nohup socat \
         UNIX-LISTEN:"$SSH_AUTH_SOCK",fork \
@@ -234,7 +237,10 @@ in
           zsh.initContent = lib.mkAfter npiperelayBridge;
           fish.interactiveShellInit = lib.mkAfter ''
             set -x SSH_AUTH_SOCK "$HOME/.1password/agent.sock"
-            if not ss -xlp 2>/dev/null | grep -qF "$SSH_AUTH_SOCK"
+            # Probe agent: exit 0/1 = responsive, exit 2 = unreachable (stale or missing)
+            timeout 2 ssh-add -l >/dev/null 2>&1
+            if test $status -eq 2
+              pkill -f "socat.*agent\\.sock" 2>/dev/null
               rm -f "$SSH_AUTH_SOCK"
               setsid nohup socat \
                 UNIX-LISTEN:"$SSH_AUTH_SOCK",fork \

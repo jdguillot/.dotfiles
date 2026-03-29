@@ -19,13 +19,13 @@ in
   };
 
   config = lib.mkMerge [
-    (lib.mkIf cfg.enable {
+    (lib.mkIf (cfg.enable && profile.enable != "wsl") {
       programs._1password = {
         enable = true;
       };
     })
 
-    (lib.mkIf (profile.enable == "wsl") { environment.systemPackages = [ op-wsl ]; })
+    (lib.mkIf (cfg.enable && profile.enable == "wsl") { environment.systemPackages = [ op-wsl ]; })
 
   ];
 }
