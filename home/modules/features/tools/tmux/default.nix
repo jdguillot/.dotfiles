@@ -18,6 +18,7 @@ let
     # postPatch substitutions no longer match and must be cleared.
     postPatch = "";
   });
+  tmuxinator = config.programs.tmux.tmuxinator.enable;
 in
 {
   options.cyberfighter.features.tools.tmux = {
@@ -114,7 +115,7 @@ in
         tmux-sessionx
         {
           plugin = tmux-sessionx;
-          extraConfig = ''
+          extraConfig = lib.optionalString tmuxinator ''
             set -g @sessionx-tmuxinator-mode 'on'
           '';
         }

@@ -1,0 +1,10 @@
+---
+name: dotfiles
+project_root: "/home/cyberfighter/.dotfiles"
+windows:
+  - nvim:
+      layout: d62d,160x37,0,0{129x37,0,0[129x31,0,0,0,129x5,0,32,8],30x37,130,0,7}
+      panes:
+        - nvim
+        - pwd
+        - copilot
