@@ -48,6 +48,7 @@
     features = {
       desktop = {
         environment = "niri";
+        displayManager = "gdm";
         firefox = true;
       };
 

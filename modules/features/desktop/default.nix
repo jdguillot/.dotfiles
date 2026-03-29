@@ -61,7 +61,8 @@ in
       })
 
       (lib.mkIf (cfg.displayManager == "gdm") {
-        services.xserver.displayManager.gdm.enable = true;
+        services.displayManager.gdm.enable = true;
+        services.displayManager.gdm.wayland = true;
       })
 
       (lib.mkIf (cfg.environment == "plasma6") {
