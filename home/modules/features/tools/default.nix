@@ -42,6 +42,7 @@ in
         duf
         tree
         dua
+        duf
         bat
 
         # Shell utilities
