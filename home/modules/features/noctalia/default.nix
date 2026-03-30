@@ -21,5 +21,12 @@ in
       enable = true;
     };
     # xdg.configFile."noctalia".source = ./configs;
+
+    services.udiskie = {
+      enable = true;
+      automount = true;
+      notify = true;
+      tray = "never";
+    };
   };
 }

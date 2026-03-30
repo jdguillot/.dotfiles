@@ -64,27 +64,33 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (lib.mkMerge [
-    {
-      programs.steam = lib.mkIf cfg.steam.enable {
-        enable = true;
-        remotePlay.openFirewall = cfg.steam.remotePlay;
-        localNetworkGameTransfers.openFirewall = cfg.steam.localNetworkGameTransfers;
-        gamescopeSession.enable = cfg.steam.gamescopeSession;
-      };
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        programs.steam = lib.mkIf cfg.steam.enable {
+          enable = true;
+          package = pkgs.steam.override {
+            extraArgs = "-system-composer";
+          };
+          remotePlay.openFirewall = cfg.steam.remotePlay;
+          localNetworkGameTransfers.openFirewall = cfg.steam.localNetworkGameTransfers;
+          gamescopeSession.enable = cfg.steam.gamescopeSession;
+        };
 
-      programs.gamemode.enable = cfg.gamemode;
+        programs.gamemode.enable = cfg.gamemode;
 
-      environment.systemPackages = with pkgs;
-        (lib.optionals cfg.mangohud [ mangohud ])
-        ++ (lib.optionals cfg.protonup [ protonup-ng ])
-        ++ cfg.extraPackages;
-    }
+        environment.systemPackages =
+          with pkgs;
+          (lib.optionals cfg.mangohud [ mangohud ])
+          ++ (lib.optionals cfg.protonup [ protonup-ng ])
+          ++ cfg.extraPackages;
+      }
 
-    (lib.mkIf cfg.steam.enable {
-      environment.sessionVariables = {
-        STEAM_EXTRA_COMPAT_TOOLS_PATHS = "\${HOME}/.steam/root/compatibilitytools.d";
-      };
-    })
-  ]);
+      (lib.mkIf cfg.steam.enable {
+        environment.sessionVariables = {
+          STEAM_EXTRA_COMPAT_TOOLS_PATHS = "\${HOME}/.steam/root/compatibilitytools.d";
+        };
+      })
+    ]
+  );
 }

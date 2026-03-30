@@ -92,10 +92,14 @@ in
         programs.niri = {
           enable = true;
         };
+        services.upower.enable = true;
+        services.udisks2.enable = true;
         services.noctalia-shell.enable = true;
         environment.systemPackages = with pkgs; [
           mako
           quickshell
+          nemo
+          xwayland-satellite
         ];
       })
 
