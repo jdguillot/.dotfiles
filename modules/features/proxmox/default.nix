@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   hostSystem,
   proxmox-nixos,
   ...
@@ -33,6 +34,18 @@ in
       enable = true;
       dmeventd.enable = true;
     };
+
+    # NFS client support for Proxmox NFS storage
+    boot.supportedFilesystems = [ "nfs" "nfs4" ];
+    services.rpcbind.enable = true;
+
+    # Ensure /mnt/pve exists for Proxmox storage mounts
+    systemd.tmpfiles.rules = [
+      "d /mnt/pve 0755 root root -"
+      "L+ /usr/sbin/thin_check - - - - ${pkgs.thin-provisioning-tools}/bin/thin_check"
+    ];
+
+    environment.systemPackages = [ pkgs.thin-provisioning-tools ];
   };
 
 }

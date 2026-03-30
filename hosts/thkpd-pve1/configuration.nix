@@ -124,6 +124,8 @@ in
       "LANG"
       "LC_*"
     ];
+    ClientAliveInterval = 60;
+    ClientAliveCountMax = 10;
   };
 
 }
