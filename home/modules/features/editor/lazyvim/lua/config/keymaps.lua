@@ -49,6 +49,42 @@ wk.add({
 	{ "<leader>oT", "<cmd>ObsidianTags<cr>", desc = "Search tags", icon = "" },
 })
 
+-- Mini Diff keymaps
+wk.add({
+	{ "<leader>gh", group = "hunks", icon = "" },
+	{
+		"<leader>ghr",
+		function()
+			local line = vim.fn.line(".")
+			MiniDiff.do_hunks(0, "reset", { line_start = line, line_end = line })
+		end,
+		desc = "Reset hunk",
+		icon = "󰜺",
+	},
+	{
+		"<leader>ghr",
+		function()
+			local line_start = vim.fn.line("v")
+			local line_end = vim.fn.line(".")
+			if line_start > line_end then
+				line_start, line_end = line_end, line_start
+			end
+			MiniDiff.do_hunks(0, "reset", { line_start = line_start, line_end = line_end })
+		end,
+		desc = "Reset hunk",
+		mode = "v",
+		icon = "󰜺",
+	},
+	{
+		"<leader>gho",
+		function()
+			MiniDiff.toggle_overlay(0)
+		end,
+		desc = "Toggle diff overlay",
+		icon = "",
+	},
+})
+
 -- Git Conflict keymaps
 wk.add({
 	{ "<leader>gx", group = "conflicts", icon = "" },
