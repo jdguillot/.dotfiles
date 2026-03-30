@@ -33,6 +33,7 @@ let
       grc
       distrobox
       nmap
+      parted
     ]
     ++ (if config.cyberfighter.profile.enable != "wsl" then [ pkgs._1password-cli ] else [ ]);
 

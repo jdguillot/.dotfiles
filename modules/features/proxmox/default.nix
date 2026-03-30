@@ -29,6 +29,10 @@ in
       enable = true;
       inherit (cfg) ipAddress;
     };
+    services.lvm = {
+      enable = true;
+      dmeventd.enable = true;
+    };
   };
 
 }

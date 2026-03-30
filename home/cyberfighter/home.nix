@@ -55,8 +55,11 @@
           "docker4"
           "opnsense"
           "docker-pri"
-          "proxmox1"
-          "proxmox2"
+          "r610-pve1"
+          "r610-pve2"
+          "zb832-pve1"
+          "zb832-pve2"
+          "zb432-pve1"
           "truenas"
           "synlgy-ds918"
         ];

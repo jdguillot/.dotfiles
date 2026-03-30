@@ -14,8 +14,11 @@ docker3: ENC[AES256_GCM,data:5gbjcPh5CDFehtwuuyW/XoxvLP4alvoiLfMYzvrQDLId2Z+B6UR
 docker4: ENC[AES256_GCM,data:voUWRilmuuQmKcjo09uL6hL1mdv7DR8zAATtY1sAvzhIewruQ5p6S41sIa5DcWetKRYobfM=,iv:1PxH2GnRpvoyDP7xiLnr9/0m/JOV48DiZMW2mO+zzps=,tag:DIBGQGxuD4gYyPvconDF2g==,type:str]
 opnsense: ENC[AES256_GCM,data:sJaRrU2ifRWk3H2J+iWJSmy54iN5AQc1H0K+aO0C9ZfehMNJrVf+kL5j30cQLM1WvV51jI0jgrOxVb6tfabnGSc=,iv:HwYAbIr3BeF/IxzZIj2Om7bHce2HwthhaLCWpOE3dG4=,tag:T79M7XLy2t5O11J1GoCemg==,type:str]
 docker-pri: ENC[AES256_GCM,data:ROjprmvHoBoi9JXKAS6q7f0epfqTW+vOZCLjfT4e+nXuecsYGSMPsUwiMsFeYkWPKlwira606eFt31Sh,iv:HbneD04nkZqwSCXKOwggbQQ+1/NclkMC2GAqawykTqM=,tag:qOs4K6JDHiyDWGIfix1PIg==,type:str]
-proxmox1: ENC[AES256_GCM,data:vMlkFaqHrJgpnarKavUwY0KbADYY+4kmFtrqmnSaUA+6PV0piF3QUCpC6Q8UIcbFYnkdHXUl5TEfmS2CDr0V,iv:bI4E2N2l28fdO7k6GwDM5/TZONAz0U/ZXRp+EoDybcQ=,tag:RSAca8Qu2oiU1UsAtpMRGg==,type:str]
-proxmox2: ENC[AES256_GCM,data:vYr6oqktHQwzXd4pB09y3KwzNAdFcv0yYGDo4QaCSEheqqmcY8aRiYL77bnNnM1dgonXDVCcpG/8IyQfijJf,iv:8Bz4izseVMtRI6A/1VEHnfZAPHuUxCoj5wzLurzBxns=,tag:4T3FoNjZM+KLvchQKfZhBQ==,type:str]
+r610-pve1: ENC[AES256_GCM,data:7hOdBqI42jMgJB67DiKCDpeHZAf6hhpDQYt+GCYC4y5XbiDzAMP33ed2IzLMyNwUzCA3nrxBvCVYNctemKnl,iv:vgVn+m/qsQj8S7I2yLoPwfjr+C8b1U+nQFBmszqwVIM=,tag:qNTtW5/KrsCpKTg8KSDmIA==,type:str]
+r610-pve2: ENC[AES256_GCM,data:iZxRVMvr7GHKlTV71/OW5hC3L7+l1tlyXwmOvVGr8xrbG4RzuPo1ZGEE3gfXXUg+dXlCwQAN8+iguwcL4YA5,iv:l2P0aUrSfHC6AbI+Lau/OhP72uiFA+PvEW60Film7u4=,tag:PHC19gQK11E9dBtyYghUtg==,type:str]
+zb832-pve1: ENC[AES256_GCM,data:IXTZ1VOBnwn1M+d2Po4+HGWGfkmMeU222mC1t7YhHG9HPA==,iv:aBx91d1hnd6ypXtO22ttbNxga8dHpGjHMO+MVsDvs3c=,tag:v7nj0ZtPTR1cBg9Kr07YBQ==,type:str]
+zb832-pve2: ENC[AES256_GCM,data:BYhjBJyA3E/qGjgTFQ/2P4vYyUPdKgNvOtwAqmlwdNhvFA==,iv:KsCLvMyh9vknean+T+6FuhGF7jIPf3ACtblSnlYy3FQ=,tag:cJLlhRK3NshkFRRSyWJzlg==,type:str]
+zb432-pve1: ENC[AES256_GCM,data:KbDTjmN0R1oXvNNhkYRTB4YdVkCUvsHhkhkSEmpjYdWQqg==,iv:KJnldyF53ilmZiZ/ChZy1Vk4M93w2Jdd41A49WnIQ4A=,tag:2YhkIggggg3TAPPt316FzA==,type:str]
 truenas: ENC[AES256_GCM,data:L3+xzsk8dsvVmIcH8ptgkKswKSvR1FTmhO5CDRuAq5d4m8XLcJp+kymu062ILttJJAeNm/QheTQ9wz1bFRQ=,iv:luN0DVdisVGqBPVK6jAezxCxUP6d+AiAlGVZwQU9t2s=,tag:+xAg1K5WGCx2tzv96ewPZQ==,type:str]
 synlgy-ds918: ENC[AES256_GCM,data:rYcwj4Qcjsr1FrTgcKLSKqD2q1tkM9Povt9muOQTC1SUqPRekHH14PK/BrwMTAUPj01CqBykmvhv5uIcCujLe1v+ZCFD2A==,iv:IpIUKctUVNQ4R+pXEJlqed/bGehdUgM+XzEEu71t70o=,tag:hvKNa+gzUSptZ2ooYlhZ1Q==,type:str]
 sops:
@@ -101,7 +104,7 @@ sops:
             eEcvZVlXVW9IYXFGVjdDZDZWSmNQQ1kKdRYIlYit1nuy1inTKJb6y5ae6JMuAzhz
             jf/W2DVyEBcvwFC6vqIuhfUwLFwjFL+jlGBeg8z423Cqnz9WjjSLNA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-03-27T22:45:09Z"
-    mac: ENC[AES256_GCM,data:wf7kfepoggkrTvYW7SyBMf/sK92Jt2HKPYDR9hYr+bWudEM1O4P7uHhhx9IgI0F8PbUyVj59joESuV3sGVdwrz3+BFeJ0r76MpRXgLkh+Px1LH6UR8JSkdakYcKQmqyFuH18oSBQ+m7oUs6LnQWjBa8P9H5LcR3crJV+X3U63LQ=,iv:+H1c1cu8TebaplfiJ+4kvRzSc19mD4qA1gaGAOLCAls=,tag:vOVKU6I4o6OrQL2P5TFPBQ==,type:str]
+    lastmodified: "2026-03-30T02:41:54Z"
+    mac: ENC[AES256_GCM,data:n4bspZXfu+QII6hnN42HTmDMm2i2Hv4cm/k8gLR2IjxDpgCnzhRlxMfzLNH/ssKxRC5zp8XnEA00oCBmiFNtGhIfWBkqWkZ7nEN5SMZfYGjksIZFik6s0C1xe/JpAGfGApDOv/Bcay6aXUOyDSBQeLttjOO+J4EL+5tCknY1tDw=,iv:bmaeHkTggDmmCEU8b95wTkvwKsOSq8veIjWg2sCdMKE=,tag:YBsLdhqFPHzTna++m5HHBw==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.12.1
