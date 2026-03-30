@@ -99,6 +99,7 @@
         zellij.enable = true;
         yazi.enable = true;
         carapace.enable = true;
+        rofi.enable = true;
         jujutsu = {
           enable = true;
           useSecretsForIdentity = true;

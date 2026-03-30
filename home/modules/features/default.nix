@@ -12,6 +12,7 @@
     ./tools/btop/default.nix
     ./tools/lazygit/default.nix
     ./tools/midnight-commander/default.nix
+    ./tools/rofi/default.nix
     ./tools/jujutsu/default.nix
     ./tools/carapace/default.nix
     ./tools/tmux/default.nix

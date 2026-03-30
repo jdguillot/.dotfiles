@@ -6,19 +6,19 @@
 }:
 
 let
-  cfg = config.cyberfighter.features.rofi;
+  cfg = config.cyberfighter.features.tools.rofi;
 in
 {
-  options.cyberfighter.features.rofi = {
+  options.cyberfighter.features.tools.rofi = {
     enable = lib.mkEnableOption "Rofi application launcher";
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = with pkgs; [
+    home.packages = with pkgs; [
       rofi
     ];
 
-    xdg.configFile."rofi/config/".source = ./rofi-config;
+    xdg.configFile."rofi/".source = ./rofi-config;
 
   };
 }
