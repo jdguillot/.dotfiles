@@ -22,9 +22,11 @@ let
   # npiperelay.exe (Windows) + socat (Linux). Starts once per shell session.
   npiperelayBridge = ''
     export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
-    # Probe agent: exit 0/1 = responsive, exit 2 = unreachable (stale or missing)
-    timeout 2 ssh-add -l >/dev/null 2>&1
-    if [ $? -eq 2 ]; then
+    # Probe agent — restart bridge if unreachable or pipe is stale.
+    # Exit 2 = socket missing; "communication with agent failed" = socat alive but pipe dead.
+    _agent_out=$(timeout 2 ssh-add -l 2>&1)
+    _agent_rc=$?
+    if [ "$_agent_rc" -eq 2 ] || echo "$_agent_out" | grep -qi "communication with agent failed"; then
       pkill -f "socat.*agent\\.sock" 2>/dev/null
       rm -f "$SSH_AUTH_SOCK"
       (setsid nohup socat \
@@ -237,9 +239,10 @@ in
           zsh.initContent = lib.mkAfter npiperelayBridge;
           fish.interactiveShellInit = lib.mkAfter ''
             set -x SSH_AUTH_SOCK "$HOME/.1password/agent.sock"
-            # Probe agent: exit 0/1 = responsive, exit 2 = unreachable (stale or missing)
-            timeout 2 ssh-add -l >/dev/null 2>&1
-            if test $status -eq 2
+            # Probe agent — restart bridge if unreachable or pipe is stale
+            set _agent_out (timeout 2 ssh-add -l 2>&1)
+            set _agent_rc $status
+            if test $_agent_rc -eq 2; or echo "$_agent_out" | grep -qi "communication with agent failed"
               pkill -f "socat.*agent\\.sock" 2>/dev/null
               rm -f "$SSH_AUTH_SOCK"
               setsid nohup socat \
