@@ -47,6 +47,7 @@ in
         # Shell utilities
         tldr
         fzf
+        television
         zoxide
         cht-sh
         pay-respects
