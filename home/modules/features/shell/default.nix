@@ -95,6 +95,7 @@ in
           ## Overriding default operations
           ls = "eza --icons -F -H -g -h -o --group-directories-first --git -1  --tree --level=1 --ignore-glob='node_modules*'";
           ll = "ls -la";
+          rm = "trash-put";
 
           ## Command Presets
           pysrc = ". .venv/bin/activate";

@@ -34,6 +34,7 @@ let
       distrobox
       nmap
       parted
+      trash-cli
     ]
     ++ (if config.cyberfighter.profile.enable != "wsl" then [ pkgs._1password-cli ] else [ ]);
 
@@ -117,5 +118,15 @@ in
 
   config = lib.mkIf cfg.includeBase {
     environment.systemPackages = allPackages;
+
+    systemd.services.trash-empty = {
+      description = "Empty trash items older than 30 days";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = config.cyberfighter.system.username;
+        ExecStart = "${pkgs.trash-cli}/bin/trash-empty 30";
+      };
+    };
   };
 }
