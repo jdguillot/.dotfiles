@@ -1,9 +1,15 @@
 @theme "catppuccin-default"
 configuration {
+  // keyboard bindings
   kb-element-next: "Control+j";
   kb-element-prev: "Control+k";
   kb-remove-to-eol: "";
   kb-accept-entry: "Return,KP_Enter";
   kb-mode-next: "Tab";
   kb-mode-previous: "Shift+Tab";
+  
+  // Window
+  display-drun: "Applications:";
+  display-window: "Windows:";
+  drun-display-format: "{name}";
 }
