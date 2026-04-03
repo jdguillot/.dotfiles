@@ -23,7 +23,7 @@ in
       type = lib.types.listOf lib.types.package;
       default = with pkgs; [
         lua-language-server
-        nodePackages.typescript-language-server
+        typescript-language-server
         jdt-language-server
         yaml-language-server
         nixd
@@ -225,7 +225,7 @@ in
               -- Nix-managed extras (must come after lazyvim.plugins but before your plugins)
               { import = "lazyvim.plugins.extras.util.dot" },
               { import = "lazyvim.plugins.extras.ui.edgy" },
-              { import = "lazyvim.plugins.extras.ai.copilot" },
+              { import = "lazyvim.plugins.extras.ai.copilot-native" },
               { import = "lazyvim.plugins.extras.ai.sidekick" },
               { import = "lazyvim.plugins.extras.editor.harpoon2" },
               { import = "lazyvim.plugins.extras.lang.markdown" },
