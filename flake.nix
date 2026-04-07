@@ -66,6 +66,17 @@
       system = "x86_64-linux";
       pkgs-stable = import nixpkgs-stable { inherit system; };
 
+      # Unmodified nixpkgs packages (used to force deploy-rs binary from nixpkgs cache)
+      pkgs = nixpkgs.legacyPackages.${system};
+      # nixpkgs with deploy-rs overlay, but binary forced from nixpkgs for cache hits
+      deployPkgs = import nixpkgs {
+        inherit system;
+        overlays = [
+          deploy-rs.overlays.default
+          (_: super: { deploy-rs = { inherit (pkgs) deploy-rs; lib = super.deploy-rs.lib; }; })
+        ];
+      };
+
       # Import centralized host metadata
       hostConfigs = import ./hosts/default.nix;
 
@@ -154,7 +165,7 @@
           profiles = {
             system = {
               user = "root";
-              path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.${hostname};
+              path = deployPkgs.deploy-rs.lib.activate.nixos self.nixosConfigurations.${hostname};
             };
           }
           // (
@@ -163,7 +174,7 @@
                 home = {
                   user = username;
                   path =
-                    deploy-rs.lib.x86_64-linux.activate.home-manager
+                    deployPkgs.deploy-rs.lib.activate.home-manager
                       self.homeConfigurations."${username}@${hostname}";
                 };
               }
