@@ -16,6 +16,11 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            connect-timeout = 30
+            stalled-download-timeout = 300
+            fallback = true
+            max-substitution-jobs = 4
       - uses: cachix/cachix-action@v15
         with:
           name: jdguillot
@@ -60,4 +65,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build Systems
         run: |
-          nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+          nix build --fallback .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
