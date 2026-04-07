@@ -55,7 +55,7 @@ let
     github-copilot-cli
     copilot-language-server
     deploy-rs
-    # claude-code
+    claude-code
   ];
 
   desktopPackages = with pkgs; [

@@ -73,7 +73,12 @@
         inherit system;
         overlays = [
           deploy-rs.overlays.default
-          (_: super: { deploy-rs = { inherit (pkgs) deploy-rs; lib = super.deploy-rs.lib; }; })
+          (_: super: {
+            deploy-rs = {
+              inherit (pkgs) deploy-rs;
+              lib = super.deploy-rs.lib;
+            };
+          })
         ];
       };
 
@@ -108,15 +113,6 @@
             {
               nixpkgs.overlays = [
                 niri.overlays.niri
-                # (final: prev: {
-                #   claude-code = prev.claude-code.overrideAttrs (old: rec {
-                #     version = "2.1.91";
-                #     src = prev.fetchurl {
-                #       url = "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-${version}.tgz";
-                #       hash = "sha256-T7Ta53HW+tHnRwN0EUj17i0kg39KBOqycEF0b3pbPis=";
-                #     };
-                #   });
-                # })
               ];
             }
             noctalia.nixosModules.default
