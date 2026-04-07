@@ -225,7 +225,8 @@ in
               -- Nix-managed extras (must come after lazyvim.plugins but before your plugins)
               { import = "lazyvim.plugins.extras.util.dot" },
               { import = "lazyvim.plugins.extras.ui.edgy" },
-              { import = "lazyvim.plugins.extras.ai.copilot-native" },
+              { import = "lazyvim.plugins.extras.ai.copilot" },
+              -- { import = "lazyvim.plugins.extras.ai.copilot-native" }, -- waiting on blink to support accepting word by word
               { import = "lazyvim.plugins.extras.ai.sidekick" },
               { import = "lazyvim.plugins.extras.editor.harpoon2" },
               { import = "lazyvim.plugins.extras.lang.markdown" },
