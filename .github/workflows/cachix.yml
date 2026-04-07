@@ -7,21 +7,29 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   flake-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v31
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@main
+      - uses: DeterminateSystems/determinate-nix-action@main
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-          extra_nix_config: |
+          extra-conf: |
             connect-timeout = 30
-            stalled-download-timeout = 300
             fallback = true
-            max-substitution-jobs = 4
-      - uses: DeterminateSystems/magic-nix-cache-action@v9
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 4G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-last-accessed: P1DT12H
+          purge-primary-key: never
       - uses: cachix/cachix-action@v15
         with:
           name: jdguillot
@@ -46,26 +54,20 @@ jobs:
       fail-fast: false # Continue other builds if one fails
     steps:
       - uses: actions/checkout@v4
-      - name: Free Disk Space
-        uses: jlumbroso/free-disk-space@main
+      - uses: DeterminateSystems/determinate-nix-action@main
         with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
-
-      - uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-          extra_nix_config: |
+          extra-conf: |
             connect-timeout = 30
-            stalled-download-timeout = 300
             fallback = true
-            max-substitution-jobs = 4
-      - uses: DeterminateSystems/magic-nix-cache-action@v9
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ matrix.host }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ matrix.host }}-
+          gc-max-store-size-linux: 4G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-${{ matrix.host }}-
+          purge-last-accessed: P1DT12H
+          purge-primary-key: never
       - uses: cachix/cachix-action@v15
         with:
           name: jdguillot
