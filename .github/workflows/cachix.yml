@@ -54,6 +54,17 @@ jobs:
       fail-fast: false # Continue other builds if one fails
     steps:
       - uses: actions/checkout@v4
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - uses: DeterminateSystems/determinate-nix-action@main
         with:
           extra-conf: |
