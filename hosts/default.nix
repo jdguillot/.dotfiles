@@ -53,4 +53,12 @@
       username = "cyberfighter";
     };
   };
+
+  vm-gameserver-nix = {
+    profile = "minimal";
+    system = {
+      hostname = "vm-gameserver-nix";
+      username = "cyberfighter";
+    };
+  };
 }

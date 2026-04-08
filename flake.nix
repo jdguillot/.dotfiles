@@ -189,6 +189,7 @@
         nixos-portable = mkNixosSystem "nixos-portable" hostConfigs.nixos-portable;
         thkpd-pve1 = mkNixosSystem "thkpd-pve1" hostConfigs.thkpd-pve1;
         simple-vm = mkNixosSystem "simple-vm" hostConfigs.simple-vm;
+        vm-gameserver-nix = mkNixosSystem "vm-gameserver-nix" hostConfigs.vm-gameserver-nix;
       };
 
       homeConfigurations = {
@@ -203,6 +204,7 @@
       deploy.nodes = {
         thkpd-pve1 = mkDeployNode "thkpd-pve1" hostConfigs.thkpd-pve1 true;
         simple-vm = mkDeployNode "simple-vm" hostConfigs.simple-vm false;
+        vm-gameserver-nix = mkDeployNode "vm-gameserver-nix" hostConfigs.vm-gameserver-nix false;
         sys-galp-nix = mkDeployNode "sys-galp-nix" hostConfigs.sys-galp-nix true;
       };
 
