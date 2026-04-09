@@ -59,9 +59,9 @@ let
   astroneerPreStartScript = pkgs.writeShellScript "astroneer-prestart" ''
     mkdir -p "${launcherDir}"
     mkdir -p "${configDir}"
-    # Always sync the Nix-managed launcher config
+    # Always sync launcher.toml from Nix config so declarative changes take effect on restart
     cp "${launcherToml}" "${launcherDir}/launcher.toml"
-    # Only write AstroServerSettings.ini on first boot; the server may update it at runtime
+    # Only write AstroServerSettings.ini on first boot; the game server manages this file at runtime
     if [ ! -f "${configDir}/AstroServerSettings.ini" ]; then
       cp "${astroneerSettingsIni}" "${configDir}/AstroServerSettings.ini"
     fi

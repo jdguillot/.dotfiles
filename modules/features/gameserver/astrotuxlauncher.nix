@@ -84,7 +84,7 @@ pkgs.python3Packages.buildPythonApplication {
     description = "Dedicated Astroneer server launcher for Linux using WINE";
     homepage = "https://github.com/JoeJoeTV/AstroTuxLauncher";
     license = pkgs.lib.licenses.gpl3Only;
-    platforms = pkgs.lib.platforms.x86_64;
+    platforms = [ "x86_64-linux" ];
     mainProgram = "AstroTuxLauncher";
   };
 }
