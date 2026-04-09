@@ -51,6 +51,9 @@
 
       gameserver = {
         enable = true;
+        user = "steam";
+        group = "steam";
+        dataDir = "/home/steam";
 
         astroneer = {
           enable = true;
