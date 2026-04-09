@@ -7,8 +7,34 @@
 
 let
   cfg = config.cyberfighter.features.gameserver;
-  installDir = "${cfg.dataDir}/astroneer";
-  configDir = "${installDir}/Astro/Saved/Config/LinuxServer";
+  launcherDir = "${cfg.dataDir}/astroneer-launcher";
+  serverDir = "${launcherDir}/AstroneerServer";
+  configDir = "${serverDir}/Astro/Saved/Config/LinuxServer";
+
+  astroTuxLauncher = pkgs.callPackage ./astrotuxlauncher.nix { };
+
+  launcherToml = pkgs.writeText "launcher.toml" ''
+    [launcher]
+    AutoUpdateServer = true
+    CheckNetwork = true
+    OverwritePublicIP = false
+    LogDebugMessages = false
+    AstroServerPath = "AstroneerServer"
+    WinePrefixPath = "winepfx"
+    WineBootTimeout = 30
+    LogPath = "logs"
+    PlayfabAPIInterval = 2
+    ServerStatusInterval = 3.0
+    DisableEncryption = true
+
+    [launcher.notifications]
+    method = ""
+
+    [launcher.status]
+    SendStatus = false
+    Interval = 120
+    EndpointURL = ""
+  '';
 
   astroneerSettingsIni = pkgs.writeText "AstroServerSettings.ini" ''
     [/Script/Astro.AstroServerSettings]
@@ -31,7 +57,11 @@ let
   '';
 
   astroneerPreStartScript = pkgs.writeShellScript "astroneer-prestart" ''
+    mkdir -p "${launcherDir}"
     mkdir -p "${configDir}"
+    # Always sync the Nix-managed launcher config
+    cp "${launcherToml}" "${launcherDir}/launcher.toml"
+    # Only write AstroServerSettings.ini on first boot; the server may update it at runtime
     if [ ! -f "${configDir}/AstroServerSettings.ini" ]; then
       cp "${astroneerSettingsIni}" "${configDir}/AstroServerSettings.ini"
     fi
@@ -39,7 +69,7 @@ let
 in
 {
   options.cyberfighter.features.gameserver = {
-    enable = lib.mkEnableOption "Game server support with SteamCMD";
+    enable = lib.mkEnableOption "Game server support with AstroTuxLauncher";
 
     user = lib.mkOption {
       type = lib.types.str;
@@ -112,7 +142,7 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
-        # SteamCMD requires 32-bit graphics libraries
+        # Wine requires 32-bit graphics libraries
         hardware.graphics = {
           enable = true;
           enable32Bit = true;
@@ -128,40 +158,21 @@ in
 
         users.groups.${cfg.group} = { };
 
-        environment.systemPackages = [ pkgs.steamcmd ];
+        environment.systemPackages = [ astroTuxLauncher ];
       }
 
       (lib.mkIf cfg.astroneer.enable {
-        # Install/update the Astroneer dedicated server (App ID 728470)
-        systemd.services.astroneer-update = {
-          description = "Update Astroneer Dedicated Server via SteamCMD";
+        systemd.services.astroneer-server = {
+          description = "Astroneer Dedicated Server via AstroTuxLauncher";
           wantedBy = [ "multi-user.target" ];
           after = [ "network-online.target" ];
           wants = [ "network-online.target" ];
-          before = [ "astroneer-server.service" ];
-          serviceConfig = {
-            Type = "oneshot";
-            User = cfg.user;
-            ExecStart = "${pkgs.steamcmd}/bin/steamcmd +login anonymous +force_install_dir ${installDir} +app_update 728470 validate +quit";
-            RemainAfterExit = true;
-          };
-        };
-
-        systemd.services.astroneer-server = {
-          description = "Astroneer Dedicated Server";
-          wantedBy = [ "multi-user.target" ];
-          after = [
-            "network-online.target"
-            "astroneer-update.service"
-          ];
-          requires = [ "astroneer-update.service" ];
           serviceConfig = {
             Type = "simple";
             User = cfg.user;
-            WorkingDirectory = installDir;
-            # Copy default config on first boot; the server may update it at runtime
+            WorkingDirectory = launcherDir;
             ExecStartPre = "${astroneerPreStartScript}";
-            ExecStart = "${installDir}/AstroServer.sh -log";
+            ExecStart = "${astroTuxLauncher}/bin/AstroTuxLauncher start";
             Restart = "on-failure";
             RestartSec = "30s";
           };

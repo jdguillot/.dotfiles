@@ -1,5 +1,5 @@
 # Game server VM running on the thkpd-pve1 Proxmox hypervisor
-# Hosts an Astroneer dedicated server via SteamCMD
+# Hosts an Astroneer dedicated server via AstroTuxLauncher (Wine-based launcher)
 {
   hostProfile,
   hostMeta,
