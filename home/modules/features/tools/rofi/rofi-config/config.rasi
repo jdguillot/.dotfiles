@@ -12,4 +12,5 @@ configuration {
   display-drun: "Applications:";
   display-window: "Windows:";
   drun-display-format: "{name}";
+  window-display-format: "{name}";
 }
