@@ -144,7 +144,7 @@ your-hostname = mkDeployNode "your-hostname" hostConfigs.your-hostname true;
 From your local machine, run the interactive helper script:
 
 ```bash
-bash scripts/nixos-anywhere.sh
+./scripts/nixos-anywhere.sh
 ```
 
 The script will prompt for:
