@@ -1,6 +1,7 @@
 # Game server VM running on the thkpd-pve1 Proxmox hypervisor
 # Hosts an Astroneer dedicated server via AstroTuxLauncher (Wine-based launcher)
 {
+  config,
   hostProfile,
   hostMeta,
   modulesPath,
@@ -51,19 +52,31 @@
 
       gameserver = {
         enable = true;
-        user = "steam";
-        group = "steam";
-        dataDir = "/home/steam";
 
         astroneer = {
           enable = true;
           serverName = "vm-gameserver-nix";
           maxPlayers = 8;
           autoSaveInterval = 900;
-          # openFirewall = false: local network only; ports managed via Proxmox firewall rules
-          openFirewall = false;
+          openFirewall = true;
+          gamePort = 10806;
+          publicIpFile = config.sops.secrets."playit-tunnel-ip".path;
+          serverPasswordFile = config.sops.secrets."astroneer-server-password".path;
         };
       };
     };
+  };
+
+  services.playit = {
+    enable = true;
+    secretPath = config.sops.secrets."playit-agent-secret".path;
+  };
+
+  sops.secrets."playit-agent-secret" = { };
+  sops.secrets."playit-tunnel-ip" = {
+    owner = "astroneer";
+  };
+  sops.secrets."astroneer-server-password" = {
+    owner = "astroneer";
   };
 }

@@ -1,4 +1,5 @@
 thkpd-pve1: ENC[AES256_GCM,data:aAVQlbT10LkmY03RRiHpPBp2o5D7ny6SVikv24QGen75f8/weEXO1T6c,iv:cmmSBDmUjAMiXybQXz6/+RI9S23GS5LsIt6lDGkQVpo=,tag:QF6o98RK7kKGWuLbcQ0StQ==,type:str]
+vm-gameserver-nix: ENC[AES256_GCM,data:y0LUOjt6419dgk96eOrMBnp4xgTJkKVas2zbufF2HKR1AG0Z2d0+//gVUQ==,iv:x3LtuHwU1aiUW+wEJ3WT38n0lV2ZldG5bOI+AHGhoYE=,tag:Cxz66MxjQ2N4M9lhTd7bOw==,type:str]
 simple-vm: ENC[AES256_GCM,data:AwQf2JTPlplD2zhOoofwh2rPEb5BT7bQzYZzLjmfxOTKFEUgGVzaJO7Ec7Kkfs54,iv:E76wloQNGC6IaRGHgt6rUYzcz8Z8TrQIOSZZCL9BLNI=,tag:g7n3A0GdGMoE6jAsZPKr6g==,type:str]
 WorkOnlogic: ENC[AES256_GCM,data:8qZGOeHCRYNe8gwgP93ilVR0UZ9ZqcYtjPb64b+65odaTw==,iv:4LizUhQKP30w5B9YfvcDZ7XXTfq0oOWncRtDxx2qlfM=,tag:BfWKI46tlP/suVWbH8u0/w==,type:str]
 linode-work: ENC[AES256_GCM,data:nVV81wNYJJhkp3oaN1y/u3XonuAMosI66114QVeAHxGGoMBEopDs8SpD1LF2tGez5EVOKRyBXoUSSTRU2FzJS856RqnOeIo=,iv:izC4Ye7iNt8YeTOXJ7wnCbzJVHeNTh3DG1N09+W1Kv4=,tag:gPZDICQXo9wDFM5JkI3ZCg==,type:str]
@@ -104,7 +105,7 @@ sops:
             eEcvZVlXVW9IYXFGVjdDZDZWSmNQQ1kKdRYIlYit1nuy1inTKJb6y5ae6JMuAzhz
             jf/W2DVyEBcvwFC6vqIuhfUwLFwjFL+jlGBeg8z423Cqnz9WjjSLNA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-03-30T02:41:54Z"
-    mac: ENC[AES256_GCM,data:n4bspZXfu+QII6hnN42HTmDMm2i2Hv4cm/k8gLR2IjxDpgCnzhRlxMfzLNH/ssKxRC5zp8XnEA00oCBmiFNtGhIfWBkqWkZ7nEN5SMZfYGjksIZFik6s0C1xe/JpAGfGApDOv/Bcay6aXUOyDSBQeLttjOO+J4EL+5tCknY1tDw=,iv:bmaeHkTggDmmCEU8b95wTkvwKsOSq8veIjWg2sCdMKE=,tag:YBsLdhqFPHzTna++m5HHBw==,type:str]
+    lastmodified: "2026-04-10T03:32:34Z"
+    mac: ENC[AES256_GCM,data:T1GGPRE3m9O0TcGMJoGe/rgg5wrianeLYMDNmY5NZYOgufTiOk4+G23OvTWWY8Fu9YjirQjsYpttxrLLifoB2I4oDtwOOvPxOepxEsofr7EHmADFjaNpleLnaKB5UsfV44zgkwriVuECubXIq8m9ixzgZn1Bi3P19yKRDwQDwkI=,iv:9ZiykRXA+7nSWRWPjoZVe3SRDfdN4KHsDuAGCH31jeA=,tag:7PA5pt2KtZW1NyfJDjJ5Xw==,type:str]
     unencrypted_suffix: _unencrypted
-    version: 3.12.1
+    version: 3.12.2

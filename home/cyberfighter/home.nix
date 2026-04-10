@@ -62,6 +62,7 @@
           "zb432-pve1"
           "truenas"
           "synlgy-ds918"
+          "vm-gameserver-nix"
         ];
       };
 
