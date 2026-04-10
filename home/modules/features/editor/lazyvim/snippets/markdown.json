@@ -1,0 +1,12 @@
+{
+  "HTML Comment": {
+    "prefix": "com",
+    "body": "<!-- $1 -->",
+    "description": "HTML comment"
+  },
+  "TODO Comment": {
+    "prefix": "todo",
+    "body": "<!-- TODO: $1 -->",
+    "description": "TODO comment"
+  }
+}
