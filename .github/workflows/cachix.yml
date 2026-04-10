@@ -50,6 +50,7 @@ jobs:
             ryzn-nix-wsl,
             sys-galp-nix,
             thkpd-pve1,
+            vm-gameserver-nix
           ]
       fail-fast: false # Continue other builds if one fails
     steps:
