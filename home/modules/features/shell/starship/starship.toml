@@ -1,7 +1,11 @@
 palette = "catppuccin_frappe"
 
 format = """
-$shell$directory$fill$all
+$shell\
+$directory\
+\\[$username@$hostname\\]\
+$fill\
+$all
 """
 
 # Right-align everything except directory
@@ -160,6 +164,11 @@ format = '\[[$symbol($version)]($style)\]'
 
 [nix_shell]
 format = '\[[$symbol$state( \($name\))]($style)\]'
+symbol = " "
+
+[direnv]
+format = '\[[$symbol$loaded/$allowed]($style)\]'
+disabled = false
 
 [nodejs]
 format = '\[[$symbol($version)]($style)\]'
@@ -234,7 +243,13 @@ format = '\[[$symbol$workspace]($style)\]'
 format = '\[[$time]($style)\]'
 
 [username]
-format = '\[[$user]($style)\]'
+format = '[$user]($style)'
+show_always = true
+
+[hostname]
+format = '[$hostname$ssh_symbol]($style)'
+ssh_only = false
+ssh_symbol = " "
 
 [vagrant]
 format = '\[[$symbol($version)]($style)\]'
