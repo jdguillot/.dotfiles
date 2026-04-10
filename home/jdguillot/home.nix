@@ -44,6 +44,7 @@
           "WorkOnlogic"
           "linode-work"
           "phoenix-router"
+          "docs-server"
         ];
       };
 
