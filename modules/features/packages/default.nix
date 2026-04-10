@@ -56,6 +56,10 @@ let
     copilot-language-server
     deploy-rs
     claude-code
+    nixd
+    yaml-language-server
+    lua-language-server
+    bash-language-server
   ];
 
   desktopPackages = with pkgs; [
