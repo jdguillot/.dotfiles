@@ -26,6 +26,7 @@
         avahi
         geckodriver
         inputs.isd.packages.${stdenv.hostPlatform.system}.default
+        inputs.deploy-rs-tui.packages.${stdenv.hostPlatform.system}.default
       ];
     };
 
