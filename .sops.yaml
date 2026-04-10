@@ -12,6 +12,7 @@ keys: &all
   - &thkpd-pve1 age1rfh8tflpx2d0j6p00284t4ep7tsqut2c9uz58ljw2k0lvr08vqtqklzqv8
   - &simple-vm age12kq643k846phl8zx4n30q486z2n3wf5y73qvqhd6e8e5ks62tq3sds4xqu
   - &sys-galp-nix age1qfe2h4mxt66lplx3vzcyz88wux0n7vqegy2wu0hg29fy7apjtqlqnr5fw6
+  - &vm-gameserver-nix age1dxs6p30u9spu7fq0n42720c8e7pln6y2t2ffet0mktp88cyfu3vqv9yazp
 creation_rules:
   - path_regex: secrets/.*
     key_groups:

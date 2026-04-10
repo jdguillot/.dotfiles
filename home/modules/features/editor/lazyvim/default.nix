@@ -280,6 +280,7 @@ in
 
     # Normal LazyVim config here, see https://github.com/LazyVim/starter/tree/main/lua
     xdg.configFile."nvim/lua".source = ./lua;
+    xdg.configFile."nvim/snippets".source = ./snippets;
 
     # Generate .nixd.json dynamically for the current user/host
     home.file.".dotfiles/.nixd.json".text =

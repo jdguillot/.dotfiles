@@ -1,0 +1,34 @@
+{
+  "lspServers": {
+    "nixd": {
+      "command": "nixd",
+      "args": [],
+      "fileExtensions": {
+        ".nix": "nix"
+      }
+    },
+    "lua": {
+      "command": "lua-language-server",
+      "args": ["--stdio"],
+      "fileExtensions": {
+        ".lua": "lua"
+      }
+    },
+    "bash": {
+      "command": "bash-language-server",
+      "args": ["start"],
+      "fileExtensions": {
+        ".sh": "shellscript",
+        ".bash": "shellscript"
+      }
+    },
+    "yaml": {
+      "command": "yaml-language-server",
+      "args": ["--stdio"],
+      "fileExtensions": {
+        ".yaml": "yaml",
+        ".yml": "yaml"
+      }
+    }
+  }
+}

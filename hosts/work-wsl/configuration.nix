@@ -28,6 +28,8 @@
         "root"
         "jdguillot"
       ];
+      # Ensure all nix clients (including sudo) use the work CA bundle
+      extraOptions = "ssl-cert-file = /etc/ssl/certs/ca-bundle-with-work.crt";
     };
 
     packages = {

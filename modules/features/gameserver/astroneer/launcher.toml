@@ -1,0 +1,20 @@
+[launcher]
+AutoUpdateServer = true
+CheckNetwork = false
+OverwritePublicIP = false
+LogDebugMessages = false
+AstroServerPath = "AstroneerServer"
+WinePrefixPath = "winepfx"
+WineBootTimeout = 30
+LogPath = "logs"
+PlayfabAPIInterval = 2
+ServerStatusInterval = 3.0
+DisableEncryption = true
+
+[launcher.notifications]
+method = ""
+
+[launcher.status]
+SendStatus = false
+Interval = 120
+EndpointURL = ""
