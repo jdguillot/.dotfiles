@@ -9,7 +9,7 @@ WineBootTimeout = 30
 LogPath = "logs"
 PlayfabAPIInterval = 2
 ServerStatusInterval = 3.0
-DisableEncryption = true
+DisableEncryption = false
 
 [launcher.notifications]
 method = ""
