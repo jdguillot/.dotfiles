@@ -35,7 +35,6 @@
 
     catppuccin.url = "github:catppuccin/nix";
     proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
-    isd.url = "github:kainctl/isd";
     #    pst-bin.url = "path:./programs/pst";
     #    tasmotizer.url = "path:./programs/tasmotizer";
     deploy-rs.url = "github:serokell/deploy-rs";

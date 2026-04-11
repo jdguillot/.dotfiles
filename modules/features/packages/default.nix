@@ -35,6 +35,7 @@ let
       nmap
       parted
       trash-cli
+      isd
     ]
     ++ (if config.cyberfighter.profile.enable != "wsl" then [ pkgs._1password-cli ] else [ ]);
 

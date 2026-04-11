@@ -28,8 +28,8 @@
 
     packages = {
       includeDev = true;
-      extraPackages = [
-        inputs.isd.packages.${pkgs.stdenv.hostPlatform.system}.default
+      extraPackages = with pkgs; [
+        inputs.deploy-rs-tui.packages.${stdenv.hostPlatform.system}.default
       ];
     };
 
