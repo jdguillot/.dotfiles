@@ -96,6 +96,30 @@ in
 
       users.groups.astroneer = { };
 
+      cyberfighter.features.gameserver.ludusavi = {
+        games = [ "Astroneer" ];
+
+        roots = [
+          {
+            path = stateDir;
+            store = "other";
+          }
+        ];
+
+        customGames = [
+          {
+            name = "Astroneer";
+            integration = "extend";
+            installDir = [ "AstroneerServer" ];
+            files = [
+              "${stateDir}/launcher.toml"
+              "<base>/Astro/Saved/Config/WindowsServer"
+              "<base>/Astro/Saved/SaveGames"
+            ];
+          }
+        ];
+      };
+
       systemd.services.astroneer-server = {
         description = "Astroneer Dedicated Server via AstroTuxLauncher";
         wantedBy = [ "multi-user.target" ];

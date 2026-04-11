@@ -5,6 +5,7 @@
   hostProfile,
   hostMeta,
   modulesPath,
+  pkgs,
   ...
 }@inputs:
 {
@@ -34,6 +35,9 @@
 
     packages = {
       includeBase = true;
+      extraPackages = with pkgs; [
+        ludusavi
+      ];
     };
 
     features = {
@@ -52,6 +56,7 @@
 
       gameserver = {
         enable = true;
+        ludusavi.enable = true;
 
         astroneer = {
           enable = true;

@@ -82,6 +82,7 @@ in
         environment.systemPackages =
           with pkgs;
           (lib.optionals cfg.mangohud [ mangohud ])
+          ++ [ ludusavi ]
           ++ (lib.optionals cfg.protonup [ protonup-ng ])
           ++ cfg.extraPackages;
       }
