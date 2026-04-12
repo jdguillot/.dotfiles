@@ -69,6 +69,8 @@ in
   config = lib.mkIf cfg.enable (
     let
       astroTuxLauncher = pkgs.callPackage ./astrotuxlauncher.nix { };
+      mergeConfigPython = pkgs.python3;
+      mergeConfigScript = ./merge-config.py;
 
       astroneerSettingsIni = pkgs.replaceVars ./AstroServerSettings.ini {
         serverName = cfg.serverName;
@@ -131,25 +133,14 @@ in
 
         preStart =
           ''
-            # Always refresh launcher.toml so declarative changes take effect on restart
-            install -m 0644 ${./launcher.toml} ${stateDir}/launcher.toml
+            mkdir -p "${configDir}"
 
-            # Seed AstroServerSettings.ini only on first run; launcher manages it at runtime
-            if [ ! -f "${configDir}/AstroServerSettings.ini" ]; then
-              mkdir -p "${configDir}"
-              install -m 0644 ${astroneerSettingsIni} "${configDir}/AstroServerSettings.ini"
-            fi
-
-            # Update Engine.ini port — seed on first run, then always keep Port in sync.
-            # Uses sed to only touch the Port line, preserving all other launcher-managed content.
-            if [ ! -f "${configDir}/Engine.ini" ]; then
-              mkdir -p "${configDir}"
-              install -m 0644 ${engineIni} "${configDir}/Engine.ini"
-            elif grep -q "^Port=" "${configDir}/Engine.ini"; then
-              sed -i "s|^Port=.*|Port=${toString cfg.gamePort}|" "${configDir}/Engine.ini"
-            else
-              printf '\n[URL]\nPort=${toString cfg.gamePort}\n' >> "${configDir}/Engine.ini"
-            fi
+            # Merge template-managed values into live config files while preserving
+            # any extra options the launcher or game may have added at runtime.
+            ${mergeConfigPython}/bin/python ${mergeConfigScript} toml ${./launcher.toml} "${stateDir}/launcher.toml"
+            ${mergeConfigPython}/bin/python ${mergeConfigScript} ini ${astroneerSettingsIni} "${configDir}/AstroServerSettings.ini"
+            ${mergeConfigPython}/bin/python ${mergeConfigScript} ini ${engineIni} "${configDir}/Engine.ini"
+            chmod 0644 "${stateDir}/launcher.toml" "${configDir}/AstroServerSettings.ini" "${configDir}/Engine.ini"
           ''
           + lib.optionalString (cfg.publicIpFile != null) ''
             TUNNEL_IP=$(cat ${toString cfg.publicIpFile})

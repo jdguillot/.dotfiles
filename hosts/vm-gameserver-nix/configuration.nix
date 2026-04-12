@@ -62,7 +62,7 @@
           enable = true;
           serverName = "vm-gameserver-nix";
           maxPlayers = 8;
-          autoSaveInterval = 900;
+          autoSaveInterval = 300;
           openFirewall = true;
           gamePort = 10806;
           publicIpFile = config.sops.secrets."playit-tunnel-ip".path;

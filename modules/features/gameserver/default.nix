@@ -8,14 +8,20 @@
 let
   cfg = config.cyberfighter.features.gameserver;
   ludusaviStateDir = "/var/lib/gameserver-ludusavi";
-  ludusaviConfigFile =
-    (pkgs.formats.yaml { }).generate "gameserver-ludusavi-config.yaml" {
-      manifest.enable = true;
-      backup.path = cfg.ludusavi.path;
-      restore.path = cfg.ludusavi.path;
-      roots = cfg.ludusavi.roots;
-      customGames = cfg.ludusavi.customGames;
+  ludusaviConfigPath = "${ludusaviStateDir}/config.yaml";
+  ludusaviConfigFile = (pkgs.formats.yaml { }).generate "gameserver-ludusavi-config.yaml" {
+    manifest.enable = true;
+    backup = {
+      path = cfg.ludusavi.path;
+      retention = {
+        differential = 5;
+        full = 2;
+      };
     };
+    restore.path = cfg.ludusavi.path;
+    roots = cfg.ludusavi.roots;
+    customGames = cfg.ludusavi.customGames;
+  };
   ludusaviGamesArgs = lib.escapeShellArgs cfg.ludusavi.games;
 in
 {
@@ -66,19 +72,26 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       (lib.mkIf cfg.ludusavi.enable {
+        system.activationScripts.gameserver-ludusavi-config = lib.stringAfter [ "var" ] ''
+          mkdir -p "${ludusaviStateDir}" "${cfg.ludusavi.path}"
+          install -m 0644 ${ludusaviConfigFile} "${ludusaviConfigPath}"
+        '';
+
         systemd.services.gameserver-ludusavi-backup = {
           description = "Back up game server saves with Ludusavi";
 
           preStart = ''
             mkdir -p "${ludusaviStateDir}" "${cfg.ludusavi.path}"
-            install -m 0644 ${ludusaviConfigFile} "${ludusaviStateDir}/config.yaml"
+            install -m 0644 ${ludusaviConfigFile} "${ludusaviConfigPath}"
           '';
 
           serviceConfig = {
             Type = "oneshot";
             StateDirectory = "gameserver-ludusavi";
             WorkingDirectory = ludusaviStateDir;
-            ExecStart = "${pkgs.ludusavi}/bin/ludusavi --config ${ludusaviStateDir} --no-manifest-update backup --force${lib.optionalString (cfg.ludusavi.games != [ ]) " ${ludusaviGamesArgs}"}";
+            ExecStart = "${pkgs.ludusavi}/bin/ludusavi --config ${ludusaviStateDir} --no-manifest-update backup --force${
+              lib.optionalString (cfg.ludusavi.games != [ ]) " ${ludusaviGamesArgs}"
+            }";
           };
         };
 
