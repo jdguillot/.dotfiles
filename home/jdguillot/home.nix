@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   inputs,
   hostProfile,
@@ -31,11 +32,6 @@
 
     features = {
       # Git, shell, editor, and tools are enabled by default
-      git = {
-        useSecretsForIdentity = true;
-        nameSecretKey = "personal-info/work-github";
-        emailSecretKey = "personal-info/work-email";
-      };
 
       ssh = {
         enable = true;
@@ -84,4 +80,8 @@
       ExtensionSettings = { };
     };
   };
+
+  programs.git.includes = [
+    { path = "${config.xdg.configHome}/git/identities/work.gitconfig"; }
+  ];
 }

@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   inputs,
   hostProfile,
@@ -35,9 +36,6 @@
 
     features = {
       # Git, shell, editor, tools enabled by default
-      git = {
-        useSecretsForIdentity = true;
-      };
 
       ssh = {
         enable = true;
@@ -111,4 +109,7 @@
 
   # Additional program configurations
 
+  programs.git.includes = [
+    { path = "${config.xdg.configHome}/git/identities/personal.gitconfig"; }
+  ];
 }
