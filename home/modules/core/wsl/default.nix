@@ -74,6 +74,8 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
+        cyberfighter.features.sops.enable = lib.mkDefault true;
+
         home = {
           # Install WSL utilities
           packages = with pkgs; [

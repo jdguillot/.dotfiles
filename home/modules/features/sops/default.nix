@@ -6,11 +6,16 @@
 }:
 
 let
+  cfg = config.cyberfighter.features.sops;
   secretsFile = ../../../../secrets/secrets_common.yaml;
   secretsAvailable = builtins.pathExists secretsFile;
 in
 {
-  config = lib.mkIf secretsAvailable {
+  options.cyberfighter.features.sops = {
+    enable = lib.mkEnableOption "SOPS secrets management";
+  };
+
+  config = lib.mkIf (cfg.enable && secretsAvailable) {
     sops = {
       defaultSopsFile = secretsFile;
       validateSopsFiles = false;

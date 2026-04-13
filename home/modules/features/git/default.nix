@@ -55,6 +55,8 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
+        cyberfighter.features.sops.enable = lib.mkDefault cfg.useSecretsForIdentity;
+
         programs.git = {
           enable = true;
           signing.format = null; # This was changed in later version of HM and because my stateVersion i need this
