@@ -45,11 +45,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1775858440,
-        "narHash": "sha256-QcPRyV6AUfSjLgMdsZeM2rPZ6DmxskpPZYrvhe9wbYM=",
+        "lastModified": 1776061830,
+        "narHash": "sha256-NWx3x67Hqn0gpBsoCAVTxyvKUV7rO6G31+hDen0vHAo=",
         "owner": "jdguillot",
         "repo": "deploy-rs-tui",
-        "rev": "fbe6ea9790cebd98cb674b322ef54c416e45e207",
+        "rev": "dc868ec263fc71b94beb0cd672255024cc713a54",
         "type": "github"
       },
       "original": {

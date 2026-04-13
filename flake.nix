@@ -121,20 +121,18 @@
 
       # Helper function to create home-manager configuration
       mkHomeConfig =
-        hostname: hostMeta:
+        homeFolder: hostMeta:
         home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = sharedSpecialArgs hostMeta;
           modules = [
-            ./home/${hostMeta.system.username}/home.nix
+            ./home/${homeFolder}/home.nix
             nix-flatpak.homeManagerModules.nix-flatpak
             catppuccin.homeModules.catppuccin
             sops-nix.homeManagerModules.sops
             niri.homeModules.config
             noctalia.homeModules.default
-          ]
-          # ++ (if hostname == "razer-nixos" || hostname == "sys-galp-nix" then [ ] else [ ])
-          ;
+          ];
         };
 
       # Helper function to create a deploy-rs node configuration
@@ -193,18 +191,19 @@
       };
 
       homeConfigurations = {
-        "cyberfighter@razer-nixos" = mkHomeConfig "razer-nixos" hostConfigs.razer-nixos;
-        "jdguillot@work-nix-wsl" = mkHomeConfig "work-nix-wsl" hostConfigs.work-nix-wsl;
-        "cyberfighter@ryzn-nix-wsl" = mkHomeConfig "ryzn-nix-wsl" hostConfigs.ryzn-nix-wsl;
-        "cyberfighter@sys-galp-nix" = mkHomeConfig "sys-galp-nix" hostConfigs.sys-galp-nix;
-        "cyberfighter@thkpd-pve1" = mkHomeConfig "thkpd-pve1" hostConfigs.thkpd-pve1;
-        "cyberfighter@simple-vm" = mkHomeConfig "simple-vm" hostConfigs.simple-vm;
+        "cyberfighter@razer-nixos" = mkHomeConfig "cyberfighter" hostConfigs.razer-nixos;
+        "jdguillot@work-nix-wsl" = mkHomeConfig "jdguillot" hostConfigs.work-nix-wsl;
+        "cyberfighter@ryzn-nix-wsl" = mkHomeConfig "cyberfighter" hostConfigs.ryzn-nix-wsl;
+        "cyberfighter@sys-galp-nix" = mkHomeConfig "cyberfighter" hostConfigs.sys-galp-nix;
+        "cyberfighter@thkpd-pve1" = mkHomeConfig "cyberfighter" hostConfigs.thkpd-pve1;
+        "cyberfighter@simple-vm" = mkHomeConfig "cyberfighter" hostConfigs.simple-vm;
+        "cyberfighter@vm-gameserver-nix" = mkHomeConfig "minimal" hostConfigs.vm-gameserver-nix;
       };
 
       deploy.nodes = {
         thkpd-pve1 = mkDeployNode "thkpd-pve1" hostConfigs.thkpd-pve1 true;
         simple-vm = mkDeployNode "simple-vm" hostConfigs.simple-vm false;
-        vm-gameserver-nix = mkDeployNode "vm-gameserver-nix" hostConfigs.vm-gameserver-nix false;
+        vm-gameserver-nix = mkDeployNode "vm-gameserver-nix" hostConfigs.vm-gameserver-nix true;
         sys-galp-nix = mkDeployNode "sys-galp-nix" hostConfigs.sys-galp-nix true;
       };
 
