@@ -61,7 +61,18 @@ in
         };
       }
 
+      # When using 1Password as SSH agent, set SSH_AUTH_SOCK in both shell
+      # session vars and the systemd user environment so that tools like git
+      # (ssh-keygen -Y sign) use 1Password regardless of what gpg-agent or
+      # gcr-ssh-agent may set at session startup.
+      (lib.mkIf cfg.onepass {
+        home.sessionVariables.SSH_AUTH_SOCK = "$HOME/.1password/agent.sock";
+        systemd.user.sessionVariables.SSH_AUTH_SOCK = "%h/.1password/agent.sock";
+      })
+
       (lib.mkIf hostsAvailable {
+        cyberfighter.features.sops.enable = lib.mkDefault true;
+
         sops.secrets = lib.listToAttrs (
           map (alias: {
             name = alias;

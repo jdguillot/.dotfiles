@@ -41,7 +41,7 @@ in
       enable = true;
       defaultCacheTtl = 600; # 10 minutes
       maxCacheTtl = 3600; # 1 hour
-      enableSshSupport = true;
+      enableSshSupport = false;
       extraConfig = ''
         pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses
       '';
