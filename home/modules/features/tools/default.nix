@@ -81,9 +81,6 @@ in
         ripgrep
         csvlens
 
-        # System monitoring & info
-        fastfetch
-
         # Nix tools
         nix-your-shell
 
