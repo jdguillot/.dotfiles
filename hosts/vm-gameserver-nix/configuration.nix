@@ -60,9 +60,9 @@
 
         astroneer = {
           enable = true;
-          serverName = "vm-gameserver-nix";
+          serverName = "vm-gameserver-playit";
           maxPlayers = 8;
-          autoSaveInterval = 300;
+          autoSaveInterval = 900;
           openFirewall = true;
           gamePort = 10806;
           publicIpFile = config.sops.secrets."playit-tunnel-ip".path;
