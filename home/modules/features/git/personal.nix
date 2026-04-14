@@ -2,9 +2,10 @@
   config,
   lib,
   hostMeta,
+  hostProfile,
   ...
 }:
-{
+lib.mkIf (hostProfile != "minimal") {
   cyberfighter.features.sops.enable = lib.mkDefault true;
 
   xdg.configFile."git/scripts/personal-signing-key".text = ''

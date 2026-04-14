@@ -1,9 +1,10 @@
 {
   config,
   lib,
+  hostProfile,
   ...
 }:
-{
+lib.mkIf (hostProfile != "minimal") {
   cyberfighter.features.sops.enable = lib.mkDefault true;
 
   xdg.configFile."git/scripts/work-signing-key".text = ''
