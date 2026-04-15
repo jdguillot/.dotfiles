@@ -1,0 +1,29 @@
+name: Daily summary
+on:
+  workflow_dispatch:
+  # Run this workflow daily at 10:30am UTC (3:30am Pacific)
+  schedule:
+    - cron: "30 10 * * *"
+permissions:
+  contents: read
+jobs:
+  daily-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v4
+
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Run Copilot CLI
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          copilot -p "Update README.md to reflect the current state of the repo. Keep it high level and practical: focus on what modules, hosts, and features exist, what options are available, and brief how-to guidance for using them. Do not explain commit history or why changes were made. Prefer concise summaries, option lists, and usage-oriented updates. For example: add new modules or tools to feature lists, update host lists, refresh option or path references, and add short how-to notes where useful. If changes are needed, create or update a Pull Request on the auto/readme-updates branch." --allow-tool='shell(git:*)' --allow-tool=write --no-ask-user
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
