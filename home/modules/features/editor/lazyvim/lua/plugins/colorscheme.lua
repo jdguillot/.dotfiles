@@ -8,10 +8,10 @@ return {
 		opts = {
 			flavour = "frappe",
 			transparent_background = true,
-			float = {
-				transparent = true,
-				solid = true,
-			},
+			-- float = {
+			-- 	transparent = true,
+			-- 	solid = true,
+			-- },
 		},
 	},
 	{
