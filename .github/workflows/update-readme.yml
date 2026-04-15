@@ -24,6 +24,8 @@ jobs:
 
       - name: Prepare update branch
         run: |
+          git config user.name --global 'GitHub Actions'
+          git config user.email --global 'github-actions@users.noreply.github.com'
           git fetch origin main auto/readme-updates || git fetch origin main
           if git show-ref --verify --quiet refs/remotes/origin/auto/readme-updates; then
             git checkout -B auto/readme-updates origin/auto/readme-updates
