@@ -1,4 +1,4 @@
-name: Daily summary
+name: Update README Daily
 on:
   workflow_dispatch:
   # Run this workflow daily at 10:30am UTC (3:30am Pacific)
@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 jobs:
-  daily-summary:
+  update-readme:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
