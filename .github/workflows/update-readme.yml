@@ -19,12 +19,76 @@ jobs:
       - name: Set up Node.js environment
         uses: actions/setup-node@v4
 
-      - name: Install Copilot CLI
-        run: npm install -g @github/copilot
+      - name: Install tools
+        run: npm install -g @github/copilot markdownlint-cli
+
+      - name: Prepare update branch
+        run: |
+          git fetch origin main auto/readme-updates || git fetch origin main
+          if git show-ref --verify --quiet refs/remotes/origin/auto/readme-updates; then
+            git checkout -B auto/readme-updates origin/auto/readme-updates
+            git rebase origin/main
+          else
+            git checkout -B auto/readme-updates origin/main
+          fi
 
       - name: Run Copilot CLI
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          copilot -p "Update README.md to reflect the current state of the repo. Keep it high level and practical: focus on what modules, hosts, and features exist, what options are available, and brief how-to guidance for using them. Do not explain commit history or why changes were made. Prefer concise summaries, option lists, and usage-oriented updates. For example: add new modules or tools to feature lists, update host lists, refresh option or path references, and add short how-to notes where useful. If changes are needed, create or update a Pull Request on the auto/readme-updates branch." --allow-tool='shell(git:*)' --allow-tool='shell(gh:*)' --allow-tool=write --no-ask-user
+          copilot -p "Update README.md to reflect the current state of the repo. Keep it high level and practical: focus on what modules, hosts, and features exist, what options are available, and brief how-to guidance for using them. Do not explain commit history or why changes were made. Prefer concise summaries, option lists, and usage-oriented updates. For example: add new modules or tools to feature lists, update host lists, refresh option or path references, and add short how-to notes where useful. Only modify README.md. Do not run git commands, create branches, commit changes, or open pull requests." --allow-tool=write --no-ask-user
           test -f summary.md && cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fix README lint issues with Copilot
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          if markdownlint README.md > /tmp/readme-lint.txt 2>&1; then
+            exit 0
+          fi
+
+          cat /tmp/readme-lint.txt >> "$GITHUB_STEP_SUMMARY"
+          copilot -p "Fix markdownlint issues in README.md. Only modify README.md. Use the following markdownlint output to guide the fixes:\n\n$(cat /tmp/readme-lint.txt)" --allow-tool=write --no-ask-user
+
+      - name: Validate README markdown
+        run: markdownlint README.md
+
+      - name: Commit and push README changes
+        id: commit
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name 'Copilot'
+          git config user.email '223556219+Copilot@users.noreply.github.com'
+          git add README.md
+          git commit -m $'docs: refresh README\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>'
+          git push --force-with-lease origin auto/readme-updates
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update pull request
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          pr_body=$(cat <<'EOF'
+          ## Summary
+          - refresh the README to match the current repo state
+          - keep documentation high level and focused on available modules, hosts, features, and usage guidance
+          EOF
+          )
+
+          if gh pr view auto/readme-updates --json number >/dev/null 2>&1; then
+            gh pr edit auto/readme-updates \
+              --title 'docs: refresh README' \
+              --body "$pr_body"
+          else
+            gh pr create \
+              --base main \
+              --head auto/readme-updates \
+              --title 'docs: refresh README' \
+              --body "$pr_body"
+          fi
