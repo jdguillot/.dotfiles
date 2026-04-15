@@ -20,7 +20,9 @@ in
   config = lib.mkIf cfg.enable {
     programs.sesh = {
       enable = true;
-
+      enableTmuxIntegration = true;
+      tmuxKey = "o";
     };
+    programs.fzf.tmux.enableShellIntegration = true;
   };
 }

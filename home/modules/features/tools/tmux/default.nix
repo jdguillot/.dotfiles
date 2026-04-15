@@ -116,8 +116,8 @@ in
           plugin = tmux-sessionx;
           extraConfig = lib.optionalString tmuxinator ''
             set -g @sessionx-tmuxinator-mode 'on'
-            unbind o
-            set -g @sessionx-bind 'o'
+            # unbind o
+            # set -g @sessionx-bind 'o'
           '';
         }
       ];

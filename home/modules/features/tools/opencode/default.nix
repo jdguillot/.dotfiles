@@ -24,6 +24,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    catppuccin.opencode.enable = false;
+
     programs.opencode = {
       enable = true;
       themes = ./themes;
