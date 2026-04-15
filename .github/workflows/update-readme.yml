@@ -38,8 +38,12 @@ jobs:
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          copilot -p "Update README.md to reflect the current state of the repo. Keep it high level and practical: focus on what modules, hosts, and features exist, what options are available, and brief how-to guidance for using them. Do not explain commit history or why changes were made. Prefer concise summaries, option lists, and usage-oriented updates. For example: add new modules or tools to feature lists, update host lists, refresh option or path references, and add short how-to notes where useful. Only modify README.md. Do not run git commands, create branches, commit changes, or open pull requests." --allow-tool=write --no-ask-user
-          test -f summary.md && cat summary.md >> "$GITHUB_STEP_SUMMARY"
+          copilot -p "Update README.md to reflect the current state of the repo. Keep it high level and practical: focus on what modules, hosts, and features exist, what options are available, and brief how-to guidance for using them. Do not explain commit history or why changes were made. Prefer concise summaries, option lists, and usage-oriented updates. For example: add new modules or tools to feature lists, update host lists, refresh option or path references, and add short how-to notes where useful. Only modify README.md. Do not run git commands, create branches, commit changes, or open pull requests." --allow-tool=write --no-ask-user | tee /tmp/copilot-readme.txt
+          {
+            echo "## Copilot README update summary"
+            echo
+            awk '/^Changes[[:space:]]/{exit} /^Requests[[:space:]]/{exit} /^Tokens[[:space:]]/{exit} /^Error: /{exit} { print }' /tmp/copilot-readme.txt
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fix README lint issues with Copilot
         env:
