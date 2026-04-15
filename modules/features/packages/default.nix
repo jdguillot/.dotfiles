@@ -52,7 +52,6 @@ let
     mermaid-cli
     ast-grep
     cargo
-    opencode
     github-copilot-cli
     copilot-language-server
     deploy-rs

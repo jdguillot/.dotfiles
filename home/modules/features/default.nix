@@ -13,6 +13,7 @@
     ./tools/copilot-mcp/default.nix
     ./tools/lazygit/default.nix
     ./tools/midnight-commander/default.nix
+    ./tools/opencode/default.nix
     ./tools/rofi/default.nix
     ./tools/jujutsu/default.nix
     ./tools/carapace/default.nix
