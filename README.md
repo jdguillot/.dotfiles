@@ -1,52 +1,93 @@
 # NixOS dotfiles
 
-Modular NixOS and Home Manager configuration built around a small set of host profiles, reusable feature modules, and flake outputs for local rebuilds or `deploy-rs`.
+Modular NixOS and Home Manager configuration with centralized host
+metadata, reusable `cyberfighter.*` modules, and flake outputs for
+local rebuilds and `deploy-rs`.
 
 ## Quick links
 
 - `docs/MODULES.md` - full NixOS module reference
 - `docs/HOME-MANAGER.md` - full Home Manager module reference
-- `docs/SOPS-MIGRATION.md` - SOPS setup and secret workflows
-- `hosts/templates/` - starter host configs (`desktop-workstation.nix`, `gaming-rig.nix`, `minimal-server.nix`, `wsl-dev.nix`)
+- `docs/SOPS-MIGRATION.md` - SOPS and secret workflows
+- `hosts/templates/` - starter host configs
+- `scripts/nixos-anywhere.sh` - bootstrap a new machine
+- `scripts/generate_ssh_key.sh` - generate SSH keys for a host
 
 ## Repo layout
 
-| Path | Purpose |
-| --- | --- |
-| `flake.nix` | Flake inputs and all `nixosConfigurations`, `homeConfigurations`, and `deploy.nodes` outputs |
-| `hosts/default.nix` | Central host metadata: profile, hostname, username |
-| `hosts/<host>/configuration.nix` | Per-host NixOS config |
-| `home/<user>/home.nix` | Per-user Home Manager config |
-| `modules/` | Reusable NixOS modules |
-| `home/modules/` | Reusable Home Manager modules |
-| `scripts/nixos-anywhere.sh` | Bootstrap new machines with nixos-anywhere |
-| `scripts/generate_ssh_key.sh` | Generate SSH keys for new hosts |
-| `secrets/` | Encrypted secrets managed with SOPS |
+- `flake.nix` - Flake inputs and all `nixosConfigurations`,
+  `homeConfigurations`, and `deploy.nodes` outputs
+- `hosts/default.nix` - Source of truth for host metadata: profile,
+  hostname, username
+- `hosts/<host>/configuration.nix` - Per-host NixOS config
+- `home/<user>/home.nix` - Per-user Home Manager config
+- `modules/` - Reusable NixOS modules under the `cyberfighter`
+  namespace
+- `home/modules/` - Reusable Home Manager modules under the
+  `cyberfighter` namespace
+- `secrets/` - Encrypted secrets used by SOPS modules
 
-## Flake outputs in this repo
+## Flake outputs
 
 ### NixOS hosts
 
-| Flake output | Host dir | Profile | Home config | Deploy node | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `razer-nixos` | `hosts/razer-nixos/` | `desktop` | `cyberfighter@razer-nixos` | No | Main desktop/laptop config with Niri, gaming, VPN, Flatpak, NAS mounts |
-| `sys-galp-nix` | `hosts/sys-galp-nix/` | `desktop` | `cyberfighter@sys-galp-nix` | Yes | Plasma 6 desktop with Nvidia, gaming, Docker, PIA VPN |
-| `nixos-portable` | `hosts/nixos-portable/` | `desktop` | None | No | Portable desktop config with Plasma 6, gaming, Flatpak, Waydroid |
-| `work-nix-wsl` | `hosts/work-wsl/` | `wsl` | `jdguillot@work-nix-wsl` | No | Work WSL setup with VS Code server, Flatpak, Docker, SOPS |
-| `ryzn-nix-wsl` | `hosts/ryzn-wsl/` | `wsl` | `cyberfighter@ryzn-nix-wsl` | No | Personal WSL setup with Docker, SOPS, Cachix |
-| `thkpd-pve1` | `hosts/thkpd-pve1/` | `minimal` | `cyberfighter@thkpd-pve1` | Yes | Proxmox VE host with Docker, Tailscale, SOPS |
-| `simple-vm` | `hosts/simple-vm/` | `minimal` | `cyberfighter@simple-vm` | Yes | Minimal VM with SSH, Docker, Tailscale, SOPS |
-| `vm-gameserver-nix` | `hosts/vm-gameserver-nix/` | `minimal` | `cyberfighter@vm-gameserver-nix` via `home/minimal` | Yes | Game server VM with Astroneer, Ludusavi, Playit |
+- `razer-nixos` (`hosts/razer-nixos/`)
+  - Profile: `desktop`
+  - Home: `cyberfighter@razer-nixos`
+  - Deploy node: No
+  - Main Niri workstation with GDM, gaming, Docker, Tailscale, PIA VPN,
+    Flatpak, Cachix, TrueNAS mounts, 1Password, and Wine
+- `sys-galp-nix` (`hosts/sys-galp-nix/`)
+  - Profile: `desktop`
+  - Home: `cyberfighter@sys-galp-nix`
+  - Deploy node: Yes
+  - Plasma 6 desktop with gaming, Bluetooth, SSH, Flatpak extras,
+    SOPS, and Waydroid
+- `nixos-portable` (`hosts/nixos-portable/`)
+  - Profile: `desktop`
+  - Home: None
+  - Deploy node: No
+  - Portable Plasma 6 desktop with Nvidia, gaming, Docker, PIA VPN,
+    and SOPS
+- `work-nix-wsl` (`hosts/work-wsl/`)
+  - Profile: `wsl`
+  - Home: `jdguillot@work-nix-wsl`
+  - Deploy node: No
+  - Work WSL config with VS Code server, Docker Desktop, custom CA
+    bundle, Flatpak browsers/CAD, Tailscale, SSH, and SOPS
+- `ryzn-nix-wsl` (`hosts/ryzn-wsl/`)
+  - Profile: `wsl`
+  - Home: `cyberfighter@ryzn-nix-wsl`
+  - Deploy node: No
+  - Personal WSL config with graphics, Docker, SSH, SOPS, and Cachix
+- `thkpd-pve1` (`hosts/thkpd-pve1/`)
+  - Profile: `minimal`
+  - Home: `cyberfighter@thkpd-pve1`
+  - Deploy node: Yes
+  - Proxmox VE host with Docker, Tailscale, SSH, SOPS, and deployable
+    system + home
+- `simple-vm` (`hosts/simple-vm/`)
+  - Profile: `minimal`
+  - Home: `cyberfighter@simple-vm`
+  - Deploy node: Yes
+  - Minimal VM with SSH, Docker, Tailscale, and SOPS; deploys system
+    only
+- `vm-gameserver-nix` (`hosts/vm-gameserver-nix/`)
+  - Profile: `minimal`
+  - Home: `cyberfighter@vm-gameserver-nix` via `home/minimal`
+  - Deploy node: Yes
+  - Game server VM with Astroneer, scheduled Ludusavi backups,
+    Tailscale, SOPS, and Playit service wiring
 
 ### Home Manager outputs
 
 - `cyberfighter@razer-nixos`
-- `jdguillot@work-nix-wsl`
 - `cyberfighter@ryzn-nix-wsl`
 - `cyberfighter@sys-galp-nix`
 - `cyberfighter@thkpd-pve1`
 - `cyberfighter@simple-vm`
 - `cyberfighter@vm-gameserver-nix`
+- `jdguillot@work-nix-wsl`
 
 ### deploy-rs nodes
 
@@ -57,113 +98,127 @@ Modular NixOS and Home Manager configuration built around a small set of host pr
 
 ## NixOS modules
 
-### Core namespaces
+### Core option roots
 
-These are the main option roots used in `hosts/<host>/configuration.nix`:
+These are the main roots used in `hosts/<host>/configuration.nix`:
 
-| Option path | Purpose | Common values |
-| --- | --- | --- |
-| `cyberfighter.profile.enable` | Selects the base profile | `"desktop"`, `"wsl"`, `"minimal"`, `"none"` |
-| `cyberfighter.system.*` | Host identity and system defaults | `hostname`, `username`, `stateVersion`, `timeZone`, `locale`, `bootloader.*`, `wslOptions.windowsUsername`, `extraGroups` |
-| `cyberfighter.nix.*` | Nix daemon and cache behavior | `enableDevenv`, `trustedUsers`, `extraOptions`, `garbageCollect`, `optimize` |
-| `cyberfighter.packages.*` | Shared package sets | `includeBase`, `includeDev`, `includeDesktop`, `includeVirt`, `extraPackages` |
-| `cyberfighter.filesystems.*` | NAS and mount helpers | `truenas.enable`, `truenas.mounts`, `truenas.credentialsFile`, `truenas.host` |
+- `cyberfighter.profile.enable` - Base profile defaults:
+  `"desktop"`, `"wsl"`, `"minimal"`, `"none"`
+- `cyberfighter.system.*` - Host identity and system defaults:
+  `hostname`, `username`, `stateVersion`, `timeZone`, `locale`,
+  `bootloader.*`, `extraGroups`, `wslOptions.*`
+- `cyberfighter.nix.*` - Nix daemon, caches, GC, and extra `nix.conf`
+  settings: `enableDevenv`, `trustedUsers`, `extraOptions`,
+  `garbageCollect`, `optimize`
+- `cyberfighter.packages.*` - Shared system package sets:
+  `includeBase`, `includeDev`, `includeDesktop`, `includeVirt`,
+  `extraPackages`
+- `cyberfighter.filesystems.*` - CIFS/TrueNAS mounts and extra
+  filesystems: `truenas.enable`, `truenas.server`, `truenas.mounts`,
+  `smbCredentials`, `extraMounts`
 
-### System feature modules
+### Profiles
+
+- `desktop` - Enables desktop + graphics + sound, turns on Flatpak,
+  includes base + desktop packages, and defaults to `systemd-boot`
+- `wsl` - Enables graphics, keeps desktop packages off by default,
+  disables `systemd-boot`, and leaves NetworkManager off by default
+- `minimal` - Includes base packages, keeps desktop packages off,
+  defaults to `systemd-boot`, and disables sleep/suspend/hibernate
+  targets
+
+### System features
 
 Available under `cyberfighter.features.*`:
 
-| Feature | What it covers | Notable options |
-| --- | --- | --- |
-| `desktop` | Desktop session and browsers | `enable`, `environment`, `displayManager`, `firefox` |
-| `graphics` | GPU drivers and hybrid graphics | `enable`, `nvidia.enable`, `nvidia.openDriver`, `nvidia.prime.*`, AMD support |
-| `sound` | PipeWire and audio defaults | `enable` |
-| `fonts` | Shared system fonts | `enable` |
-| `networking` | NetworkManager defaults | `networkmanager` |
-| `printing` | Printing support | `enable` |
-| `ssh` | OpenSSH server settings | `enable`, `passwordAuth`, `port`, `ports`, `permitRootLogin` |
-| `sops` | Host secrets and age key wiring | `enable`, `defaultSopsFile`, `sshKeyPaths`, `deployUserAgeKey` |
-| `docker` | Docker service and networks | `enable`, rootless support, custom `networks` |
-| `tailscale` | Tailscale client setup | `enable`, `useRoutingFeatures`, `acceptRoutes`, `extraUpFlags` |
-| `vpn` | PIA VPN service | `pia.enable`, `pia.autoConnect`, `pia.server` |
-| `flatpak` | Flatpak setup and app bundles | `enable`, `browsers`, `cad`, `extraPackages` |
-| `gaming` | Steam and gaming tooling | `enable` and related Steam/gaming toggles |
-| `wine` | Wine support | `enable` |
-| `vscode` | VS Code installation | `enable` |
-| `onepassword` | 1Password desktop integration | `enable` |
-| `security` | Firejail sandboxing | `firejail` |
-| `cachix` | Cachix auth and cache setup | `enable` |
-| `proxmox` | Proxmox VE node config | `enable`, `ipAddress` |
-| `gameserver` | Dedicated game server support | `enable`, `ludusavi.enable`, `astroneer.*` |
-
-Profiles set sensible defaults:
-
-- `desktop`: desktop, graphics, sound, Flatpak, base + desktop packages
-- `wsl`: base packages, no systemd-boot, NetworkManager off by default
-- `minimal`: base packages, short boot timeout, sleep/suspend disabled
+- `desktop` - Desktop environment, display manager, Firefox:
+  `enable`, `environment`, `displayManager`, `firefox`
+- `graphics` - Hardware acceleration and GPU drivers: `enable`,
+  `nvidia.enable`, `nvidia.openDriver`, `nvidia.powerManagement`,
+  `nvidia.prime.*`, `amd.enable`
+- `sound` - PipeWire and audio defaults: `enable`
+- `fonts` - Shared system fonts: `enable`
+- `bluetooth` - Bluetooth support: `enable`
+- `networking` - NetworkManager defaults: `networkmanager`
+- `printing` - Printing support: `enable`
+- `ssh` - OpenSSH server settings: `enable`, `passwordAuth`, `port`,
+  `ports`, `permitRootLogin`
+- `sops` - Host secret management: `enable`, `defaultSopsFile`,
+  `sshKeyPaths`, `deployUserAgeKey`
+- `docker` - Docker service and optional bootstrapped networks:
+  `enable`, `rootless`, `enableOnBoot`, `networks`
+- `tailscale` - Tailscale client setup: `enable`,
+  `useRoutingFeatures`, `acceptRoutes`, `extraUpFlags`
+- `vpn` - PIA VPN integration: `pia.enable`, `pia.autoConnect`,
+  `pia.server`
+- `flatpak` - Flathub and curated app bundles: `enable`, `browsers`,
+  `cad`, `electronics`, `gaming`, `extraPackages`
+- `gaming` - Steam and gaming defaults: `enable`
+- `wine` - Wine support: `enable`
+- `vscode` - VS Code system install: `enable`
+- `onepassword` - 1Password desktop integration: `enable`
+- `security` - Firejail sandboxing: `firejail`
+- `cachix` - Cachix setup: `enable`
+- `proxmox` - Proxmox VE node helpers: `enable`, `ipAddress`
+- `gameserver` - Game server host support: `enable`, `ludusavi.*`,
+  `astroneer.*`
 
 ## Home Manager modules
 
-### Core namespaces
+### Core home option roots
 
-These are the main option roots used in `home/<user>/home.nix`:
+These are the main roots used in `home/<user>/home.nix`:
 
-| Option path | Purpose | Common values |
-| --- | --- | --- |
-| `cyberfighter.profile.enable` | Home profile, usually inherited from the host | `"desktop"`, `"wsl"`, `"minimal"` |
-| `cyberfighter.system.*` | User identity and state version | `username`, `homeDirectory`, `stateVersion` |
-| `cyberfighter.packages.*` | User package sets | `includeDev`, `extraPackages` |
-| `cyberfighter.common.enable` | Shared defaults for all users | Usually left enabled |
-| `cyberfighter.wsl.*` | WSL-specific HM settings | WSL helpers and path/session behavior |
+- `cyberfighter.profile.enable` - Home profile: `"desktop"`, `"wsl"`,
+  `"minimal"`
+- `cyberfighter.system.*` - User identity and state version:
+  `username`, `homeDirectory`, `stateVersion`
+- `cyberfighter.packages.*` - Shared user package sets: `includeDev`,
+  `extraPackages`
+- `cyberfighter.common.enable` - Shared base user config: Usually left
+  enabled
+- `cyberfighter.wsl.*` - WSL-specific Home Manager behavior:
+  session/path helpers and Windows integration
 
-### Home feature modules
+### Home features
 
 Available under `cyberfighter.features.*`:
 
-| Feature | What it covers | Notable options |
-| --- | --- | --- |
-| `git` | Git defaults and includes | identity and extra config |
-| `shell` | Shared shell behavior | base aliases/env plus `fish.enable`, `zsh.enable`, `starship.enable` |
-| `editor` | Editors and IDEs | `vim.enable`, `neovim.enable`, `micro.enable`, `zed.enable`, `lazyvim.enable` |
-| `terminal` | Terminal emulators | `enable`, `alacritty.enable`, `ghostty.enable`, `ghostty.fullscreen` |
-| `desktop` | User desktop apps | Firefox, Bitwarden, desktop package helpers |
-| `ssh` | SSH client config | `enable`, `onepass`, `hosts` |
-| `sops` | User secrets | SOPS-backed Home Manager secrets |
-| `noctalia` | Noctalia shell integration | `enable` |
-| `tools` | CLI/TUI extras | `btop`, `copilotMcp`, `lazygit`, `mc`, `opencode`, `rofi`, `jujutsu`, `carapace`, `tmux`, `zellij`, `yazi`, `direnv`, `fastfetch`, `sesh` |
-| `tmuxinator` | Host-specific tmux session layouts | `enable` |
+- `git` - Git defaults plus personal/work includes: `enable`,
+  `extraSettings`
+- `shell` - Shared shell behavior and aliases: `enable`,
+  `fish.enable`, `bash.enable`, `zsh.enable`, `starship.enable`,
+  `extraSessionVariables`, `extraAliases`
+- `editor` - Editors and editor-specific modules: `enable`, `vim.*`,
+  `neovim.enable`, `vscode.*`, `lazyvim.enable`, `micro.enable`,
+  `zed.enable`
+- `terminal` - Terminal emulator modules: `enable`,
+  `alacritty.enable`, `ghostty.enable`, `ghostty.fullscreen`
+- `desktop` - User desktop apps: `enable`, `firefox.*`,
+  `bitwarden.enable`, `extraPackages`
+- `ssh` - SSH client config: `enable`, `onepass`, `hosts`
+- `sops` - User secrets: `enable`
+- `noctalia` - Noctalia shell integration: `enable`
+- `tools` - CLI/TUI tools and helper packages: `enable`,
+  `enableDefault`, `extraPackages`, `btop`, `copilotMcp`, `lazygit`,
+  `mc`, `opencode`, `rofi`, `jujutsu`, `carapace`, `tmux`, `zellij`,
+  `yazi`, `direnv`, `fastfetch`
+- `tmuxinator` - Host-specific tmux layouts: `enable`
 
-## Current user configs
+### Current home configs
 
-### `home/cyberfighter`
-
-- Desktop-oriented setup
-- Fish + Zsh + Starship
-- Vim, Neovim, Zed, LazyVim
-- Alacritty and Ghostty
-- Desktop apps, Bitwarden, Noctalia
-- SSH host list for homelab machines
-- Tooling such as tmux, zellij, yazi, lazygit, rofi, jujutsu
-
-### `home/jdguillot`
-
-- WSL/workstation-oriented setup
-- Fish + Zsh + Starship
-- Neovim + LazyVim
-- Firefox and work git identity include
-- SSH host list for work targets
-- Tooling such as tmux, zellij, yazi, lazygit, direnv, midnight commander
-
-### `home/minimal`
-
-- Lightweight server/VM profile
-- Zsh + Starship
-- Vim, Neovim, LazyVim
-- Small CLI tool set for admin tasks
+- `home/cyberfighter` - Desktop-oriented setup with Fish + Zsh +
+  Starship, Vim/Neovim/Zed/LazyVim, Alacritty + Ghostty, desktop apps,
+  Noctalia, SSH host aliases, and admin/dev tools
+- `home/jdguillot` - Work/WSL-oriented setup with Fish + Zsh +
+  Starship, Neovim + LazyVim, Firefox, work Git include, SSH host
+  aliases, and common CLI/TUI tools
+- `home/minimal` - Lightweight server profile with Zsh + Starship,
+  Vim/Neovim/LazyVim, SSH, and a small admin tool set
 
 ## How to use this repo
 
-### Build or switch a host
+### Build or switch a NixOS host
 
 ```bash
 sudo nixos-rebuild switch --flake .#<hostname>
@@ -195,40 +250,47 @@ home-manager switch --flake .#cyberfighter@razer-nixos
 home-manager switch --flake .#jdguillot@work-nix-wsl
 ```
 
-### Deploy with deploy-rs
+### Deploy a remote host
 
 ```bash
 deploy .#<hostname>
 ```
 
-Use this for hosts that exist under `deploy.nodes`, currently:
+Use this only for hosts present under `deploy.nodes`.
 
-- `thkpd-pve1`
-- `simple-vm`
-- `vm-gameserver-nix`
-- `sys-galp-nix`
-
-### Update flake inputs
+### Inspect or update flake inputs
 
 ```bash
+nix flake show
 nix flake update
 ```
 
-If your shell aliases are loaded, this repo also expects:
+### Shell aliases used in this repo
 
-- `ns` - rebuild system and home together
+- `ns` - rebuild system and current Home Manager config
 - `hs` - switch the current Home Manager config
+- `nb` - build boot generation and switch current Home Manager config
 - `nu` - update flake inputs
+
+### Practical notes
+
+- New files must be tracked in git before `nixos-rebuild` or
+  `home-manager switch`.
+- Keep host metadata in `hosts/default.nix`; use host files for feature
+  selection and overrides.
+- For full option details, use `docs/MODULES.md` and `docs/HOME-MANAGER.md`.
 
 ## Adding or updating a host
 
-1. Add host metadata in `hosts/default.nix`.
+1. Add the host entry to `hosts/default.nix`.
 2. Create `hosts/<host>/configuration.nix`.
-3. Add `disk-config.nix` and/or `hardware-configuration.nix` when needed.
+3. Add `hardware-configuration.nix` and/or `disk-config.nix` when needed.
 4. Register the host in `flake.nix` under `nixosConfigurations`.
 5. Add a Home Manager output in `flake.nix` if the host needs one.
 6. Add a `deploy.nodes` entry if the host should be managed with `deploy-rs`.
-7. Use `hosts/templates/` as a starting point when possible.
+7. Start from `hosts/templates/desktop-workstation.nix`,
+   `gaming-rig.nix`, `minimal-server.nix`, or `wsl-dev.nix` when
+   useful.
 
 Minimal host skeleton:
 
@@ -257,12 +319,6 @@ Minimal host skeleton:
 Important:
 
 - Keep attributes nested under `cyberfighter = { ... };`
-- New files must be tracked in git before `nixos-rebuild` or `home-manager switch`
-- Put host metadata in `hosts/default.nix`; do not duplicate hostname/username logic across the tree
-
-## Secrets and bootstrap notes
-
-- System and Home Manager secrets live under `secrets/` and are wired through SOPS modules.
-- `scripts/nixos-anywhere.sh` is the practical starting point for provisioning a new machine.
-- If a host needs remote bootstrap plus declarative disks, pair `nixos-anywhere` with the host's `disk-config.nix`.
-- For full secret setup details, use `docs/SOPS-MIGRATION.md`.
+- Put shared host metadata in `hosts/default.nix`
+- Use `scripts/nixos-anywhere.sh` when provisioning a fresh machine
+- Use `scripts/generate_ssh_key.sh` when preparing SSH access for a new host
