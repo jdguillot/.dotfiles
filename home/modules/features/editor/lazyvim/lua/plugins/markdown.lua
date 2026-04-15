@@ -1,4 +1,32 @@
 return {
+	{
+		"LazyVim/LazyVim",
+		ft = "markdown",
+		init = function()
+			local markdown_keymaps = vim.api.nvim_create_augroup("markdown_keymaps", { clear = true })
+
+			vim.api.nvim_create_autocmd("FileType", {
+				group = markdown_keymaps,
+				pattern = "markdown",
+				callback = function(args)
+					vim.keymap.set("n", "<c-b>", 'viw"zc**<C-r>z**<Esc>', {
+						buffer = args.buf,
+						noremap = true,
+						silent = true,
+						desc = "Bold word",
+					})
+
+					vim.keymap.set("n", "<c-i>", 'viw"zc*<C-r>z*<Esc>', {
+						buffer = args.buf,
+						noremap = true,
+						silent = true,
+						desc = "Italicize word",
+					})
+				end,
+			})
+		end,
+	},
+
 	-- Configure markdown LSP and linting
 	{
 		"mfussenegger/nvim-lint",

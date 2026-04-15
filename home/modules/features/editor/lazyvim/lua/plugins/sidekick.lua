@@ -5,16 +5,18 @@ return {
 			mux = {
 				backend = "tmux",
 				enabled = true,
-			},
-			tools = {
-				copilot = { cmd = { "copilot", "--alt-screen" } },
-			},
-		},
-		copilot = {
-			status = {
-				level = vim.log.levels.OFF,
+				create = "split",
+				split = {
+					vertical = true,
+					size = 0.3,
+				},
 			},
 		},
+		-- copilot = {
+		-- 	status = {
+		-- 		level = vim.log.levels.OFF,
+		-- 	},
+		-- },
 	},
 	keys = {
 		{
