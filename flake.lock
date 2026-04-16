@@ -38,26 +38,6 @@
         "type": "github"
       }
     },
-    "deploy-rs-tui": {
-      "inputs": {
-        "deploy-rs": "deploy-rs_2",
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs_4"
-      },
-      "locked": {
-        "lastModified": 1776061830,
-        "narHash": "sha256-NWx3x67Hqn0gpBsoCAVTxyvKUV7rO6G31+hDen0vHAo=",
-        "owner": "jdguillot",
-        "repo": "deploy-rs-tui",
-        "rev": "dc868ec263fc71b94beb0cd672255024cc713a54",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jdguillot",
-        "repo": "deploy-rs-tui",
-        "type": "github"
-      }
-    },
     "deploy-rs_2": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -75,6 +55,26 @@
       "original": {
         "owner": "serokell",
         "repo": "deploy-rs",
+        "type": "github"
+      }
+    },
+    "deptui": {
+      "inputs": {
+        "deploy-rs": "deploy-rs_2",
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs_4"
+      },
+      "locked": {
+        "lastModified": 1776330120,
+        "narHash": "sha256-IZx0qDBD/PZNCEoIyxJvOMCV/+AlwM0OWaDQiAGpo9w=",
+        "owner": "jdguillot",
+        "repo": "deptui",
+        "rev": "47abdce83259b5d8773615bb0e46ac330d47b0d3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jdguillot",
+        "repo": "deptui",
         "type": "github"
       }
     },
@@ -586,7 +586,7 @@
       "inputs": {
         "catppuccin": "catppuccin",
         "deploy-rs": "deploy-rs",
-        "deploy-rs-tui": "deploy-rs-tui",
+        "deptui": "deptui",
         "disko": "disko",
         "home-manager": "home-manager",
         "niri": "niri",

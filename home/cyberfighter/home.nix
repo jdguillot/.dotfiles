@@ -30,7 +30,7 @@
     packages = {
       includeDev = true;
       extraPackages = with pkgs; [
-        inputs.deploy-rs-tui.packages.${stdenv.hostPlatform.system}.default
+        inputs.deptui.packages.${stdenv.hostPlatform.system}.default
       ];
     };
 

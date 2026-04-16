@@ -38,7 +38,7 @@
     #    pst-bin.url = "path:./programs/pst";
     #    tasmotizer.url = "path:./programs/tasmotizer";
     deploy-rs.url = "github:serokell/deploy-rs";
-    deploy-rs-tui.url = "github:jdguillot/deploy-rs-tui";
+    deptui.url = "github:jdguillot/deptui";
     niri.url = "github:sodiboo/niri-flake";
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell";
