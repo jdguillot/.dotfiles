@@ -1,1561 +1,278 @@
-# NixOS Dotfiles - Complete Setup Guide
+# NixOS dotfiles
 
-A modular NixOS configuration system with home-manager integration, featuring profiles, feature modules, secrets management, and deploy-rs for remote deployments.
+Modular NixOS and Home Manager configurations for desktops, WSL machines, servers, and VMs, built around a small custom namespace: `cyberfighter.*`.
 
-## Table of Contents
+This flake tracks `nixos-unstable`, keeps a `nixos-25.11` package set available for selective use, and wires in shared building blocks such as `sops-nix`, `disko`, `deploy-rs`, `nixos-wsl`, `vscode-server`, `niri`, `proxmox-nixos`, and Noctalia.
 
-- [Quick Links](#quick-links)
-- [Features](#features)
-- [Installation Guide](#installation-guide)
-  - [nixos-anywhere (Preferred Method)](#nixos-anywhere-preferred-method)
-  - [Deploy-rs + Disko](#deploy-rs--disko)
-  - [On a Fresh NixOS Installation (Git Clone Method)](#on-a-fresh-nixos-installation-git-clone-method)
-  - [From a Live CD (Manual Partition Method)](#from-a-live-cd-manual-partition-method)
-  - [On an Existing System](#on-an-existing-system)
-- [Running VMs with quickemu](#running-vms-with-quickemu)
-- [Configuration System](#configuration-system)
-- [Quick Start Examples](#quick-start-examples)
-- [Building and Deploying](#building-and-deploying)
-- [Secrets Management](#secrets-management)
-- [Module Documentation](#module-documentation)
+## Documentation
 
-## Quick Links
+Use the README for the quick overview, then jump into the focused docs as needed:
 
-- **[NixOS Modules Reference](docs/MODULES.md)** - Complete NixOS system module documentation
-- **[Home Manager Reference](docs/HOME-MANAGER.md)** - Complete home-manager module documentation
-- **[SOPS Secrets Guide](docs/SOPS-MIGRATION.md)** - Secrets management with SOPS
+- [`docs/HOSTS.md`](docs/HOSTS.md) - exported hosts, templates, flake naming, and rollout notes
+- [`docs/MODULES.md`](docs/MODULES.md) - NixOS/system module reference for `modules/`
+- [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) - Home Manager module reference for `home/modules/`
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) - local rebuilds, `deploy-rs`, and `nixos-anywhere`
+- [`docs/SOPS.md`](docs/SOPS.md) - system, home, and SSH-host secret workflows
+- [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) - repo usage recommendations and the reasoning behind them
 
-## Features
+## Repository layout
 
-### System Features (26 Modules)
-
-- **Profiles**: Desktop, WSL, Minimal - predefined configurations for common use cases
-- **Desktop Environments**: Plasma6, Plasma5, GNOME, Hyprland
-- **Graphics**: Nvidia (with Prime support) and AMD drivers
-- **Gaming**: Steam, GameMode, MangoHud, ProtonUp-Qt, Wine
-- **Containers**: Docker with rootless support
-- **Networking**: NetworkManager, Tailscale VPN
-- **Filesystems**: TrueNAS CIFS mounts with credentials management, Disko declarative disk partitioning
-- **Security**: Firejail sandboxing, SOPS secrets management
-- **Proxmox**: Proxmox VE node management via proxmox-nixos
-- **Caching**: Cachix binary cache configuration
-- **And more**: Bluetooth, Printing, SSH, Flatpak, Fonts, 1Password
-
-### Home Manager Features (14 Modules)
-
-- **Profiles**: Desktop, Minimal, WSL - automatically inherit from system profile
-- **Shell**: Fish, Bash, Zsh with Starship prompt
-- **Editors**: Vim, Neovim, VSCode with LazyVim support
-- **Terminal**: Alacritty, Ghostty, Tmux, Zellij
-- **Tools**: 40+ curated CLI tools (ripgrep, fd, fzf, bat, etc.)
-- **Desktop Apps**: Firefox, 1Password, and more
-- **Git**: Pre-configured with sensible defaults
-- **Secrets**: SOPS home-manager secrets integration
-- **SSH**: SSH client configuration with host management
-
-## Installation Guide
-
-### nixos-anywhere (Preferred Method)
-
-[nixos-anywhere](https://github.com/nix-community/nixos-anywhere) is the preferred tool for bootstrapping new hosts. It handles disko-based disk partitioning and the full NixOS installation in a single remote command, with built-in support for injecting SSH host keys (required for SOPS secrets).
-
-A helper script at `scripts/nixos-anywhere.sh` automates the full workflow, including 1Password-based SSH host key management and optional SOPS secrets onboarding.
-
-#### Prerequisites
-
-- Your dotfiles repo cloned locally
-- 1Password CLI (`op`) signed in (used to create/retrieve the host SSH key)
-- A target host booted from the NixOS live ISO with SSH enabled (see Step 1)
-
-#### Step 1: Prepare the Target Host
-
-Boot the target machine from the NixOS live ISO and enable SSH:
-
-```bash
-# On the live ISO, set a temporary root password
-passwd
-
-# Note the IP address
-ip addr
+```text
+.
+├── flake.nix
+├── hosts/
+│   ├── default.nix
+│   └── templates/
+├── home/
+│   └── modules/
+├── modules/
+├── docs/
+├── scripts/
+└── secrets/
 ```
 
-#### Step 2: Register the New Host
+## Current hosts
 
-On your local machine, add the host to `hosts/default.nix`:
+| Host | Profile | Folder | Home config | `deploy-rs` | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `razer-nixos` | `desktop` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
+| `sys-galp-nix` | `desktop` | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
+| `nixos-portable` | `desktop` | `hosts/nixos-portable/` | none | no | portable desktop profile with NVIDIA, gaming, Docker, VPN, and SOPS |
+| `work-nix-wsl` | `wsl` | `hosts/work-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
+| `ryzn-nix-wsl` | `wsl` | `hosts/ryzn-wsl/` | `cyberfighter@ryzn-nix-wsl` | no | WSL with Docker, Flatpak, SSH, Cachix, and SOPS |
+| `thkpd-pve1` | `minimal` | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
+| `simple-vm` | `minimal` | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
+| `vm-gameserver-nix` | `minimal` | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
+
+Two flake output names intentionally differ from their folders:
+
+- `work-nix-wsl` uses `hosts/work-wsl/`
+- `ryzn-nix-wsl` uses `hosts/ryzn-wsl/`
+
+For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
+
+## NixOS module overview
+
+System modules live in `modules/`.
+
+### Core namespaces
+
+- `cyberfighter.profile.enable` - host profile selector: `desktop`, `wsl`, `minimal`, or `none`
+- `cyberfighter.system.*` - host identity, user, locale, timezone, bootloader, and platform metadata
+- `cyberfighter.nix.*` - trusted users, GC, optimisation, substituters, and extra Nix settings
+- `cyberfighter.packages.*` - shared system package bundles and extra packages
+- `cyberfighter.filesystems.*` - TrueNAS/CIFS mounts and extra file systems
+
+### Feature namespaces
+
+Feature modules live under `cyberfighter.features.*` and currently cover:
+
+- Desktop and hardware: `desktop`, `graphics`, `sound`, `fonts`, `bluetooth`, `printing`
+- Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`
+- Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
+- Services and infra: `docker`, `security`, `sops`, `proxmox`
+- Gaming and game hosting: `gaming`, `gameserver`, `gameserver.astroneer`
+
+The most commonly used options in host files look like this:
 
 ```nix
 {
-  # ... existing hosts ...
-
-  your-hostname = {
-    profile = "desktop";  # or "wsl", "minimal"
-    system = {
-      hostname = "your-hostname";
-      username = "yourusername";
-    };
-  };
-}
-```
-
-#### Step 3: Create a Disko Disk Configuration
-
-Create `hosts/your-hostname/disk-config.nix`. Copy an existing one as a starting point and edit the device name:
-
-```bash
-cp hosts/simple-vm/disk-config.nix hosts/your-hostname/disk-config.nix
-# Edit to set the correct device (check with lsblk on the target)
-```
-
-#### Step 4: Create the Host Configuration
-
-Create `hosts/your-hostname/configuration.nix`:
-
-```nix
-{ inputs, ... }:
-{
-  imports = [
-    ../../modules
-    ./disk-config.nix
-  ];
-
-  cyberfighter.features = {
-    desktop.environment = "plasma6";
-    docker.enable = true;
-    # ... other features
-  };
-}
-```
-
-#### Step 5: Add the Host to flake.nix
-
-```nix
-# In nixosConfigurations:
-your-hostname = mkNixosSystem "your-hostname" hostConfigs.your-hostname;
-
-# In homeConfigurations:
-"yourusername@your-hostname" = mkHomeConfig "your-hostname" hostConfigs.your-hostname;
-
-# In deploy.nodes (for subsequent deploy-rs deployments):
-your-hostname = mkDeployNode "your-hostname" hostConfigs.your-hostname true;
-```
-
-#### Step 6: Run the nixos-anywhere Script
-
-From your local machine, run the interactive helper script:
-
-```bash
-./scripts/nixos-anywhere.sh
-```
-
-The script will prompt for:
-- **Hostname** – must match the key in `hosts/default.nix` and `flake.nix`
-- **Target** – `user@host` or `user@host -p port` (e.g. `root@192.168.1.50`)
-- **Generate hardware-configuration.nix?** – recommended for bare-metal hosts
-- **Set up secrets?** – if yes, the script derives the age key from the injected SSH key, copies it to clipboard, and opens `.sops.yaml` for editing before re-encrypting secrets
-
-Behind the scenes the script:
-1. Creates or retrieves the host SSH key from 1Password (`Dev` vault)
-2. Injects the key into the target so nixos-anywhere can embed it in the new system (enabling SOPS decryption on first boot)
-3. Runs `nix run github:nix-community/nixos-anywhere -- --flake .#your-hostname --target-host <target>`
-
-#### Step 7: Deploy with deploy-rs
-
-After the system reboots and SSH is available using the permanent host key:
-
-```bash
-# Deploy system profile
-deploy .#your-hostname
-
-# Deploy with sudo (if not root)
-deploy -s .#your-hostname
-
-# Deploy system + home-manager
-deploy .#your-hostname --profiles system home
-```
-
----
-
-### Deploy-rs + Disko
-
-An alternative approach using disko directly on the target followed by `nixos-install`, then managed with deploy-rs. Prefer [nixos-anywhere](#nixos-anywhere-preferred-method) for new hosts — this method is documented here as a reference.
-
-This uses **disko** for declarative disk partitioning and **deploy-rs** for atomic deployments with automatic rollback.
-
-#### Prerequisites
-
-- A working NixOS system (or NixOS live ISO) you can SSH into
-- Your dotfiles repo cloned on a machine you'll deploy **from**
-- The target host registered in `hosts/default.nix` and `flake.nix`
-
-#### Step 1: Prepare the Target Host
-
-Boot the target machine from the NixOS live ISO and enable SSH:
-
-```bash
-# On the live ISO - set a temporary root password so you can SSH in
-passwd
-
-# Note the IP address
-ip addr
-```
-
-#### Step 2: Register the New Host
-
-On your local machine, add the host to `hosts/default.nix`:
-
-```nix
-{
-  # ... existing hosts ...
-
-  your-hostname = {
-    profile = "desktop";  # or "wsl", "minimal"
-    system = {
-      hostname = "your-hostname";
-      username = "yourusername";
-    };
-  };
-}
-```
-
-#### Step 3: Create a Disko Disk Configuration
-
-Create `hosts/your-hostname/disk-config.nix` with your disk layout. Use an existing one as a template:
-
-```bash
-cp hosts/simple-vm/disk-config.nix hosts/your-hostname/disk-config.nix
-# Edit to set the correct device (check with lsblk on the target)
-```
-
-A typical disko config (btrfs with subvolumes):
-
-```nix
-{
-  disko.devices = {
-    disk = {
-      main = {
-        type = "disk";
-        device = "/dev/sda";  # Change to your disk (check with lsblk)
-        content = {
-          type = "gpt";
-          partitions = {
-            ESP = {
-              priority = 1;
-              name = "ESP";
-              start = "1M";
-              end = "128M";
-              type = "EF00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
-              };
-            };
-            root = {
-              size = "100%";
-              name = "root";
-              content = {
-                type = "btrfs";
-                extraArgs = [ "-f" ];
-                subvolumes = {
-                  "/rootfs" = { mountpoint = "/"; };
-                  "/home"   = { mountOptions = [ "compress=zstd" ]; mountpoint = "/home"; };
-                  "/nix"    = { mountOptions = [ "compress=zstd" "noatime" ]; mountpoint = "/nix"; };
-                  "/swap"   = { mountpoint = "/.swapvol"; swap.swapfile.size = "4G"; };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-  };
-}
-```
-
-#### Step 4: Create the Host Configuration
-
-Create `hosts/your-hostname/configuration.nix`:
-
-```nix
-{ inputs, ... }:
-{
-  imports = [
-    ../../modules
-    ./disk-config.nix
-  ];
-
-  cyberfighter.features = {
-    desktop.environment = "plasma6";
-    docker.enable = true;
-    # ... other features
-  };
-}
-```
-
-#### Step 5: Add the Host to flake.nix
-
-```nix
-# In nixosConfigurations:
-your-hostname = mkNixosSystem "your-hostname" hostConfigs.your-hostname;
-
-# In homeConfigurations:
-"yourusername@your-hostname" = mkHomeConfig "your-hostname" hostConfigs.your-hostname;
-
-# In deploy.nodes (if using deploy-rs):
-your-hostname = mkDeployNode "your-hostname" hostConfigs.your-hostname true;
-```
-
-#### Step 6: Partition and Format with Disko
-
-From your local machine, run disko to partition and format the target disk:
-
-```bash
-# This will wipe and partition the target disk according to disk-config.nix
-nix run github:nix-community/disko/latest -- \
-  --mode destroy,format,mount \
-  --flake .#your-hostname \
-  --ssh-host root@<target-ip>
-```
-
-Or run it directly on the target (from the live ISO):
-
-```bash
-nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- \
-  --mode destroy,format,mount \
-  --flake github:jdguillot/.dotfiles#your-hostname
-```
-
-#### Step 7: Install NixOS
-
-```bash
-# From the live ISO (after disko has partitioned and mounted):
-nixos-install --flake github:jdguillot/.dotfiles#your-hostname --no-root-password
-
-# Reboot into the new system
-reboot
-```
-
-#### Step 8: Deploy with deploy-rs
-
-After the target reboots and SSH is available:
-
-```bash
-# Deploy system profile only
-deploy .#your-hostname
-
-# Deploy with sudo (if not root)
-deploy -s .#your-hostname
-
-# Deploy system + home-manager profiles
-deploy .#your-hostname --profiles system home
-
-# Deploy without automatic rollback (useful for debugging)
-deploy .#your-hostname --auto-rollback false
-
-# Deploy with custom SSH options
-deploy .#your-hostname -- -p 2222
-
-# Dry-run (build but don't activate)
-deploy .#your-hostname --dry-activate
-```
-
----
-
-### On a Fresh NixOS Installation (Git Clone Method)
-
-If you've just installed NixOS and want to use this configuration without deploy-rs:
-
-1. **Boot into your new NixOS system**
-
-2. **Install required tools** (if not already available):
-
-   ```bash
-   nix-shell -p git gh
-   ```
-
-3. **Clone this repository**:
-
-   ```bash
-   git clone https://github.com/jdguillot/.dotfiles.git ~/dotfiles
-   cd ~/dotfiles
-   ```
-
-4. **Register your host in hosts/default.nix** (IMPORTANT - do this first):
-
-   ```nix
-   # Edit hosts/default.nix and add your host:
-   {
-     # ... existing hosts ...
-
-     your-hostname = {
-       profile = "desktop";  # or "wsl", "minimal"
-       system = {
-         hostname = "your-hostname";
-         username = "yourusername";
-       };
-     };
-   }
-   ```
-
-5. **Generate hardware configuration**:
-
-   ```bash
-   mkdir -p hosts/<your-hostname>
-   sudo nixos-generate-config --dir hosts/<your-hostname>
-   ```
-
-6. **Choose a template or create your configuration**:
-
-   ```bash
-   # Option 1: Use a template
-   cp hosts/templates/desktop-workstation.nix hosts/<your-hostname>/configuration.nix
-
-   # Option 2: Start from scratch (see Configuration System section)
-   ```
-
-7. **Edit your host configuration** (hosts/<your-hostname>/configuration.nix):
-
-   ```nix
-   # The profile, hostname, and username are already set in hosts/default.nix
-   # Just configure additional features:
-   {
-     imports = [ ../../modules ];
-
-     cyberfighter.features = {
-       desktop.environment = "plasma6";
-       docker.enable = true;
-       # ... other features
-     };
-   }
-   ```
-
-8. **Add your host to flake.nix**:
-
-   ```nix
-   # In flake.nix nixosConfigurations section, add:
-   your-hostname = mkNixosSystem "your-hostname" hostConfigs.your-hostname;
-   ```
-
-9. **Set up home-manager configuration**:
-
-   ```bash
-   mkdir -p home/<your-username>
-   # Copy from home/cyberfighter/home.nix as a template
-   cp home/cyberfighter/home.nix home/<your-username>/home.nix
-   # Edit to match your preferences
-   ```
-
-10. **Add home-manager to flake.nix**:
-
-    ```nix
-    # In flake.nix homeConfigurations section, add:
-    "yourusername@your-hostname" = mkHomeConfig "your-hostname" hostConfigs.your-hostname;
-    ```
-
-11. **Build and activate**:
-
-    ```bash
-    sudo nixos-rebuild switch --flake .#your-hostname
-    ```
-
-### From a Live CD (Manual Partition Method)
-
-Installing NixOS from scratch with this configuration:
-
-1. **Boot the NixOS installation media**
-
-2. **Connect to the internet**:
-
-   ```bash
-   # For WiFi
-   sudo systemctl start wpa_supplicant
-   wpa_cli
-   > add_network
-   > set_network 0 ssid "YOUR_SSID"
-   > set_network 0 psk "YOUR_PASSWORD"
-   > enable_network 0
-   > quit
-
-   # Or use nmtui for an easier interface
-   nmtui
-   ```
-
-3. **Partition your disk** (example with UEFI):
-
-   ```bash
-   # List disks
-   lsblk
-
-   # Partition (example for /dev/sda)
-   sudo parted /dev/sda -- mklabel gpt
-   sudo parted /dev/sda -- mkpart ESP fat32 1MiB 512MiB
-   sudo parted /dev/sda -- set 1 esp on
-   sudo parted /dev/sda -- mkpart primary 512MiB 100%
-
-   # Format partitions
-   sudo mkfs.fat -F 32 -n boot /dev/sda1
-   sudo mkfs.ext4 -L nixos /dev/sda2
-
-   # Mount
-   sudo mount /dev/disk/by-label/nixos /mnt
-   sudo mkdir -p /mnt/boot
-   sudo mount /dev/disk/by-label/boot /mnt/boot
-   ```
-
-4. **For encrypted root** (optional):
-
-   ```bash
-   # Encrypt root partition
-   sudo cryptsetup luksFormat /dev/sda2
-   sudo cryptsetup open /dev/sda2 cryptroot
-   sudo mkfs.ext4 -L nixos /dev/mapper/cryptroot
-   sudo mount /dev/mapper/cryptroot /mnt
-
-   # Note the UUID for later
-   sudo cryptsetup luksUUID /dev/sda2
-   ```
-
-5. **Install git and clone dotfiles**:
-
-   ```bash
-   nix-shell -p git gh
-   cd /mnt
-   git clone https://github.com/jdguillot/.dotfiles.git /mnt/home/dotfiles
-   cd /mnt/home/dotfiles
-   ```
-
-6. **Register your host in hosts/default.nix** (see step 4 in "On a Fresh NixOS Installation")
-
-7. **Generate hardware configuration**:
-
-   ```bash
-   mkdir -p hosts/<your-hostname>
-   sudo nixos-generate-config --root /mnt --dir hosts/<your-hostname>
-   ```
-
-8. **Create your configuration** (see "On a Fresh NixOS Installation" steps 6-10)
-
-9. **Install NixOS**:
-
-   ```bash
-   sudo nixos-install --flake .#your-hostname
-
-   # Set root password when prompted
-   ```
-
-10. **Reboot and finish setup**:
-
-    ```bash
-    reboot
-    # After reboot, log in and run:
-    sudo nixos-rebuild switch --flake ~/dotfiles#your-hostname
-    ```
-
-### On an Existing System
-
-Migrating an existing NixOS system to this configuration:
-
-1. **Backup your current configuration**:
-
-   ```bash
-   sudo cp -r /etc/nixos /etc/nixos.backup
-   ```
-
-2. **Clone this repository**:
-
-   ```bash
-   git clone https://github.com/jdguillot/.dotfiles.git ~/dotfiles
-   cd ~/dotfiles
-   ```
-
-3. **Register your host in hosts/default.nix** (see step 4 in "On a Fresh NixOS Installation")
-
-4. **Copy your hardware configuration**:
-
-   ```bash
-   mkdir -p hosts/<your-hostname>
-   sudo cp /etc/nixos/hardware-configuration.nix hosts/<your-hostname>/
-   ```
-
-5. **Create new configuration** based on a template or from scratch
-
-6. **Add your host to flake.nix** (see steps 8 and 10 in "On a Fresh NixOS Installation")
-
-7. **Gradually migrate** your existing settings:
-   - Start with a minimal profile
-   - Enable features one at a time
-   - Test after each change
-
-8. **Build and test**:
-
-   ```bash
-   # Test without activating
-   sudo nixos-rebuild test --flake .#your-hostname
-
-   # If everything works, switch
-   sudo nixos-rebuild switch --flake .#your-hostname
-   ```
-
-## Host Registration System
-
-This repository uses a centralized host registration system that simplifies configuration management.
-
-### How It Works
-
-1. **hosts/default.nix** - Central registry of all hosts with metadata
-   - Profile (desktop, wsl, minimal)
-   - Hostname
-   - Username
-   - User description
-
-2. **flake.nix** - Imports host metadata and generates configurations
-   - Uses helper functions `mkNixosSystem` and `mkHomeConfig`
-   - Automatically passes profile and metadata to configurations
-
-3. **hosts/<hostname>/configuration.nix** - Host-specific settings
-   - Only needs to configure additional features
-   - Profile, hostname, and username are inherited from hosts/default.nix
-
-### Adding a New Host
-
-**Step 1: Register in hosts/default.nix**
-
-```nix
-{
-  # ... existing hosts ...
-
-  my-new-host = {
-    profile = "desktop";  # or "wsl", "minimal"
-    system = {
-      hostname = "my-new-host";
-      username = "myuser";
-      userDescription = "My Full Name";
-    };
-  };
-}
-```
-
-**Step 2: Add to flake.nix**
-
-```nix
-# In nixosConfigurations:
-my-new-host = mkNixosSystem "my-new-host" hostConfigs.my-new-host;
-
-# In homeConfigurations:
-"myuser@my-new-host" = mkHomeConfig "my-new-host" hostConfigs.my-new-host;
-
-# Optional: In deploy.nodes (for deploy-rs remote deployment):
-# mkDeployNode "hostname" hostMeta withHome
-# Set withHome = true to also deploy the home-manager profile
-my-new-host = mkDeployNode "my-new-host" hostConfigs.my-new-host true;
-```
-
-**Step 3: Create host configuration**
-
-```nix
-# hosts/my-new-host/configuration.nix
-{
-  imports = [ ../../modules ];
-
-  # Profile, hostname, username already set via hosts/default.nix
-  # Just configure features:
-  cyberfighter.features = {
-    desktop.environment = "plasma6";
-    docker.enable = true;
-  };
-}
-```
-
-### Benefits of This System
-
-- **DRY**: Define hostname and username once in hosts/default.nix
-- **Consistent**: All hosts follow the same pattern
-- **Simple**: Host configs only need feature configuration
-- **Type-safe**: Metadata is validated and passed to all modules
-
-## Configuration System
-
-This repository uses a modular configuration system under the `cyberfighter` namespace.
-
-### NixOS Configuration Structure
-
-```nix
-{
-  imports = [ ../../modules ];
-
   cyberfighter = {
-    # Choose a profile (optional but recommended)
-    profile.enable = "desktop";  # or "wsl", "minimal", "none"
+    profile.enable = "desktop";
 
-    # Core system settings
     system = {
-      hostname = "my-nixos";
+      hostname = "my-host";
       username = "myuser";
-      userDescription = "My Full Name";
       stateVersion = "25.05";
-
-      # Bootloader configuration
-      bootloader = {
-        systemd-boot = true;
-        efiCanTouchVariables = true;
-        # luksDevice = "uuid-here";  # Optional: for encrypted disks
-      };
-
-      extraGroups = [ "docker" ];  # Additional user groups
     };
 
-    # Nix configuration
-    nix = {
-      trustedUsers = [ "root" "myuser" ];
-      enableDevenv = true;
-    };
+    nix.trustedUsers = [ "root" "myuser" ];
+    packages.includeDev = true;
 
-    # Package selection
-    packages = {
-      includeBase = true;
-      includeDesktop = true;
-      extraPackages = with pkgs; [
-        # htop  # Example - base already includes htop
-        # neofetch  # Add your custom packages here
-      ];
-    };
-
-    # Feature modules
     features = {
-      # Desktop environment
-      desktop = {
-        environment = "plasma6";  # or "gnome", "hyprland", etc.
-        firefox = true;
-      };
-
-      # Graphics drivers
-      graphics = {
-        enable = true;
-        nvidia = {
-          enable = true;
-          # prime = {
-          #   enable = true;
-          #   intelBusId = "PCI:0:2:0";
-          #   nvidiaBusId = "PCI:2:0:0";
-          # };
-        };
-      };
-
-      # Sound
-      sound.enable = true;
-
-      # Fonts
-      fonts.enable = true;
-
-      # Bluetooth
-      # bluetooth = {
-      #   enable = true;
-      #   powerOnBoot = true;
-      # };
-
-      # Gaming
-      # gaming = {
-      #   enable = true;
-      #   steam.enable = true;
-      #   gamemode = true;
-      #   mangohud = true;
-      # };
-
-      # Containers
+      desktop.environment = "plasma6";
+      graphics.enable = true;
       docker.enable = true;
-
-      # VPN
-      # tailscale = {
-      #   enable = true;
-      #   acceptRoutes = true;
-      # };
-
-      # Flatpak applications
-      flatpak = {
-        enable = true;
-        browsers = true;  # Zen Browser, Chromium
-        # cad = true;  # OpenSCAD, FreeCAD
-        # electronics = true;  # Arduino IDE, Fritzing
-        extraPackages = [
-          # "com.moonlight_stream.Moonlight"
-          # "us.zoom.Zoom"
-        ];
-      };
-
-      # Network file systems
-      # filesystems.truenas = {
-      #   enable = true;
-      #   mounts = {
-      #     home = {
-      #       share = "userdata/myuser";
-      #       mountPoint = "/mnt/nas-home";
-      #     };
-      #   };
-      # };
+      tailscale.enable = true;
+      sops.enable = true;
     };
   };
 }
 ```
 
-### Home Manager Configuration Structure
+For the full option surface and upstream references, see [`docs/MODULES.md`](docs/MODULES.md).
+
+## Home Manager module overview
+
+Home modules live in `home/modules/` and use the same `cyberfighter.*` namespace style.
+
+### Core home namespaces
+
+- `cyberfighter.profile.enable` - home profile selector, usually set from `hostProfile`
+- `cyberfighter.system.*` - username, home directory, and state version
+- `cyberfighter.common.enable` - baseline shell and CLI setup
+- `cyberfighter.packages.*` - shared user package bundles
+- `cyberfighter.wsl.*` - Windows path integration and 1Password SSH-agent bridging for WSL
+
+### Main feature groups
+
+- `cyberfighter.features.git`, `shell`, `terminal`, `editor`, `desktop`, `ssh`, `sops`, `tools`, `noctalia`
+- Shell submodules: `shell.zsh`, `shell.fish`, `shell.starship`
+- Terminal submodules: `terminal.alacritty`, `terminal.ghostty`
+- Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`
+- Tool submodules: `tmux`, `zellij`, `yazi`, `btop`, `lazygit`, `jujutsu`, `carapace`, `direnv`, `rofi`, `sesh`, `fastfetch`, `opencode`, `mc`, `copilotMcp`
+
+Example:
 
 ```nix
 {
-  imports = [
-    ../modules
-    # Optional: Import additional feature configurations
-    # ../features/cli/lazyvim/lazyvim.nix
-    # ../features/cli/tmux/default.nix
-    # ../features/desktop/alacritty/default.nix
-  ];
-
   cyberfighter = {
-    # Profile auto-inherits from system (optional override)
-    # profile.enable = "desktop";
+    profile.enable = hostProfile;
 
-    # User settings
     system = {
       username = "myuser";
       homeDirectory = "/home/myuser";
       stateVersion = "24.11";
     };
 
-    # Packages
-    packages = {
-      includeDev = true;  # Development tools
-      extraPackages = with pkgs; [
-        # Add your custom packages
-      ];
-    };
-
-    # Features
-    features = {
-      # Git configuration
-      git = {
-        userName = "Your Name";
-        userEmail = "your@email.com";
-      };
-
-      # Shell configuration
-      shell = {
-        fish.enable = true;
-        starship.enable = true;
-        # extraAliases = {
-        #   vi = "nvim";
-        # };
-      };
-
-      # Editor configuration
-      editor = {
-        neovim.enable = true;
-        # vscode.enable = true;
-      };
-
-      # Terminal (auto-enabled on desktop systems)
-      terminal = {
-        # alacritty.enable = true;
-        # tmux.enable = true;
-      };
-
-      # Desktop apps (auto-enabled on desktop systems)
-      desktop = {
-        firefox.enable = true;
-        bitwarden.enable = true;
-      };
-
-      # Development tools
-      tools = {
-        enableDefault = true;  # Includes 40+ CLI tools
-        # extraPackages = with pkgs; [ kubectl ];
-      };
-    };
-  };
-
-  programs.home-manager.enable = true;
-}
-```
-
-## Quick Start Examples
-
-### Desktop Workstation
-
-```nix
-{
-  cyberfighter = {
-    profile.enable = "desktop";
-
-    system = {
-      hostname = "workstation";
-      username = "myuser";
-    };
-
-    features = {
-      desktop.environment = "plasma6";
-      docker.enable = true;
-      gaming.enable = true;
-    };
-  };
-}
-```
-
-### WSL Development Environment
-
-```nix
-{
-  cyberfighter = {
-    profile.enable = "wsl";
-
-    system = {
-      hostname = "dev-wsl";
-      username = "devuser";
-    };
-
-    features = {
-      docker.enable = true;
-      tailscale.enable = true;
-    };
-  };
-}
-```
-
-### Gaming Rig
-
-```nix
-{
-  cyberfighter = {
-    profile.enable = "desktop";
-
-    system = {
-      hostname = "gaming-pc";
-      username = "gamer";
-    };
-
-    features = {
-      desktop.environment = "plasma6";
-      graphics = {
-        enable = true;
-        nvidia.enable = true;
-      };
-      gaming = {
-        enable = true;
-        steam = {
-          enable = true;
-          remotePlay = true;
-          gamescopeSession = true;
-        };
-        gamemode = true;
-        mangohud = true;
-      };
-    };
-  };
-}
-```
-
-### Minimal Server
-
-```nix
-{
-  cyberfighter = {
-    profile.enable = "minimal";
-
-    system = {
-      hostname = "server";
-      username = "admin";
-    };
+    packages.includeDev = true;
 
     features = {
       ssh = {
         enable = true;
-        passwordAuth = false;
-        permitRootLogin = "no";
+        onepass = true;
+        hosts = [ "simple-vm" "thkpd-pve1" ];
       };
-      docker.enable = true;
+
+      shell.zsh.enable = true;
+      editor.lazyvim.enable = true;
+      terminal.ghostty.enable = true;
+      tools.tmux.enable = true;
+      tools.copilotMcp.enable = true;
     };
   };
 }
 ```
 
-## Building and Deploying
+For the detailed home reference, see [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md).
 
-### deploy-rs (Primary Method)
+## Common workflows
 
-[deploy-rs](https://github.com/serokell/deploy-rs) is the primary deployment tool for remote hosts. It supports atomic deployments with automatic rollback.
-
-#### Deploy All Profiles for a Node
+Inspect flake outputs:
 
 ```bash
-# Deploy system + home-manager profiles (order defined by profilesOrder in flake.nix)
-deploy .#hostname
-```
-
-#### Deploy with sudo (recommended for non-root SSH users)
-
-```bash
-deploy -s .#hostname
-# Equivalent to:
-deploy --sudo .#hostname
-```
-
-#### Deploy a Specific Profile
-
-```bash
-# System profile only
-deploy .#hostname --profiles system
-
-# Home-manager profile only
-deploy .#hostname --profiles home
-
-# Both (explicit order)
-deploy .#hostname --profiles system home
-```
-
-#### Rollback Control
-
-```bash
-# Disable automatic rollback (useful when debugging activation failures)
-deploy .#hostname --auto-rollback false
-
-# Default behavior is to auto-rollback on failure
-deploy .#hostname  # --auto-rollback true is the default
-```
-
-#### Dry Run / Build Only
-
-```bash
-# Build without activating (verify the config builds)
-deploy .#hostname --dry-activate
-```
-
-#### Custom SSH Options
-
-```bash
-# Use a non-standard SSH port
-deploy .#hostname -- -p 2222
-
-# Use a specific SSH key
-deploy .#hostname -- -i ~/.ssh/id_ed25519
-```
-
-#### Deploy All Configured Nodes
-
-```bash
-# Deploy to all nodes defined in deploy.nodes
-deploy .
-```
-
-#### Available Deploy Nodes
-
-| Node | Profiles | Description |
-|------|----------|-------------|
-| `thkpd-pve1` | system + home | Proxmox VE node |
-| `simple-vm` | system | Minimal VM |
-| `sys-galp-nix` | system + home | Laptop |
-
-### Local Build Commands (nixos-rebuild)
-
-For local (on-machine) deployments, use the standard `nixos-rebuild` workflow:
-
-```bash
-# Build and activate NixOS system
-sudo nixos-rebuild switch --flake .#hostname
-# Or use alias:
-ns
-
-# Build home-manager only
-home-manager switch --flake .#user@host
-# Or use alias:
-hs
-
-# Test without activating
-sudo nixos-rebuild test --flake .#hostname
-
-# Build for next boot
-sudo nixos-rebuild boot --flake .#hostname
-
-# Update flake inputs
-nix flake update
-# Or use alias:
-nu
-
-# Show flake outputs
 nix flake show
 ```
 
-### Available Hosts
-
-| Hostname | Profile | Description |
-|----------|---------|-------------|
-| `razer-nixos` | desktop | Desktop workstation |
-| `sys-galp-nix` | desktop | Laptop |
-| `work-nix-wsl` | wsl | Work WSL environment |
-| `ryzn-nix-wsl` | wsl | Personal WSL environment |
-| `nixos-portable` | desktop | Portable installation |
-| `thkpd-pve1` | minimal | Proxmox VE node |
-| `simple-vm` | minimal | Minimal VM |
-
-## Running VMs with quickemu
-
-[quickemu](https://github.com/quickemu-project/quickemu) wraps QEMU with sensible defaults and includes `quickget`, a companion tool that downloads OS images and generates a ready-to-use VM config file in one step.
-
-`quickemu` is available when `packages.includeVirt = true` is set in your host config, or via `nix-shell -p quickemu`.
-
-### Step 1: Download the VM with quickget
-
-Use `quickget` to download the OS image and generate the VM config automatically:
+Switch the local system:
 
 ```bash
-mkdir -p ~/vms && cd ~/vms
-
-# NixOS (for simple-vm or any NixOS guest)
-quickget nixos latest minimal
-
-# Or any other distro, e.g.:
-quickget ubuntu 24.04
-quickget debian 12
+sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
-`quickget` downloads the ISO and creates a config file named `<os>-<release>.conf` (e.g. `nixos-latest-minimal.conf`). No manual config authoring required.
-
-### Step 2: Boot the VM
-
-Start the VM using the generated config:
+Switch only Home Manager:
 
 ```bash
-quickemu --vm nixos-latest-minimal.conf
+home-manager switch --flake .#<user>@<hostname>
 ```
 
-This opens a SPICE/VNC window. quickemu maps the VM's SSH port to a host port — find it with:
+Test a system build without switching:
 
 ```bash
-cat ~/vms/nixos-latest-minimal/nixos-latest-minimal.ports
+sudo nixos-rebuild test --flake .#<hostname>
 ```
 
-### Step 3: Install — Choose Based on OS
-
----
-
-#### Option A: NixOS VM (nixos-anywhere)
-
-Use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) to partition the disk and install NixOS in one command, driven by your flake config (e.g. `simple-vm`).
-
-In the live ISO, enable SSH access:
+Update flake inputs:
 
 ```bash
-# Inside the live VM
-passwd   # set a temporary root password
+nix flake update
 ```
 
-Then from your dotfiles repo on the host machine:
+Useful aliases from the Home Manager shell module:
+
+- `ns` - rebuild system and matching Home Manager target
+- `hs` - switch Home Manager only
+- `nu` - update flake inputs
+- `nb` - build the flake output without switching
+
+## Deployment
+
+### `deploy-rs`
+
+The flake exports deploy nodes for:
+
+- `sys-galp-nix`
+- `thkpd-pve1`
+- `simple-vm`
+- `vm-gameserver-nix`
+
+Typical commands:
 
 ```bash
-bash scripts/nixos-anywhere.sh
-# Hostname: simple-vm
-# Target: root@localhost -p <ssh-port>
+deploy .#sys-galp-nix
+deploy .#vm-gameserver-nix.system
+deploy --dry-activate .#thkpd-pve1
 ```
 
-Or run nixos-anywhere directly:
+`simple-vm` is exported as a system-only node; the other deploy nodes have both `system` and `home` profiles.
+
+### `nixos-anywhere`
+
+For first-time installs, use `scripts/nixos-anywhere.sh` as the repo-aware wrapper around `nixos-anywhere`.
+
+Example:
 
 ```bash
-nix run github:nix-community/nixos-anywhere -- \
-  --flake .#simple-vm \
-  --target-host "root@localhost" \
-  -p <ssh-port>
+./scripts/nixos-anywhere.sh \
+  --hostname simple-vm \
+  --target root@192.168.1.50 -i ~/.ssh/bootstrap-key \
+  --hardware-config \
+  --secrets \
+  --ssh-host \
+  --user cyberfighter
 ```
 
-nixos-anywhere will partition the virtual disk using `hosts/simple-vm/disk-config.nix` (targets `/dev/vda` by default) and install NixOS.
+The helper can:
 
-After it finishes, reboot the VM and deploy with deploy-rs:
+- pass extra SSH flags after `--target`
+- generate `hardware-configuration.nix`
+- update `.sops.yaml` recipients and run `sops updatekeys`
+- open `home/modules/features/ssh/ssh-hosts.yaml` for a new encrypted host entry
+- add the host alias to one or more `home/<user>/home.nix` files
+- seed host SSH keys from 1Password before installation
 
-```bash
-deploy .#simple-vm -s
-```
+Use `hosts/templates/*.nix` as starting points for new machines. For more deployment detail, see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
----
+## Secrets
 
-#### Option B: Non-NixOS VM (deploy-rs home-manager)
+Secrets are managed with `sops-nix` on both the system and Home Manager sides.
 
-For any non-NixOS distro, install the OS normally via the VM window, then deploy your home-manager configuration to it using deploy-rs.
+Main secret locations in this repo:
 
-**1. Register the VM in `flake.nix`**
+- `secrets/secrets.yaml` - shared system/host secrets
+- `secrets/secrets_common.yaml` - shared home/user secrets
+- `home/modules/features/ssh/ssh-hosts.yaml` - encrypted SSH config snippets used by the Home Manager SSH module
 
-Add a home configuration and a deploy node (home profile only) for the VM:
+The system SOPS wrapper also supports `deployUserAgeKey = true` for hosts that should derive a user-readable age key from the host SSH key during activation.
 
-```nix
-# In homeConfigurations:
-"yourusername@my-vm" = mkHomeConfig "my-vm" hostConfigs.my-vm;
+See [`docs/SOPS.md`](docs/SOPS.md) for practical examples and host-onboarding guidance.
 
-# In deploy.nodes:
-my-vm = {
-  hostname = "localhost";
-  profiles.home = {
-    user = "yourusername";
-    sshUser = "yourusername";
-    sshOpts = [ "-p" "<ssh-port>" ];
-    path = deploy-rs.lib.x86_64-linux.activate.home-manager
-      self.homeConfigurations."yourusername@my-vm";
-  };
-};
-```
+## New host checklist
 
-**2. Install Nix on the VM**
+1. Start from a template in `hosts/templates/`.
+2. Add host metadata to `hosts/default.nix`.
+3. Create `hosts/<name>/configuration.nix`.
+4. Export the host from `flake.nix` under `nixosConfigurations`.
+5. Add a Home Manager target under `homeConfigurations` if needed.
+6. Add a `deploy.nodes` entry if the host will be maintained remotely.
+7. If the host uses secrets or shared SSH aliases, update SOPS/SSH data with `scripts/nixos-anywhere.sh` or the manual SOPS workflow.
 
-SSH into the VM (using the port from `<vm-name>.ports`):
+## External references
 
-```bash
-ssh -p <ssh-port> yourusername@localhost
-```
-
-Inside the VM, install Nix using the Determinate Systems installer (supports both NixOS and non-NixOS):
-
-```bash
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-```
-
-**3. Deploy home-manager**
-
-From your dotfiles repo on the host machine, deploy the home profile:
-
-```bash
-deploy .#my-vm --profiles home
-```
-
-This installs and activates your full home-manager configuration on the non-NixOS VM. Subsequent changes can be redeployed the same way.
-
----
-
-### quickemu Tips
-
-```bash
-# Start with no display (headless)
-quickemu --vm nixos-latest-minimal.conf --display none
-
-# Connect via SSH (after finding the port)
-ssh -p <port> <username>@localhost
-
-# Stop the VM
-quickemu --vm nixos-latest-minimal.conf --kill
-```
-
-## Secrets Management
-
-This repository uses **SOPS** (Secrets OPerationS) with age encryption for managing secrets.
-
-### Setting Up SOPS on a New Host
-
-When setting up a new host, you can add its key to SOPS **directly from that host** using your personal age key stored in 1Password. No need to use a separate development machine!
-
-#### Prerequisites
-
-Install required tools on the new host:
-
-```bash
-nix-shell -p _1password-cli jq ssh-to-age
-```
-
-#### Step 1: Sign In to 1Password CLI
-
-```bash
-# Sign in and get session token
-eval $(op signin)
-```
-
-#### Step 2: Set Up SOPS with Your Personal Age Key
-
-```bash
-# Get your personal age private key from 1Password and set as environment variable
-export SOPS_AGE_KEY=$(op read "op://Personal/SOPS Age Key/notesPlain")
-
-# Verify it's set (should show your key)
-echo $SOPS_AGE_KEY
-```
-
-**Alternative: Use on-demand key fetching** (more secure):
-
-```bash
-# SOPS will fetch the key automatically when needed
-export SOPS_AGE_KEY_CMD='op read "op://Personal/SOPS Age Key/notesPlain"'
-```
-
-#### Step 4: Get New Host's Age Public Key
-
-```bash
-# Generate age public key from the host's SSH key
-nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
-
-# Output example:
-# age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-#### Step 5: Add New Host Key to .sops.yaml
-
-Edit `.sops.yaml` (now you can use SOPS since you have your personal key):
-
-```yaml
-keys:
-  - &cyberfighter age1059cfeyzas7ug20q7w39vwr8v9vj8rylxmhwl4p4uzh90hknyprq359wyd
-  - &razer-nix age1g98hga3gn0qmtelwmcm3gpfpjpmt6zs60xww2vj7fk4v8n48qc5shnnvq3
-  # Add your new host key:
-  - &my-new-host age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-creation_rules:
-  - path_regex: secrets/secrets.yaml$
-    key_groups:
-      - age:
-          - *cyberfighter
-          - *razer-nix
-          - *my-new-host # Add reference here
-```
-
-#### Step 6: Re-encrypt Secrets with New Host Key
-
-```bash
-# Re-encrypt secrets to include the new host
-sops updatekeys secrets/secrets.yaml
-```
-
-You should see output like:
-
-```
-2022/02/09 16:32:02 Syncing keys for file secrets/secrets.yaml
-The following changes will be made to the file's groups:
-Group 1
-    age1059cfeyzas7ug20q7w39vwr8v9vj8rylxmhwl4p4uzh90hknyprq359wyd
-    age1g98hga3gn0qmtelwmcm3gpfpjpmt6zs60xww2vj7fk4v8n48qc5shnnvq3
-+++ age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-Is this okay? (y/n): y
-```
-
-#### Step 7: Commit and Push
-
-```bash
-# Commit the updated configuration
-git add .sops.yaml secrets/secrets.yaml
-git commit -m "Add SOPS key for my-new-host"
-git push
-```
-
-#### Step 8: Clean Up Environment Variables
-
-```bash
-# Remove sensitive data from environment
-unset SOPS_AGE_KEY
-unset SOPS_AGE_KEY_CMD
-```
-
-#### Step 9: Verify Secrets Work
-
-```bash
-# Rebuild the system
-sudo nixos-rebuild switch --flake .#my-new-host
-
-# Check that secrets are available
-ls -l /run/secrets/
-
-# Test a specific secret
-cat /run/secrets/my-secret
-```
-
-### Quick Reference: One-Command Workflow
-
-```bash
-# Complete workflow in one go:
-nix-shell -p _1password-cli ssh-to-age --run '
-  eval $(op signin) &&
-  export SOPS_AGE_KEY=$(op read "op://Personal/SOPS Age Key/notesPlain") &&
-  echo "New host key:" &&
-  cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age &&
-  echo "Now edit .sops.yaml to add this key, then run:" &&
-  echo "  sops updatekeys secrets/secrets.yaml"
-'
-```
-
-### Why This Works
-
-- **Your personal age key** (`&cyberfighter`) allows YOU to edit secrets from any machine
-- **Host keys** (like `&razer-nix`, `&my-new-host`) allow HOSTS to decrypt secrets at runtime
-- You use your personal key to edit/re-encrypt, hosts use their keys to decrypt
-- Your personal key retrieved from 1Password exists only in memory (environment variable)
-- No sensitive files are created on disk
-
-### Security Benefits of This Approach
-
-✅ **No file cleanup needed** - Age key only exists as environment variable  
-✅ **Secure** - Private key never written to disk on new host  
-✅ **Temporary** - Key only exists for current shell session  
-✅ **Convenient** - Add hosts directly from the host itself, no dev machine needed  
-✅ **Centralized** - Personal key securely stored in 1Password  
-✅ **Auditable** - 1Password tracks when/where key is accessed
-
-### Alternative: Using SOPS_AGE_KEY_CMD
-
-For even better security, use `SOPS_AGE_KEY_CMD` which fetches the key on-demand:
-
-```bash
-eval $(op signin)
-export SOPS_AGE_KEY_CMD='op read "op://Personal/SOPS Age Key/notesPlain"'
-
-# SOPS will fetch your key automatically when needed
-sops secrets/secrets.yaml
-```
-
-This ensures the key is only retrieved when SOPS actually needs it.
-
-### Common Operations
-
-```bash
-# Edit secrets
-sops secrets/secrets.yaml
-
-# Add a new secret
-# 1. Edit secrets/secrets.yaml with sops
-# 2. Add the secret key-value pair
-# 3. Save and commit
-
-# View secrets (decrypted)
-sops secrets/secrets.yaml
-
-# Re-encrypt after adding new host
-sops updatekeys secrets/secrets.yaml
-```
-
-### Using Secrets in Configuration
-
-Enable SOPS in your host configuration:
-
-```nix
-cyberfighter.features.sops = {
-  enable = true;
-  defaultSopsFile = ../../secrets/secrets.yaml;
-};
-```
-
-Define secrets to use:
-
-```nix
-# Make secret available
-config.sops.secrets."my-secret" = { };
-
-# Secret will be available at: /run/secrets/my-secret
-
-# Use in a service
-services.myservice = {
-  passwordFile = config.sops.secrets."my-secret".path;
-};
-```
-
-### Troubleshooting
-
-**Error: "Failed to get the data key"**
-
-- Your host key is not in `.sops.yaml`
-- Run `sops updatekeys secrets/secrets.yaml` after adding the key
-
-**Error: "no such file or directory: /etc/ssh/ssh_host_ed25519_key"**
-
-- Host doesn't have an ed25519 SSH key
-- Generate one: `sudo ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""`
-
-**Secrets not appearing in /run/secrets/**
-
-- SOPS module not enabled in configuration
-- Add: `cyberfighter.features.sops.enable = true;`
-
-See **[docs/SOPS-MIGRATION.md](docs/SOPS-MIGRATION.md)** for complete secrets management guide.
-
-## Module Documentation
-
-### Detailed References
-
-- **[NixOS Modules](docs/MODULES.md)** - Complete system module options, types, defaults, and examples
-- **[Home Manager Modules](docs/HOME-MANAGER.md)** - Complete home-manager options, types, defaults, and examples
-
-### Module Organization
-
-**NixOS Modules (26 total)**:
-
-- **Core** (4): profiles, system, users, nix-settings
-- **Features** (22): 1password, bluetooth, cachix, desktop, docker, filesystems, flatpak, fonts, gaming, graphics, networking, packages, printing, proxmox, security, sops, sound, ssh, tailscale, vpn, vscode, wine
-
-**Home Manager Modules (14 total)**:
-
-- **Core** (6): common, profiles, system, users, packages, wsl
-- **Features** (8): git, shell, editor, terminal, desktop, tools, sops, ssh
-
-### Profile Defaults
-
-**Desktop Profile** enables:
-
-- Desktop environment, Graphics, Sound, NetworkManager
-- Base + Desktop packages, Flatpak with common apps
-- Systemd-boot bootloader
-
-**WSL Profile** enables:
-
-- Graphics (for GUI apps)
-- Base packages only
-- Disables bootloader and NetworkManager
-
-**Minimal Profile** enables:
-
-- NetworkManager, Systemd-boot
-- Base packages only
-
-## Help and Support
-
-### Quick Actions
-
-Press `Ctrl+P` in your terminal for available actions (if using OpenCode)
-
-### Learning Resources
-
-- [NixOS Manual](https://nixos.org/manual/nixos/stable/)
-- [Home Manager Manual](https://nix-community.github.io/home-manager/)
-- [Nix Pills](https://nixos.org/guides/nix-pills/)
-- [Zero to Nix](https://zero-to-nix.com/)
-- [deploy-rs Documentation](https://github.com/serokell/deploy-rs)
-- [disko Documentation](https://github.com/nix-community/disko)
-
-## Repository Structure
-
-```
-.
-├── flake.nix           # Flake configuration (nixosConfigurations, homeConfigurations, deploy.nodes)
-├── flake.lock          # Locked flake inputs
-├── README.md           # This file
-├── hosts/              # Host-specific configurations
-│   ├── default.nix     # Centralized host metadata registry
-│   ├── razer-nixos/    # Desktop workstation  (flake key: razer-nixos)
-│   ├── sys-galp-nix/   # Laptop (deploy-rs managed)  (flake key: sys-galp-nix)
-│   ├── thkpd-pve1/     # Proxmox VE node (deploy-rs managed, disko)  (flake key: thkpd-pve1)
-│   ├── simple-vm/      # Minimal VM (deploy-rs managed, disko)  (flake key: simple-vm)
-│   ├── work-wsl/       # Work WSL environment  (flake key: work-nix-wsl)
-│   ├── ryzn-wsl/       # Personal WSL environment  (flake key: ryzn-nix-wsl)
-│   ├── nixos-portable/ # Portable installation  (flake key: nixos-portable)
-│   └── templates/      # Example configurations
-├── modules/            # NixOS system modules
-│   ├── core/           # Essential modules (profiles, system, users, nix-settings)
-│   └── features/       # Optional features (22 modules)
-├── home/               # Home-manager configurations
-│   ├── modules/        # Home-manager modules (14 total)
-│   ├── cyberfighter/   # cyberfighter user home config
-│   └── jdguillot/      # jdguillot user home config
-├── secrets/            # SOPS encrypted secrets
-├── docs/               # Documentation
-│   ├── MODULES.md
-│   ├── HOME-MANAGER.md
-│   └── SOPS-MIGRATION.md
-└── scripts/            # Utility scripts
-```
-
-## Contributing
-
-This is a personal dotfiles repository, but feel free to:
-
-- Use it as inspiration for your own configuration
-- Submit issues for bugs or unclear documentation
-- Suggest improvements via pull requests
-
-## License
-
-This configuration is provided as-is for personal and educational use.
+- `deploy-rs`: <https://github.com/serokell/deploy-rs>
+- `nixos-anywhere`: <https://github.com/nix-community/nixos-anywhere>
+- `disko`: <https://github.com/nix-community/disko>
+- `sops-nix`: <https://github.com/Mic92/sops-nix>
+- NixOS manual: <https://nixos.org/manual/nixos/stable/>
+- Home Manager manual: <https://nix-community.github.io/home-manager/>
+- MyNixOS search: <https://mynixos.com/>
