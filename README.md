@@ -45,39 +45,23 @@ Use the README for the quick map, then jump into the focused docs:
 
 ## Current hosts
 
-- `razer-nixos` (`desktop`) - folder: `hosts/razer-nixos/`; home:
-  `cyberfighter@razer-nixos`; `deploy-rs`: no; notes: Niri workstation
-  with gaming, Docker, Flatpak, Cachix, 1Password, SOPS, VPN, and
-  TrueNAS mounts
-- `sys-galp-nix` (`desktop`) - folder: `hosts/sys-galp-nix/`; home:
-  `cyberfighter@sys-galp-nix`; `deploy-rs`: yes; notes: Plasma 6 laptop
-  with gaming, Bluetooth, Flatpak, SOPS, and Waydroid
-- `nixos-portable` (`desktop`) - folder: `hosts/nixos-portable/`; home:
-  none; `deploy-rs`: no; notes: portable desktop with NVIDIA, gaming,
-  Docker, PIA VPN, and SOPS
-- `work-nix-wsl` (`wsl`) - folder: `hosts/work-wsl/`; home:
-  `jdguillot@work-nix-wsl`; `deploy-rs`: no; notes: WSL with VS Code
-  Server, Docker Desktop, Tailscale, SSH, Flatpak, and a SOPS-managed
-  work CA bundle
-- `ryzn-nix-wsl` (`wsl`) - folder: `hosts/ryzn-wsl/`; home:
-  `cyberfighter@ryzn-nix-wsl`; `deploy-rs`: no; notes: WSL with graphics
-  support, Docker, Flatpak, SSH, Cachix, and SOPS
-- `thkpd-pve1` (`minimal`) - folder: `hosts/thkpd-pve1/`; home:
-  `cyberfighter@thkpd-pve1`; `deploy-rs`: yes; notes: Proxmox VE host
-  with bridge networking, Docker, Tailscale, and SOPS
-- `simple-vm` (`minimal`) - folder: `hosts/simple-vm/`; home:
-  `cyberfighter@simple-vm`; `deploy-rs`: yes (system only); notes:
-  generic VM/server target with SSH, Docker, Tailscale, and SOPS
-- `vm-gameserver-nix` (`minimal`) - folder: `hosts/vm-gameserver-nix/`;
-  home: `cyberfighter@vm-gameserver-nix`; `deploy-rs`: yes; notes:
-  Astroneer server VM with Ludusavi, Playit, Tailscale, and SOPS
+| Host | Profile | Folder | Home config | `deploy-rs` | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `razer-nixos` | `desktop` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
+| `sys-galp-nix` | `desktop` | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
+| `nixos-portable` | `desktop` | `hosts/nixos-portable/` | none | no | portable desktop profile with NVIDIA, gaming, Docker, VPN, and SOPS |
+| `work-nix-wsl` | `wsl` | `hosts/work-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
+| `ryzn-nix-wsl` | `wsl` | `hosts/ryzn-wsl/` | `cyberfighter@ryzn-nix-wsl` | no | WSL with Docker, Flatpak, SSH, Cachix, and SOPS |
+| `thkpd-pve1` | `minimal` | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
+| `simple-vm` | `minimal` | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
+| `vm-gameserver-nix` | `minimal` | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
 
 Two flake output names intentionally differ from their folders:
 
 - `work-nix-wsl` uses `hosts/work-wsl/`
 - `ryzn-nix-wsl` uses `hosts/ryzn-wsl/`
 
-For the full host matrix and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
+For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
 
 ## NixOS module overview
 
