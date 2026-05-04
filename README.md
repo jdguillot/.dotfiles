@@ -1,30 +1,35 @@
 # NixOS dotfiles
 
 Modular NixOS and Home Manager configurations for desktops, WSL
-machines, servers, and VMs. The repo is organized around a shared
-`cyberfighter.*` option namespace so hosts mostly declare intent and let
-modules handle the underlying NixOS or Home Manager settings.
+machines, Proxmox, and small server/VM targets. Hosts mostly declare
+intent through the shared `cyberfighter.*` option namespace and let repo
+modules translate that into upstream NixOS and Home Manager settings.
 
 The flake follows `nixos-unstable`, keeps `nixos-25.11` available for
 selected packages, and wires in shared tooling such as `sops-nix`,
-`disko`, `deploy-rs`, `nixos-wsl`, `vscode-server`, `niri`,
-`proxmox-nixos`, `noctalia`, and `deptui`.
+`disko`, `deploy-rs`, `nixos-anywhere`, `nixos-wsl`, `vscode-server`,
+`niri`, `proxmox-nixos`, `noctalia`, and `deptui`.
 
 ## Documentation
 
 Use the README for the quick map, then jump into the focused docs:
 
-- [`docs/HOSTS.md`](docs/HOSTS.md) - flake outputs, host folders,
-  templates, and rollout notes
-- [`docs/MODULES.md`](docs/MODULES.md) - NixOS/system module reference for
-  `modules/`
-- [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) - Home Manager module
-  reference for `home/modules/`
+- [`docs/HOSTS.md`](docs/HOSTS.md) - current hosts, flake outputs,
+  templates, and onboarding flow
+- [`docs/MODULES.md`](docs/MODULES.md) - NixOS module overview and
+  namespace map
+- [`docs/NIXOS-FEATURES.md`](docs/NIXOS-FEATURES.md) - detailed NixOS
+  module and option reference
+- [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) - Home Manager overview
+  and integration notes
+- [`docs/HOME-FEATURES.md`](docs/HOME-FEATURES.md) - detailed Home
+  Manager feature reference
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) - local rebuilds,
   `deploy-rs`, and `nixos-anywhere`
-- [`docs/SOPS.md`](docs/SOPS.md) - system, home, and SSH-host secret workflows
+- [`docs/SOPS.md`](docs/SOPS.md) - system, home, SSH-host, and
+  bootstrap secret workflows
 - [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) - repo
-  recommendations and why they are worth following
+  recommendations and why they matter here
 
 ## Repository layout
 
@@ -45,34 +50,51 @@ Use the README for the quick map, then jump into the focused docs:
 
 ## Current hosts
 
-| Host | Profile | Folder | Home config | `deploy-rs` | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `razer-nixos` | `desktop` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
-| `sys-galp-nix` | `desktop` | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
-| `nixos-portable` | `desktop` | `hosts/nixos-portable/` | none | no | portable desktop profile with NVIDIA, gaming, Docker, VPN, and SOPS |
-| `work-nix-wsl` | `wsl` | `hosts/work-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
-| `ryzn-nix-wsl` | `wsl` | `hosts/ryzn-wsl/` | `cyberfighter@ryzn-nix-wsl` | no | WSL with Docker, Flatpak, SSH, Cachix, and SOPS |
-| `thkpd-pve1` | `minimal` | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
-| `simple-vm` | `minimal` | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
-| `vm-gameserver-nix` | `minimal` | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
+- `razer-nixos` (`desktop`) - folder `hosts/razer-nixos/`; home
+  `cyberfighter@razer-nixos`; `deploy-rs`: no. Niri workstation with
+  gaming, Docker, PIA VPN, Flatpak, Cachix, SOPS, and TrueNAS mounts.
+- `sys-galp-nix` (`desktop`) - folder `hosts/sys-galp-nix/`; home
+  `cyberfighter@sys-galp-nix`; `deploy-rs`: yes. Plasma 6 laptop with
+  gaming, Bluetooth, Flatpak, SOPS, SSH, and Waydroid.
+- `nixos-portable` (`desktop`) - folder `hosts/nixos-portable/`; home
+  none; `deploy-rs`: no. Portable Plasma/NVIDIA desktop profile with
+  gaming, Docker, VPN, and SOPS.
+- `work-nix-wsl` (`wsl`) - folder `hosts/work-wsl/`; home
+  `jdguillot@work-nix-wsl`; `deploy-rs`: no. WSL with VS Code Server,
+  Docker Desktop, Flatpak, Tailscale, SSH, and a SOPS-managed work CA
+  bundle.
+- `ryzn-nix-wsl` (`wsl`) - folder `hosts/ryzn-wsl/`; home
+  `cyberfighter@ryzn-nix-wsl`; `deploy-rs`: no. WSL with graphics
+  support, Docker, Flatpak, SSH, Cachix, and SOPS.
+- `thkpd-pve1` (`minimal`) - folder `hosts/thkpd-pve1/`; home
+  `cyberfighter@thkpd-pve1`; `deploy-rs`: yes. Proxmox VE host with
+  bridge networking, Docker, Tailscale, and SOPS.
+- `simple-vm` (`minimal`) - folder `hosts/simple-vm/`; home
+  `cyberfighter@simple-vm`; `deploy-rs`: yes (system only). Generic
+  VM/server target with SSH, Docker, Tailscale, and SOPS.
+- `vm-gameserver-nix` (`minimal`) - folder
+  `hosts/vm-gameserver-nix/`; home `cyberfighter@vm-gameserver-nix`;
+  `deploy-rs`: yes. Astroneer server VM with Ludusavi backups, Playit,
+  Tailscale, and SOPS.
 
 Two flake output names intentionally differ from their folders:
 
 - `work-nix-wsl` uses `hosts/work-wsl/`
 - `ryzn-nix-wsl` uses `hosts/ryzn-wsl/`
 
-For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
+For host details, templates, and rollout notes, see
+[`docs/HOSTS.md`](docs/HOSTS.md).
 
 ## NixOS module overview
 
 System modules live in `modules/`.
 
-### Core namespaces
+### Core and top-level namespaces
 
 - `cyberfighter.profile.enable` - profile selector: `desktop`, `wsl`,
   `minimal`, or `none`
 - `cyberfighter.system.*` - hostname, username, locale, timezone,
-  bootloader, and platform metadata
+  state version, bootloader, and WSL metadata
 - `cyberfighter.nix.*` - trusted users, substituters, GC, optimization,
   and extra `nix.conf` settings
 - `cyberfighter.packages.*` - shared package bundles and extra packages
@@ -87,8 +109,11 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
 - Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
 - Services and infrastructure: `docker`, `security`, `sops`, `proxmox`
-- Gaming and hosting: `gaming`, `gameserver`,
-  `gameserver.astroneer`, `gameserver.playit`
+- Gaming and hosting: `gaming`, `gameserver`
+
+One host-level service lives outside the `cyberfighter.*` tree:
+
+- `services.playit.*` - Playit tunnel agent used by `vm-gameserver-nix`
 
 Common host shape:
 
@@ -117,7 +142,9 @@ Common host shape:
 }
 ```
 
-For the detailed option reference, see [`docs/MODULES.md`](docs/MODULES.md).
+See [`docs/MODULES.md`](docs/MODULES.md) for the overview and
+[`docs/NIXOS-FEATURES.md`](docs/NIXOS-FEATURES.md) for the grouped
+option reference.
 
 ## Home Manager overview
 
@@ -125,19 +152,20 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 
 ### Core home namespaces
 
-- `cyberfighter.profile.enable` - home profile selector, usually set from
-  `hostProfile`
+- `cyberfighter.profile.enable` - home profile selector, usually set
+  from `hostProfile`
 - `cyberfighter.system.*` - username, home directory, and state version
-- `cyberfighter.common.enable` - baseline shell and CLI setup
+- `cyberfighter.common.enable` - baseline shell, GitHub CLI, GPG,
+  Catppuccin, and shared dotfile setup
 - `cyberfighter.packages.*` - shared user package bundles
-- `cyberfighter.wsl.*` - Windows path integration and optional
+- `cyberfighter.wsl.*` - Windows-path integration and optional
   1Password SSH-agent bridging for WSL
 
 ### Main feature groups
 
 - `cyberfighter.features.git`, `shell`, `terminal`, `editor`,
   `desktop`, `ssh`, `sops`, `tools`, `noctalia`
-- Shell toggles: `bash`, `fish`, `zsh`, `starship`
+- Shell submodules: `bash`, `fish`, `zsh`, `starship`
 - Terminal submodules: `terminal.alacritty`, `terminal.ghostty`
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`
 - Tool submodules: `tmux`, `zellij`, `yazi`, `btop`, `lazygit`,
@@ -176,8 +204,9 @@ Common home shape:
 }
 ```
 
-For the detailed home reference, see
-[`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md).
+See [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) for the overview and
+[`docs/HOME-FEATURES.md`](docs/HOME-FEATURES.md) for the detailed
+option reference.
 
 ## Common workflows
 
@@ -222,7 +251,7 @@ Useful aliases from the Home Manager shell module:
 - `ns` - rebuild system and the matching Home Manager target
 - `hs` - switch Home Manager only
 - `nu` - update flake inputs
-- `nb` - build for next boot and switch Home Manager
+- `nb` - set the next boot generation and switch Home Manager
 
 ## Deployment
 
@@ -257,7 +286,7 @@ Example:
 ```bash
 ./scripts/nixos-anywhere.sh \
   --hostname simple-vm \
-  --target root@192.168.1.50 -i ~/.ssh/bootstrap-key \
+  --target root@192.168.1.50 -i ~/.ssh/bootstrap-key -p 2222 \
   --hardware-config \
   --secrets \
   --ssh-host \
@@ -266,16 +295,16 @@ Example:
 
 The helper can:
 
-- prompt for missing values or accept everything non-interactively
+- prompt for missing values or run non-interactively
 - treat everything after `--target` as SSH flags until the next script flag
 - generate `hardware-configuration.nix`
 - update `.sops.yaml` recipients and run `sops updatekeys`
 - open `home/modules/features/ssh/ssh-hosts.yaml` for a new encrypted host entry
 - add the host alias to one or more `home/<user>/home.nix` files
-- seed host SSH keys from 1Password before installation
+- reuse or create host SSH keys in 1Password before installation
 
-`--user` is repeatable and implies `--ssh-host`. For more detail, see
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+`--user` is repeatable and implies `--ssh-host`. For full setup notes,
+see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Secrets
 
@@ -293,7 +322,7 @@ The system SOPS wrapper also supports `deployUserAgeKey = true` for
 hosts that should derive a user-readable age key from the host SSH key
 during activation.
 
-For the practical secret workflow, see [`docs/SOPS.md`](docs/SOPS.md).
+For the working secret flow, see [`docs/SOPS.md`](docs/SOPS.md).
 
 ## New host checklist
 
@@ -305,6 +334,7 @@ For the practical secret workflow, see [`docs/SOPS.md`](docs/SOPS.md).
 6. Add a `deploy.nodes` entry if the host will be maintained remotely.
 7. If the host needs secrets or shared SSH aliases, update SOPS and SSH
    data with `scripts/nixos-anywhere.sh` or the manual SOPS workflow.
+8. Track new Nix files before running a flake-based build, switch, or deploy.
 
 ## References
 
