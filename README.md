@@ -1,35 +1,36 @@
 # NixOS dotfiles
 
-Modular NixOS and Home Manager configurations for desktops, WSL
-machines, Proxmox, and small server/VM targets. Hosts mostly declare
-intent through the shared `cyberfighter.*` option namespace and let repo
-modules translate that into upstream NixOS and Home Manager settings.
+Modular NixOS and Home Manager configs for desktops, WSL machines,
+Proxmox, and small server or VM targets. Most host files stay focused on
+intent through the shared `cyberfighter.*` option tree, while repo
+modules translate that into NixOS, Home Manager, deployment, and
+secrets configuration.
 
-The flake follows `nixos-unstable`, keeps `nixos-25.11` available for
+The flake tracks `nixos-unstable`, keeps `nixos-25.11` available for
 selected packages, and wires in shared tooling such as `sops-nix`,
 `disko`, `deploy-rs`, `nixos-anywhere`, `nixos-wsl`, `vscode-server`,
-`niri`, `proxmox-nixos`, `noctalia`, and `deptui`.
+`niri`, `proxmox-nixos`, and `noctalia`.
 
 ## Documentation
 
 Use the README for the quick map, then jump into the focused docs:
 
-- [`docs/HOSTS.md`](docs/HOSTS.md) - current hosts, flake outputs,
+- [`docs/HOSTS.md`](docs/HOSTS.md) - flake outputs, current hosts,
   templates, and onboarding flow
-- [`docs/MODULES.md`](docs/MODULES.md) - NixOS module overview and
-  namespace map
-- [`docs/NIXOS-FEATURES.md`](docs/NIXOS-FEATURES.md) - detailed NixOS
-  module and option reference
-- [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) - Home Manager overview
-  and integration notes
-- [`docs/HOME-FEATURES.md`](docs/HOME-FEATURES.md) - detailed Home
-  Manager feature reference
+- [`docs/MODULES.md`](docs/MODULES.md) - namespace map and where system
+  vs home logic lives
+- [`docs/NIXOS-FEATURES.md`](docs/NIXOS-FEATURES.md) - system module and
+  option reference
+- [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) - Home Manager
+  structure, profiles, and examples
+- [`docs/HOME-FEATURES.md`](docs/HOME-FEATURES.md) - Home Manager
+  feature and submodule reference
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) - local rebuilds,
   `deploy-rs`, and `nixos-anywhere`
-- [`docs/SOPS.md`](docs/SOPS.md) - system, home, SSH-host, and
-  bootstrap secret workflows
+- [`docs/SOPS.md`](docs/SOPS.md) - system, home, and SSH-host secret
+  workflows
 - [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) - repo
-  recommendations and why they matter here
+  conventions that keep hosts manageable
 
 ## Repository layout
 
@@ -37,6 +38,7 @@ Use the README for the quick map, then jump into the focused docs:
 .
 ├── flake.nix
 ├── hosts/
+│   ├── <hostname>/configuration.nix
 │   ├── default.nix
 │   └── templates/
 ├── home/
@@ -48,74 +50,71 @@ Use the README for the quick map, then jump into the focused docs:
 └── secrets/
 ```
 
-## Current hosts
+## Current Hosts
 
-- `razer-nixos` (`desktop`) - folder `hosts/razer-nixos/`; home
-  `cyberfighter@razer-nixos`; `deploy-rs`: no. Niri workstation with
-  gaming, Docker, PIA VPN, Flatpak, Cachix, SOPS, and TrueNAS mounts.
-- `sys-galp-nix` (`desktop`) - folder `hosts/sys-galp-nix/`; home
-  `cyberfighter@sys-galp-nix`; `deploy-rs`: yes. Plasma 6 laptop with
-  gaming, Bluetooth, Flatpak, SOPS, SSH, and Waydroid.
-- `nixos-portable` (`desktop`) - folder `hosts/nixos-portable/`; home
-  none; `deploy-rs`: no. Portable Plasma/NVIDIA desktop profile with
-  gaming, Docker, VPN, and SOPS.
-- `work-nix-wsl` (`wsl`) - folder `hosts/work-wsl/`; home
-  `jdguillot@work-nix-wsl`; `deploy-rs`: no. WSL with VS Code Server,
-  Docker Desktop, Flatpak, Tailscale, SSH, and a SOPS-managed work CA
-  bundle.
-- `ryzn-nix-wsl` (`wsl`) - folder `hosts/ryzn-wsl/`; home
-  `cyberfighter@ryzn-nix-wsl`; `deploy-rs`: no. WSL with graphics
-  support, Docker, Flatpak, SSH, Cachix, and SOPS.
-- `thkpd-pve1` (`minimal`) - folder `hosts/thkpd-pve1/`; home
-  `cyberfighter@thkpd-pve1`; `deploy-rs`: yes. Proxmox VE host with
-  bridge networking, Docker, Tailscale, and SOPS.
-- `simple-vm` (`minimal`) - folder `hosts/simple-vm/`; home
-  `cyberfighter@simple-vm`; `deploy-rs`: yes (system only). Generic
-  VM/server target with SSH, Docker, Tailscale, and SOPS.
-- `vm-gameserver-nix` (`minimal`) - folder
-  `hosts/vm-gameserver-nix/`; home `cyberfighter@vm-gameserver-nix`;
-  `deploy-rs`: yes. Astroneer server VM with Ludusavi backups, Playit,
-  Tailscale, and SOPS.
+- `razer-nixos` (`desktop`, folder `hosts/razer-nixos/`, home
+  `cyberfighter@razer-nixos`, `deploy-rs`: no) - Niri workstation with
+  TrueNAS mounts, gaming, Docker, Flatpak, Cachix, Bluetooth, printing,
+  PIA VPN, and SOPS
+- `sys-galp-nix` (`desktop`, folder `hosts/sys-galp-nix/`, home
+  `cyberfighter@sys-galp-nix`, `deploy-rs`: yes) - Plasma 6 laptop with
+  SSH, Bluetooth, gaming, Flatpak, Waydroid, and SOPS
+- `nixos-portable` (`desktop`, folder `hosts/nixos-portable/`, home
+  none, `deploy-rs`: no) - Portable Plasma 6 + NVIDIA desktop profile
+  with gaming, Docker, VPN, and SOPS
+- `work-nix-wsl` (`wsl`, folder `hosts/work-wsl/`, home
+  `jdguillot@work-nix-wsl`, `deploy-rs`: no) - WSL with VS Code Server,
+  Docker Desktop, Tailscale, Flatpak browsers/CAD apps, SSH, and a work
+  CA bundle from SOPS
+- `ryzn-nix-wsl` (`wsl`, folder `hosts/ryzn-wsl/`, home
+  `cyberfighter@ryzn-nix-wsl`, `deploy-rs`: no) - WSL with graphics
+  support, Docker, Flatpak, SSH, Cachix, and SOPS
+- `thkpd-pve1` (`minimal`, folder `hosts/thkpd-pve1/`, home
+  `cyberfighter@thkpd-pve1`, `deploy-rs`: yes) - Proxmox VE host with
+  bridge networking, Docker, Tailscale, and SOPS
+- `simple-vm` (`minimal`, folder `hosts/simple-vm/`, home
+  `cyberfighter@simple-vm`, `deploy-rs`: yes, system only) - Generic
+  VM/server target with SSH, Docker, Tailscale, and SOPS
+- `vm-gameserver-nix` (`minimal`, folder `hosts/vm-gameserver-nix/`,
+  home `cyberfighter@vm-gameserver-nix`, `deploy-rs`: yes) - Astroneer
+  server VM with Ludusavi backups, Playit, Tailscale, and SOPS
 
-Two flake output names intentionally differ from their folders:
+Two flake outputs intentionally differ from their folder names:
 
 - `work-nix-wsl` uses `hosts/work-wsl/`
 - `ryzn-nix-wsl` uses `hosts/ryzn-wsl/`
-
-For host details, templates, and rollout notes, see
-[`docs/HOSTS.md`](docs/HOSTS.md).
 
 ## NixOS module overview
 
 System modules live in `modules/`.
 
-### Core and top-level namespaces
+### Top-level namespaces
 
-- `cyberfighter.profile.enable` - profile selector: `desktop`, `wsl`,
+- `cyberfighter.profile.enable` - bundled defaults for `desktop`, `wsl`,
   `minimal`, or `none`
-- `cyberfighter.system.*` - hostname, username, locale, timezone,
-  state version, bootloader, and WSL metadata
+- `cyberfighter.system.*` - hostname, username, locale, bootloader,
+  timezone, and WSL metadata
 - `cyberfighter.nix.*` - trusted users, substituters, GC, optimization,
   and extra `nix.conf` settings
-- `cyberfighter.packages.*` - shared package bundles and extra packages
-- `cyberfighter.filesystems.*` - TrueNAS/CIFS mounts and extra file systems
+- `cyberfighter.packages.*` - shared package bundles and extra system packages
+- `cyberfighter.filesystems.*` - TrueNAS/CIFS helpers plus extra mounts
 
 ### Feature namespaces
 
-Feature modules live under `cyberfighter.features.*` and currently cover:
+`cyberfighter.features.*` currently covers:
 
 - Desktop and hardware: `desktop`, `graphics`, `sound`, `fonts`,
   `bluetooth`, `printing`
 - Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`
-- Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
+- Apps and platform: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
 - Services and infrastructure: `docker`, `security`, `sops`, `proxmox`
 - Gaming and hosting: `gaming`, `gameserver`
 
-One host-level service lives outside the `cyberfighter.*` tree:
+One host currently uses a service outside the `cyberfighter.*` tree:
 
-- `services.playit.*` - Playit tunnel agent used by `vm-gameserver-nix`
+- `services.playit.*` on `vm-gameserver-nix`
 
-Common host shape:
+Example host shape:
 
 ```nix
 {
@@ -142,37 +141,39 @@ Common host shape:
 }
 ```
 
-See [`docs/MODULES.md`](docs/MODULES.md) for the overview and
-[`docs/NIXOS-FEATURES.md`](docs/NIXOS-FEATURES.md) for the grouped
-option reference.
+See [`docs/MODULES.md`](docs/MODULES.md) and
+[`docs/NIXOS-FEATURES.md`](docs/NIXOS-FEATURES.md) for the detailed
+module map and option reference.
 
 ## Home Manager overview
 
-Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
+Home modules live in `home/modules/` and mirror the same
+`cyberfighter.*` layout.
 
 ### Core home namespaces
 
-- `cyberfighter.profile.enable` - home profile selector, usually set
-  from `hostProfile`
-- `cyberfighter.system.*` - username, home directory, and state version
-- `cyberfighter.common.enable` - baseline shell, GitHub CLI, GPG,
-  Catppuccin, and shared dotfile setup
-- `cyberfighter.packages.*` - shared user package bundles
-- `cyberfighter.wsl.*` - Windows-path integration and optional
-  1Password SSH-agent bridging for WSL
+- `cyberfighter.profile.enable` - home profile selector, usually `hostProfile`
+- `cyberfighter.system.*` - username, home directory, and Home Manager
+  state version
+- `cyberfighter.common.enable` - shared user baseline: Home Manager,
+  GPG, GitHub CLI, Catppuccin, and common dotfiles
+- `cyberfighter.packages.*` - extra user package bundles
+- `cyberfighter.users.*` - extra user metadata
+- `cyberfighter.wsl.*` - Windows path integration and optional
+  1Password agent bridging for WSL
 
 ### Main feature groups
 
 - `cyberfighter.features.git`, `shell`, `terminal`, `editor`,
   `desktop`, `ssh`, `sops`, `tools`, `noctalia`
-- Shell submodules: `bash`, `fish`, `zsh`, `starship`
+- Shell submodules: `shell.zsh`, `shell.fish`, `shell.starship`
 - Terminal submodules: `terminal.alacritty`, `terminal.ghostty`
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`
 - Tool submodules: `tmux`, `zellij`, `yazi`, `btop`, `lazygit`,
   `jujutsu`, `carapace`, `direnv`, `rofi`, `sesh`, `fastfetch`,
   `opencode`, `mc`, `copilotMcp`
 
-Common home shape:
+Example home shape:
 
 ```nix
 {
@@ -204,13 +205,13 @@ Common home shape:
 }
 ```
 
-See [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) for the overview and
-[`docs/HOME-FEATURES.md`](docs/HOME-FEATURES.md) for the detailed
-option reference.
+See [`docs/HOME-MANAGER.md`](docs/HOME-MANAGER.md) and
+[`docs/HOME-FEATURES.md`](docs/HOME-FEATURES.md) for the deeper
+reference.
 
 ## Common workflows
 
-Inspect flake outputs:
+Inspect current flake outputs:
 
 ```bash
 nix flake show
@@ -240,15 +241,9 @@ Test a system build without switching:
 sudo nixos-rebuild test --flake .#<hostname>
 ```
 
-Update flake inputs:
-
-```bash
-nix flake update
-```
-
 Useful aliases from the Home Manager shell module:
 
-- `ns` - rebuild system and the matching Home Manager target
+- `ns` - rebuild system and switch the matching Home Manager target
 - `hs` - switch Home Manager only
 - `nu` - update flake inputs
 - `nb` - set the next boot generation and switch Home Manager
@@ -274,7 +269,7 @@ deploy --dry-activate .#thkpd-pve1
 
 `simple-vm` is exported as a system-only node. The other deploy nodes
 expose both `system` and `home` profiles. See
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full deploy flow.
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full flow.
 
 ### `nixos-anywhere`
 
@@ -286,7 +281,9 @@ Example:
 ```bash
 ./scripts/nixos-anywhere.sh \
   --hostname simple-vm \
-  --target root@192.168.1.50 -i ~/.ssh/bootstrap-key -p 2222 \
+  --target root@192.168.1.50 \
+  -i ~/.ssh/bootstrap-key \
+  -p 2222 \
   --hardware-config \
   --secrets \
   --ssh-host \
@@ -295,16 +292,11 @@ Example:
 
 The helper can:
 
-- prompt for missing values or run non-interactively
-- treat everything after `--target` as SSH flags until the next script flag
 - generate `hardware-configuration.nix`
-- update `.sops.yaml` recipients and run `sops updatekeys`
+- update SOPS recipients and run `sops updatekeys`
 - open `home/modules/features/ssh/ssh-hosts.yaml` for a new encrypted host entry
 - add the host alias to one or more `home/<user>/home.nix` files
 - reuse or create host SSH keys in 1Password before installation
-
-`--user` is repeatable and implies `--ssh-host`. For full setup notes,
-see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Secrets
 
@@ -322,8 +314,6 @@ The system SOPS wrapper also supports `deployUserAgeKey = true` for
 hosts that should derive a user-readable age key from the host SSH key
 during activation.
 
-For the working secret flow, see [`docs/SOPS.md`](docs/SOPS.md).
-
 ## New host checklist
 
 1. Start from a template in `hosts/templates/`.
@@ -333,17 +323,6 @@ For the working secret flow, see [`docs/SOPS.md`](docs/SOPS.md).
 5. Add a Home Manager target under `homeConfigurations` if needed.
 6. Add a `deploy.nodes` entry if the host will be maintained remotely.
 7. If the host needs secrets or shared SSH aliases, update SOPS and SSH
-   data with `scripts/nixos-anywhere.sh` or the manual SOPS workflow.
+   data with `scripts/nixos-anywhere.sh` or the manual SOPS workflow in
+   [`docs/SOPS.md`](docs/SOPS.md).
 8. Track new Nix files before running a flake-based build, switch, or deploy.
-
-## References
-
-- `deploy-rs`: <https://github.com/serokell/deploy-rs>
-- `nixos-anywhere`: <https://github.com/nix-community/nixos-anywhere>
-- `disko`: <https://github.com/nix-community/disko>
-- `sops-nix`: <https://github.com/Mic92/sops-nix>
-- NixOS manual: <https://nixos.org/manual/nixos/stable/>
-- Home Manager manual: <https://nix-community.github.io/home-manager/>
-- Home Manager options:
-  <https://nix-community.github.io/home-manager/options.xhtml>
-- MyNixOS search: <https://mynixos.com/>
