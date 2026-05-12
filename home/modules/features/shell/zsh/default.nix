@@ -61,7 +61,7 @@ in
     enableStartupJoke = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Show a dad joke on shell startup (uses cached jokes, refreshes daily)";
+      description = "Show fastfetch on shell startup";
     };
 
     extraInitContent = lib.mkOption {
@@ -110,7 +110,7 @@ in
         eval "$(starship init zsh)"
         eval "$(zoxide init zsh)"
         ${lib.optionalString cfg.enableStartupJoke ''
-          show-startup-joke
+          fastfetch
         ''}
 
         if command -v nix-your-shell > /dev/null; then
