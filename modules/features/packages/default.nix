@@ -36,6 +36,7 @@ let
       parted
       trash-cli
       isd
+      usbutils
     ]
     ++ (if config.cyberfighter.profile.enable != "wsl" then [ pkgs._1password-cli ] else [ ]);
 
