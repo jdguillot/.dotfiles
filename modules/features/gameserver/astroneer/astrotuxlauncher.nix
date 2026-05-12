@@ -3,7 +3,8 @@
 { pkgs }:
 
 let
-  version = "1.1.11";
+  version = "1.1.12";
+  hash = "sha256-9ZFpd+4EHULDdHWB63EAbqdEW3dBEw4p6hx9MYpe30o=";
 
   # pansi is not in nixpkgs; build from PyPI
   pansi = pkgs.python3Packages.buildPythonPackage rec {
@@ -57,7 +58,7 @@ pkgs.python3Packages.buildPythonApplication {
     owner = "JoeJoeTV";
     repo = "AstroTuxLauncher";
     rev = version;
-    hash = "sha256-O9ZMwDioP848BXfZaUs/Bp0MyxK8t7ixI+7eAa7xXsc=";
+    hash = hash;
   };
 
   format = "other";
