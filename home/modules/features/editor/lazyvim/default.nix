@@ -64,10 +64,9 @@ in
         "dockerfile"
         "html"
         "css"
-        "regex"
         "python"
         "diff"
-        "jsonc"
+        "json5"
         "toml"
         "xml"
         "rust"
@@ -96,10 +95,19 @@ in
       viAlias = true;
       vimAlias = true;
 
+      extraLuaPackages =
+        ps: with ps; [
+          lua-utils-nvim
+          pathlib-nvim
+          nvim-nio
+          tree-sitter-norg
+        ];
+
       extraPackages =
         with pkgs;
         [
           ripgrep
+          luarocks
         ]
         ++ cfg.languageServers
         ++ cfg.formatters;
@@ -195,6 +203,7 @@ in
             mini-hipatterns
             markdown-preview-nvim
             vim-table-mode
+            neorg
           ];
           mkEntryFromDrv =
             drv:
@@ -258,25 +267,37 @@ in
               -- import/override with your plugins
               { import = "plugins" },
               -- treesitter handled by xdg.configFile."nvim/parser", put this line at the end of spec to clear ensure_installed
-              -- { "nvim-treesitter/nvim-treesitter", opts = { ensure_installed = {} } },
+              { "nvim-treesitter/nvim-treesitter", opts = { ensure_installed = {} } },
             },
           })
         '';
 
     };
 
-    # # https://github.com/nvim-treesitter/nvim-treesitter#i-get-query-error-invalid-node-type-at-position
-    # xdg.configFile."nvim/parser".source =
-    #   let
-    #     parsers = pkgs.symlinkJoin {
-    #       name = "treesitter-parsers";
-    #       paths =
-    #         (pkgs.vimPlugins.nvim-treesitter.withPlugins (
-    #           plugins: builtins.map (parser: plugins.${parser}) cfg.treesitterParsers
-    #         )).dependencies;
-    #     };
-    #   in
-    #   "${parsers}/parser";
+    # https://github.com/nvim-treesitter/nvim-treesitter#i-get-query-error-invalid-node-type-at-position
+    xdg.configFile."nvim/parser".source =
+      let
+        parsers = pkgs.symlinkJoin {
+          name = "treesitter-parsers";
+          paths =
+            (pkgs.vimPlugins.nvim-treesitter.withPlugins (
+              plugins: builtins.map (parser: plugins.${parser}) cfg.treesitterParsers
+            )).dependencies;
+        };
+        # Add norg parsers from luarocks
+        norgParser = pkgs.luajitPackages.tree-sitter-norg;
+        allParsers = pkgs.symlinkJoin {
+          name = "all-treesitter-parsers";
+          paths = [ parsers norgParser ];
+          postBuild = ''
+            # Link norg parser .so files to the parser directory
+            if [ -d ${norgParser}/lib/lua/5.1/parser ]; then
+              ln -sf ${norgParser}/lib/lua/5.1/parser/*.so $out/parser/
+            fi
+          '';
+        };
+      in
+      "${allParsers}/parser";
 
     # Normal LazyVim config here, see https://github.com/LazyVim/starter/tree/main/lua
     xdg.configFile."nvim/lua".source = ./lua;
