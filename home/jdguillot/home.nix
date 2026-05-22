@@ -41,6 +41,7 @@
           "linode-work"
           "phoenix-router"
           "docs-server"
+          "devops-hypervisor"
         ];
       };
 
