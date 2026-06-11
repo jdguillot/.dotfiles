@@ -30,14 +30,6 @@ in
       };
     };
 
-    bitwarden = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable Bitwarden password manager";
-      };
-    };
-
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
@@ -51,10 +43,6 @@ in
         enable = true;
         package = lib.mkDefault cfg.firefox.package;
       };
-    })
-
-    (lib.mkIf (cfg.enable && cfg.bitwarden.enable) {
-      home.packages = with pkgs; [ bitwarden-desktop ];
     })
 
     (lib.mkIf cfg.enable {

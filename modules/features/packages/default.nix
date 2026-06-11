@@ -23,7 +23,6 @@ let
       diffnav
       delta
       lazyjj
-      bitwarden-cli
       appimage-run
       xclip
       wl-clipboard
@@ -67,7 +66,6 @@ let
     kitty
     wofi
     wineWow64Packages.stable
-    bitwarden-desktop
     _1password-gui
   ];
 

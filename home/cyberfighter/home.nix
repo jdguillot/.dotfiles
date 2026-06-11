@@ -88,7 +88,6 @@
 
       desktop = {
         enable = true;
-        bitwarden.enable = true;
       };
 
       tools = {
