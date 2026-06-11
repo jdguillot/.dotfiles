@@ -77,10 +77,7 @@ in
         cyberfighter.features.sops.enable = lib.mkDefault true;
 
         home = {
-          # Install WSL utilities
-          packages = with pkgs; [
-            wslu # WSL utilities (wslpath, wslvar, etc)
-          ];
+          # WSL utilities (wslpath, wslvar, etc) are provided by WSL itself
 
           # Set WSL-specific environment variables
           sessionVariables = {

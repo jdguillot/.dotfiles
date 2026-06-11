@@ -62,7 +62,7 @@ in
 
       (lib.mkIf (cfg.displayManager == "gdm") {
         services.displayManager.gdm.enable = true;
-        services.displayManager.gdm.wayland = true;
+        # services.displayManager.gdm.wayland = true;
       })
 
       (lib.mkIf (cfg.environment == "plasma6") {
@@ -94,7 +94,7 @@ in
         };
         services.upower.enable = true;
         services.udisks2.enable = true;
-        services.noctalia-shell.enable = true;
+        # Note: noctalia-shell is now configured via home-manager, not NixOS
         environment.systemPackages = with pkgs; [
           mako
           quickshell

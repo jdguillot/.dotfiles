@@ -41,7 +41,7 @@
     deptui.url = "github:jdguillot/deptui";
     niri.url = "github:sodiboo/niri-flake";
     noctalia = {
-      url = "github:noctalia-dev/noctalia-shell";
+      url = "github:noctalia-dev/noctalia/legacy-v4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -115,7 +115,6 @@
                 niri.overlays.niri
               ];
             }
-            noctalia.nixosModules.default
           ];
         };
 
