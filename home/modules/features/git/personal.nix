@@ -8,6 +8,8 @@
 lib.mkIf (hostProfile != "minimal") {
   cyberfighter.features.sops.enable = lib.mkDefault true;
 
+  home.sessionVariables.OP_ACCOUNT = "my.1password.com";
+
   xdg.configFile."git/scripts/personal-signing-key".text = ''
     #!/run/current-system/sw/bin/bash
     printf "key::"

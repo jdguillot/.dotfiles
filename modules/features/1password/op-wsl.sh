@@ -14,9 +14,18 @@ if [ -z "$OP_DIR" ]; then
   exit 1
 fi
 
+# Export all OP_* environment variables to Windows
 mapfile -d '' op_env_vars < <(env -0 | grep -z ^OP_ | cut -z -d= -f1)
-export WSLENV="${WSLENV:-}:$(
-  IFS=:
-  echo "${op_env_vars[*]}"
-)"
-exec $OP_DIR/op.exe "$@"
+if [ ${#op_env_vars[@]} -gt 0 ]; then
+  export WSLENV="${WSLENV:-}:$(
+    IFS=:
+    echo "${op_env_vars[*]}"
+  )"
+fi
+
+# If OP_ACCOUNT is set, pass it via --account flag
+if [ -n "$OP_ACCOUNT" ]; then
+  exec $OP_DIR/op.exe --account "$OP_ACCOUNT" "$@"
+else
+  exec $OP_DIR/op.exe "$@"
+fi
