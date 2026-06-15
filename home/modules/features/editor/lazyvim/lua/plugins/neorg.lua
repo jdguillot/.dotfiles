@@ -4,7 +4,9 @@ return {
   ft = "norg",
   dependencies = {
     "nvim-lua/plenary.nvim",
+    "nvim-treesitter/nvim-treesitter",
   },
+  build = ":Neorg sync-parsers",
   cmd = "Neorg",
 	config = function()
 		require("neorg").setup({
@@ -30,6 +32,8 @@ return {
 						workspace = "notes",
 					},
 				},
+				["core.syntax"] = {},
+				["core.integrations.treesitter"] = {},
 			},
 		})
 

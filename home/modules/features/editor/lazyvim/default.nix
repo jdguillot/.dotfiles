@@ -100,7 +100,6 @@ in
           lua-utils-nvim
           pathlib-nvim
           nvim-nio
-          tree-sitter-norg
         ];
 
       extraPackages =
@@ -284,16 +283,16 @@ in
               plugins: builtins.map (parser: plugins.${parser}) cfg.treesitterParsers
             )).dependencies;
         };
-        # Add norg parsers from luarocks
-        norgParser = pkgs.luajitPackages.tree-sitter-norg;
+        # Add norg parsers from tree-sitter-grammars
+        norgParser = pkgs.tree-sitter-grammars.tree-sitter-norg;
+        norgMetaParser = pkgs.tree-sitter-grammars.tree-sitter-norg-meta;
         allParsers = pkgs.symlinkJoin {
           name = "all-treesitter-parsers";
-          paths = [ parsers norgParser ];
+          paths = [ parsers ];
           postBuild = ''
-            # Link norg parser .so files to the parser directory
-            if [ -d ${norgParser}/lib/lua/5.1/parser ]; then
-              ln -sf ${norgParser}/lib/lua/5.1/parser/*.so $out/parser/
-            fi
+            # Link norg parsers
+            ln -sf ${norgParser}/parser $out/parser/norg.so
+            ln -sf ${norgMetaParser}/parser $out/parser/norg_meta.so
           '';
         };
       in
