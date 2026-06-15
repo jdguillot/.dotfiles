@@ -92,6 +92,15 @@ in
         networkConfig = {
           Bridge = "vmbr0";
         };
+        bridgeVLANs = [
+          { bridgeVLANConfig.VLAN = "2-4094"; }
+          {
+            bridgeVLANConfig = {
+              PVID = 1;
+              EgressUntagged = 1;
+            };
+          }
+        ];
       };
 
       netdevs."vmbr0" = {
@@ -99,6 +108,19 @@ in
           Name = "vmbr0";
           Kind = "bridge";
         };
+        extraConfig = ''
+          [Bridge]
+          VLANFiltering=yes
+          DefaultPVID=1
+        '';
+      };
+
+      netdevs."vmbr0.40" = {
+        netdevConfig = {
+          Name = "vmbr0.40";
+          Kind = "vlan";
+        };
+        vlanConfig.Id = 40;
       };
 
       networks."10-lan-bridge" = {
@@ -111,10 +133,38 @@ in
             "192.168.101.1"
             "1.1.1.1"
           ];
+          VLAN = [ "vmbr0.40" ];
         };
         linkConfig.RequiredForOnline = "routable";
+        bridgeVLANs = [
+          { bridgeVLANConfig.VLAN = "2-4094"; }
+          {
+            bridgeVLANConfig = {
+              PVID = 1;
+              EgressUntagged = 1;
+            };
+          }
+        ];
+      };
+
+      networks."20-vmbr0-40" = {
+        matchConfig.Name = "vmbr0.40";
+        networkConfig = {
+          Address = [ "192.168.40.39/24" ];
+        };
+        linkConfig.RequiredForOnline = "no";
       };
     };
+  };
+
+  networking.firewall = {
+    extraInputRules = ''
+      iifname "vmbr0.40" ct state new drop
+    '';
+    extraForwardRules = ''
+      iifname "vmbr0.40" oifname "vmbr0" drop
+      iifname "vmbr0" oifname "vmbr0.40" drop
+    '';
   };
 
   users.users.root.openssh.authorizedKeys.keys = proxmoxKeys;
