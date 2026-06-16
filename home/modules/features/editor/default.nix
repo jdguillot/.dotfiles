@@ -79,6 +79,10 @@ in
         enable = true;
         viAlias = true;
         vimAlias = true;
+        # No legacy pynvim/ruby-host plugins in use; opt into the new
+        # upstream defaults (false) and drop the provider wrappers.
+        withRuby = false;
+        withPython3 = false;
       };
     })
 

@@ -114,6 +114,10 @@
               nixpkgs.overlays = [
                 niri.overlays.niri
               ];
+              # catppuccin is themed per-user via home-manager, not system-wide.
+              # Setting autoEnable explicitly opts out of the legacy auto-enroll
+              # default and silences the upcoming-behaviour eval warning.
+              catppuccin.autoEnable = false;
             }
           ];
         };
