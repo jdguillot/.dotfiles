@@ -1,0 +1,32 @@
+/* Catppuccin Frappé (Lavender) tweaks for ReGreet.
+ *
+ * Layered on top of the catppuccin-gtk theme, which already colors the
+ * widgets. This file only fine-tunes readability over the wallpaper and the
+ * accent on interactive elements. GTK ignores selectors it can't match (it
+ * logs a warning at most), so nothing here can crash the greeter.
+ *
+ * Frappé palette refs:
+ *   base #303446  crust #232634  text #c6d0f5  lavender #babbf1
+ */
+
+/* Keep on-screen text legible over a photo background. */
+label {
+  color: #c6d0f5;
+  text-shadow: 0 1px 2px rgba(35, 38, 52, 0.85);
+}
+
+/* Lavender accent on the focused username/password field. */
+entry:focus-within {
+  border-color: #babbf1;
+  box-shadow: 0 0 0 1px #babbf1;
+}
+
+/* Blue login button. */
+button.suggested-action {
+  background-color: #8caaee;
+  color: #232634;
+}
+
+button.suggested-action:hover {
+  background-color: #ca9ee6; /* mauve on hover */
+}

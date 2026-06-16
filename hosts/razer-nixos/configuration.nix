@@ -48,7 +48,8 @@
     features = {
       desktop = {
         environment = "niri";
-        displayManager = "gdm";
+        displayManager = "greetd";
+        greeter = "regreet";
         firefox = true;
       };
 
