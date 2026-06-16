@@ -3,6 +3,7 @@
     ./git/default.nix
     ./shell/default.nix
     ./noctalia/default.nix
+    ./niri/default.nix
     ./sops/default.nix
     ./editor/default.nix
     ./terminal/default.nix

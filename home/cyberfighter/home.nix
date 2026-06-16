@@ -65,6 +65,7 @@
       };
 
       noctalia.enable = true;
+      niri.enable = true;
 
       shell = {
         fish.enable = true;
