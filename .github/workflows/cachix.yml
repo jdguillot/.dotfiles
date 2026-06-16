@@ -88,3 +88,5 @@ jobs:
       - name: Build Systems
         run: |
           nix build --fallback .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+      - name: Push to Cachix
+        run: nix path-info -r ./result | cachix push jdguillot
