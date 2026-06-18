@@ -163,6 +163,9 @@ in
       iifname "vmbr0.40" oifname "vmbr0" drop
       iifname "vmbr0" oifname "vmbr0.40" drop
     '';
+    extraCommands = ''
+      iptables -A nixos-fw -s 172.18.0.0/16 -p tcp --dport 8090 -j nixos-fw-accept
+    '';
   };
 
   users.users.root.openssh.authorizedKeys.keys = proxmoxKeys;
