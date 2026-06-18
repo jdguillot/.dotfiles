@@ -16,8 +16,6 @@
     profile.enable = hostProfile;
 
     system = hostMeta.system // {
-      stateVersion = "24.11";
-
       bootloader = {
         systemd-boot = true;
         efiCanTouchVariables = true;

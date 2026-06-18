@@ -15,7 +15,6 @@
     profile.enable = hostProfile;
 
     system = hostMeta.system // {
-      stateVersion = "25.05";
 
       bootloader = {
         systemd-boot = true;

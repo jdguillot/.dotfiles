@@ -18,8 +18,6 @@
     profile.enable = hostProfile;
 
     system = hostMeta.system // {
-      stateVersion = "25.11";
-
       bootloader = {
         systemd-boot = true;
         efiCanTouchVariables = true;

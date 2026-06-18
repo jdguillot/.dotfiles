@@ -13,9 +13,8 @@
     profile.enable = hostProfile;
 
     system = {
-      inherit (hostMeta.system) username;
+      inherit (hostMeta.system) username stateVersion;
       homeDirectory = "/home/${hostMeta.system.username}";
-      stateVersion = "24.11";
     };
 
     features = {
