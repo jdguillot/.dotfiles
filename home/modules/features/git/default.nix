@@ -33,6 +33,7 @@ in
       signing.format = null; # This was changed in later version of HM and because my stateVersion i need this
       settings = {
         init.defaultBranch = "main";
+        user.useConfigOnly = true;
         pull.rebase = true;
         pager = {
           diff = "delta";

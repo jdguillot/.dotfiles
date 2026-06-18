@@ -26,6 +26,9 @@ in
             }
           ];
           parseEmoji = true;
+          tag = {
+            forceAnnotated = true;
+          };
         };
         confirmOnQuit = false;
       };
