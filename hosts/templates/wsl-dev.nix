@@ -1,6 +1,8 @@
 # Template for WSL development environment
 {
+  lib,
   pkgs,
+  config,
   inputs,
   ...
 }:
@@ -54,6 +56,16 @@
     useWindowsDriver = true;
     wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;
+    wslConf.interop.enabled = true; # Ensure Windows interop is enabled
+  };
+
+  # Ensure binfmt_misc is properly set up for .exe files
+  boot.binfmt.registrations = lib.mkIf config.wsl.enable {
+    WSLInterop = {
+      magicOrExtension = "MZ";
+      interpreter = "/init";
+      preserveArgvZero = false;
+    };
   };
 
   programs.nix-ld.enable = true;

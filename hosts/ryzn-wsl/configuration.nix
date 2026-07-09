@@ -1,5 +1,7 @@
 {
+  lib,
   pkgs,
+  config,
   hostProfile,
   hostMeta,
   ...
@@ -51,6 +53,16 @@
     defaultUser = "cyberfighter";
     useWindowsDriver = true;
     wslConf.automount.root = "/";
+    wslConf.interop.enabled = true; # Ensure Windows interop is enabled
+  };
+
+  # Ensure binfmt_misc is properly set up for .exe files
+  boot.binfmt.registrations = lib.mkIf config.wsl.enable {
+    WSLInterop = {
+      magicOrExtension = "MZ";
+      interpreter = "/init";
+      preserveArgvZero = false;
+    };
   };
 
   environment.variables = {

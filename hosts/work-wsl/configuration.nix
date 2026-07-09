@@ -66,7 +66,7 @@
     };
   };
 
-  services.vscode-server.enable = true;
+  services.vscode-server.enable = false;
 
   wsl = {
     enable = true;
@@ -75,6 +75,16 @@
     useWindowsDriver = true;
     # wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;
+    wslConf.interop.enabled = true; # Ensure Windows interop is enabled
+  };
+
+  # Ensure binfmt_misc is properly set up for .exe files
+  boot.binfmt.registrations = lib.mkIf config.wsl.enable {
+    WSLInterop = {
+      magicOrExtension = "MZ";
+      interpreter = "/init";
+      preserveArgvZero = false;
+    };
   };
   sops.secrets."work-ca" = {
     sopsFile = ./100-PKROOTCA290-CA.yaml;
