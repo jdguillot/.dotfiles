@@ -83,6 +83,9 @@ in
         download-buffer-size = 524288000;
       };
 
+      nix.daemonCPUSchedPolicy = "idle";
+      nix.daemonIOSchedClass = "idle";
+
       nix.extraOptions = ''
         !include ${config.sops.templates."access-tokens".path}
       ''
