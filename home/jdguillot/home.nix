@@ -41,6 +41,7 @@
           "phoenix-router"
           "docs-server"
           "devops-hypervisor"
+          "linux-dev-server"
         ];
       };
 
