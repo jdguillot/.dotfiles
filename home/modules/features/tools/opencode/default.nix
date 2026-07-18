@@ -28,6 +28,8 @@ in
 
     programs.opencode = {
       enable = true;
+      # Installed system-wide via cyberfighter.packages; only manage config here.
+      package = null;
       themes = ./themes;
       tui = {
         inherit (cfg) theme;

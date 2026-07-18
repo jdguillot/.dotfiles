@@ -11,7 +11,8 @@
     ./ssh/default.nix
     ./tools/default.nix
     ./tools/btop/default.nix
-    ./tools/copilot-mcp/default.nix
+    ./tools/mcp/default.nix
+    ./tools/skills/default.nix
     ./tools/lazygit/default.nix
     ./tools/midnight-commander/default.nix
     ./tools/opencode/default.nix

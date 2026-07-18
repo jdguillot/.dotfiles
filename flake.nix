@@ -33,6 +33,11 @@
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     vscode-server.url = "github:nix-community/nixos-vscode-server";
 
+    anthropic-skills = {
+      url = "github:anthropics/skills";
+      flake = false;
+    };
+
     catppuccin.url = "github:catppuccin/nix";
     proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
     #    pst-bin.url = "path:./programs/pst";

@@ -56,6 +56,7 @@ let
     copilot-language-server
     deploy-rs
     claude-code
+    opencode
     nixd
     yaml-language-server
     lua-language-server
