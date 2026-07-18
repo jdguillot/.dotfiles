@@ -57,7 +57,16 @@
       };
 
       docker.enable = true;
-      tailscale.enable = true;
+      tailscale = {
+        enable = true;
+        # WSL shares one network namespace across all distros, so anything Tailscale
+        # programs here breaks networking for every distro. Keep it off the shared stack:
+        useRoutingFeatures = "none"; # no subnet/exit-node route programming (table 52)
+        acceptRoutes = true; # don't pull others' subnet routes into the shared stack
+        acceptDns = false; # don't overwrite the shared /etc/resolv.conf
+        extraUpFlags = [ "--netfilter-mode=off" ]; # don't install iptables/nftables rules
+        authKeyFile = config.sops.secrets."tailscale-authkey".path;
+      };
 
       vscode.enable = true;
 
@@ -78,19 +87,28 @@
     wslConf.interop.enabled = true; # Ensure Windows interop is enabled
   };
 
-  # Ensure binfmt_misc is properly set up for .exe files
-  boot.binfmt.registrations = lib.mkIf config.wsl.enable {
-    WSLInterop = {
-      magicOrExtension = "MZ";
-      interpreter = "/init";
-      preserveArgvZero = false;
-    };
+  # Workaround for WSL 2.7.3: /mnt/shared_memory is missing at boot, so WSLg
+  # falls back to RAIL copy mode ("[WARN: COPY MODE]" in window titles) and
+  # windows never render. https://github.com/microsoft/WSL/issues/40618
+  fileSystems."/mnt/shared_memory" = {
+    device = "tmpfs";
+    fsType = "tmpfs";
+    options = [
+      "defaults"
+      "nofail"
+    ];
   };
+
   sops.secrets."work-ca" = {
     sopsFile = ./100-PKROOTCA290-CA.yaml;
     key = "data";
     mode = "0444";
   };
+
+  # Decrypts the "tailscale-authkey" key from secrets/secrets.yaml (the default
+  # sopsFile) to /run/secrets/tailscale-authkey, root-only (0400), for
+  # tailscaled-autoconnect.
+  sops.secrets."tailscale-authkey" = { };
 
   # Make nix-daemon use the custom bundle (must run after install-work-ca)
   systemd.services.nix-daemon = {

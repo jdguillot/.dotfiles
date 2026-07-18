@@ -56,14 +56,10 @@
     wslConf.interop.enabled = true; # Ensure Windows interop is enabled
   };
 
-  # Ensure binfmt_misc is properly set up for .exe files
-  boot.binfmt.registrations = lib.mkIf config.wsl.enable {
-    WSLInterop = {
-      magicOrExtension = "MZ";
-      interpreter = "/init";
-      preserveArgvZero = false;
-    };
-  };
+  # Do NOT register WSLInterop (or any binfmt) here: binfmt_misc is kernel-global
+  # across all WSL distros. With no registrations, NixOS never starts
+  # systemd-binfmt.service, so it can't wipe the shared table on boot/shutdown and
+  # WSL's own /init-registered WSLInterop handler keeps working for every distro.
 
   environment.variables = {
     JAVA_HOME = "${pkgs.zulu8}";

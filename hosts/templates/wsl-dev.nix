@@ -40,7 +40,15 @@
     features = {
       graphics.enable = true;  # For GUI apps
       docker.enable = true;
-      tailscale.enable = true;
+      tailscale = {
+        enable = true;
+        # WSL shares one network namespace across all distros, so anything Tailscale
+        # programs here breaks networking for every distro. Keep it off the shared stack:
+        useRoutingFeatures = "none"; # no subnet/exit-node route programming (table 52)
+        acceptRoutes = false; # don't pull others' subnet routes into the shared stack
+        acceptDns = false; # don't overwrite the shared /etc/resolv.conf
+        extraUpFlags = [ "--netfilter-mode=off" ]; # don't install iptables/nftables rules
+      };
 
       vscode = {
         enable = true;
@@ -59,14 +67,10 @@
     wslConf.interop.enabled = true; # Ensure Windows interop is enabled
   };
 
-  # Ensure binfmt_misc is properly set up for .exe files
-  boot.binfmt.registrations = lib.mkIf config.wsl.enable {
-    WSLInterop = {
-      magicOrExtension = "MZ";
-      interpreter = "/init";
-      preserveArgvZero = false;
-    };
-  };
+  # Do NOT register WSLInterop (or any binfmt) here: binfmt_misc is kernel-global
+  # across all WSL distros. With no registrations, NixOS never starts
+  # systemd-binfmt.service, so it can't wipe the shared table on boot/shutdown and
+  # WSL's own /init-registered WSLInterop handler keeps working for every distro.
 
   programs.nix-ld.enable = true;
 
