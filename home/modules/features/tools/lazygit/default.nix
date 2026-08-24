@@ -19,9 +19,11 @@ in
           nerdFontsVersion = "3";
         };
         git = {
-          pagers = [
+          # Renamed in lazygit: git.pagers -> git.diffRenderers, and the
+          # per-entry `pager` field -> `command`.
+          diffRenderers = [
             {
-              pager = "delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format=\"lazygit-edit://{path}:{line}\"";
+              command = "delta --dark --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format=\"lazygit-edit://{path}:{line}\"";
               colorArg = "always";
             }
           ];

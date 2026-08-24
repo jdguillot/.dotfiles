@@ -97,30 +97,19 @@ in
           };
         in
         {
-          # programs.regreet enables greetd and runs ReGreet inside cage.
-          # ReGreet lists sessions from the registered wayland-sessions files
-          # (niri.desktop is registered), so no --cmd is needed here.
-          programs.regreet = {
+          # services.displayManager.regreet enables greetd and runs ReGreet
+          # inside cage. ReGreet lists sessions from the registered
+          # wayland-sessions files (niri.desktop is registered), so no --cmd is
+          # needed here.
+          #
+          # Renamed from programs.regreet in nixpkgs PR #545504.
+          #
+          # The former pkgs.regreet.overrideAttrs GStreamer override (needed
+          # because ReGreet's animated [background]/playbin3 shipped without
+          # GStreamer plugins) is gone: nixpkgs PR #530302 (merged 2026-06-16)
+          # bakes the plugins into the package, so plain pkgs.regreet works.
+          services.displayManager.regreet = {
             enable = true;
-
-            # ReGreet 0.4.0 routes the [background] through GStreamer
-            # (GstPlay/playbin3), but the nixpkgs package ships no GStreamer
-            # plugins -> "playbin3 element not found" -> fatal GStreamer-Play-
-            # ERROR -> SIGABRT -> greetd restart loop. Setting the plugin path
-            # via env does NOT work because wrapGAppsHook4 overrides it; the fix
-            # is to add GStreamer to buildInputs so the wrapper bakes the plugin
-            # path in. Mirrors nixpkgs PR #530302; drop this override once it
-            # lands in our nixpkgs pin.
-            package = pkgs.regreet.overrideAttrs (old: {
-              buildInputs = (old.buildInputs or [ ]) ++ (
-                with pkgs.gst_all_1;
-                [
-                  gstreamer
-                  gst-plugins-base
-                  gst-plugins-good
-                ]
-              );
-            });
 
             # Catppuccin Frappé + Lavender GTK theme.
             theme = {

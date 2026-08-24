@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -81,52 +80,13 @@ in
         };
       };
 
-      # Fix WSL systemd user service startup issues
-      # The user@.service often fails on first boot with "Device or resource busy"
-      # due to journal file locks or race conditions. This adds retries and delays.
-      systemd.services."user@" = {
-        serviceConfig = {
-          # Add retry logic for resource busy errors
-          Restart = lib.mkForce "on-failure";
-          RestartSec = "1s";
-          StartLimitBurst = 5;
-          StartLimitIntervalSec = 10;
-        };
-        # Ensure it starts after journal is ready
-        after = [ "systemd-journald.service" ];
-        wants = [ "systemd-journald.service" ];
-      };
-
-      # Clear stale journal locks on boot
-      systemd.services.clear-user-journal-locks = {
-        description = "Clear stale user journal locks (WSL workaround)";
-        wantedBy = [ "multi-user.target" ];
-        before = [ "user@.service" ];
-        after = [ "systemd-journald.service" ];
-        
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-
-        script = ''
-          # Wait a moment for journal to settle
-          sleep 0.5
-          
-          # The journal lock issue is internal to systemd, so we just
-          # ensure journald is fully initialized before starting user services
-          ${pkgs.systemd}/bin/systemctl is-active systemd-journald.service || true
-          
-          # Give a small delay to ensure no race conditions
-          sleep 0.2
-        '';
-      };
-
-      # Ensure journal directory has correct permissions
-      systemd.tmpfiles.rules = [
-        "d /var/log/journal 0755 root systemd-journal -"
-        "d /run/log/journal 0755 root systemd-journal -"
-      ];
+      # NOTE: user@1000.service failing on the first WSL start after Windows login
+      # is a cross-distro cgroup collision (all WSL distros share one cgroup tree;
+      # another systemd distro booting first claims user@1000's delegated cgroup,
+      # so ours gets EBUSY). Not fixable from inside this distro — mitigated by
+      # keeping other distros' systemd disabled until microsoft/WSL PR #40519
+      # (per-distro cgroup isolation) ships in a WSL release. See
+      # https://github.com/microsoft/WSL/issues/40593
     })
 
     (lib.mkIf (cfg.enable == "minimal") {
