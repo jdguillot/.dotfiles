@@ -91,12 +91,10 @@ in
           Bridge = "vmbr0";
         };
         bridgeVLANs = [
-          { bridgeVLANConfig.VLAN = "2-4094"; }
+          { VLAN = "2-4094"; }
           {
-            bridgeVLANConfig = {
-              PVID = 1;
-              EgressUntagged = 1;
-            };
+            PVID = 1;
+            EgressUntagged = 1;
           }
         ];
       };
@@ -135,12 +133,10 @@ in
         };
         linkConfig.RequiredForOnline = "routable";
         bridgeVLANs = [
-          { bridgeVLANConfig.VLAN = "2-4094"; }
+          { VLAN = "2-4094"; }
           {
-            bridgeVLANConfig = {
-              PVID = 1;
-              EgressUntagged = 1;
-            };
+            PVID = 1;
+            EgressUntagged = 1;
           }
         ];
       };
