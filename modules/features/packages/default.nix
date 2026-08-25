@@ -72,7 +72,6 @@ let
 
   virtualizationPackages = with pkgs; [
     qemu
-    realvnc-vnc-viewer
     nemu
     virt-viewer
     quickemu
