@@ -4,9 +4,9 @@
 
   inputs = {
     # # This is the long form of both of below
-    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    nixpkgs-stable.url = "nixpkgs/nixos-25.11";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
 
     # Home-manager using the same nixpkgs
     home-manager = {
