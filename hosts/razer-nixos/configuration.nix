@@ -75,6 +75,7 @@
       flatpak = {
         browsers = true;
         extraPackages = [
+          "org.tigervnc.vncviewer"
           "org.rncbc.qsynth"
         ];
       };
