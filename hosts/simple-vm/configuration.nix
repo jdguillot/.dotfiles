@@ -1,15 +1,16 @@
 # Template for a minimal server
 {
+  inputs,
   pkgs,
   hostProfile,
   hostMeta,
   modulesPath,
   ...
-}@inputs:
+}:
 {
   imports = [
     ../../modules
-    inputs.inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-index-database.nixosModules.nix-index
     ./disk-config.nix
     (modulesPath + "/profiles/qemu-guest.nix")
   ];

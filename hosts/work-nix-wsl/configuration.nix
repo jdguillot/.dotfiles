@@ -1,17 +1,18 @@
 {
+  inputs,
   lib,
   config,
   pkgs,
   hostProfile,
   hostMeta,
   ...
-}@inputs:
+}:
 {
   imports = [
     ../../modules
-    inputs.inputs.nixos-wsl.nixosModules.default
-    inputs.inputs.nix-index-database.nixosModules.nix-index
-    inputs.inputs.vscode-server.nixosModules.default
+    inputs.nixos-wsl.nixosModules.default
+    inputs.nix-index-database.nixosModules.nix-index
+    inputs.vscode-server.nixosModules.default
   ];
 
   cyberfighter = {
@@ -81,7 +82,7 @@
 
   wsl = {
     enable = true;
-    defaultUser = "jdguillot";
+    defaultUser = hostMeta.system.username;
     docker-desktop.enable = true;
     useWindowsDriver = true;
     # wslConf.automount.root = "/";

@@ -1,13 +1,14 @@
 {
+  inputs,
   pkgs,
   hostProfile,
   hostMeta,
   ...
-}@inputs:
+}:
 {
   imports = [
     ../../modules
-    inputs.inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-index-database.nixosModules.nix-index
     ./hardware-configuration.nix
   ];
 

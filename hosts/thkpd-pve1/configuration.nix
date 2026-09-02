@@ -1,12 +1,13 @@
 # Template for a minimal server
 {
+  inputs,
   config,
   lib,
   pkgs,
   hostProfile,
   hostMeta,
   ...
-}@inputs:
+}:
 let
   proxmoxKeys = [
     "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDP3lFwujAAvXHMk+tj4BkILJTRbAM9guMsg/83SLnaOXg1vLiVnVQvjcyL8UzCekLh6GS6s9YDOhDRymgrlOJrqFBGVDvlsQuMtXaGT0LUkpuv+X18NrSxkW3Dm8JpXr5bQvp/z0MeySNwGIiTvR3ewbU6EbeFe/2xu4wDeq+AvKV76SEDCRpyZwvFVm5YJebaFUXsBT7y1a5cA5VLSHoQKmZDjdCjc+13d175gYwpg0P8+9nlyFjKmmaqBBPz9G16qJk3zEw0un+85NXar96bv0FI+r/wosiSzrV2DpRSqmWzGGVut8VecjubK0cFwh51u+T9g4NyhmSGl4JStE7h root@proxmox"
@@ -22,7 +23,7 @@ in
 {
   imports = [
     ../../modules
-    inputs.inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-index-database.nixosModules.nix-index
     ./disk-config.nix
     ./hardware-configuration.nix
   ];

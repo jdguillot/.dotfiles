@@ -1,17 +1,18 @@
 # Game server VM running on the thkpd-pve1 Proxmox hypervisor
 # Hosts an Astroneer dedicated server via AstroTuxLauncher (Wine-based launcher)
 {
+  inputs,
   config,
   hostProfile,
   hostMeta,
   modulesPath,
   pkgs,
   ...
-}@inputs:
+}:
 {
   imports = [
     ../../modules
-    inputs.inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-index-database.nixosModules.nix-index
     ./disk-config.nix
     (modulesPath + "/profiles/qemu-guest.nix")
   ];
