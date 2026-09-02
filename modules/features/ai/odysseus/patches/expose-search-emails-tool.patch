@@ -1,0 +1,48 @@
+Expose the MCP email server's search_emails tool to the agent.
+
+Upstream wired search_emails into security/capabilities/conversion
+(BUILTIN_EMAIL_TOOLS includes it) but never gave it a schema in
+FUNCTION_TOOL_SCHEMAS, a tool_index description, or a slot in the email
+domain map -- so tool selection can never offer it and the model pages
+list_emails instead of searching. Mirror list_emails' three catalog
+entries. No upstream issue yet; the tool itself already works end to end
+once offered.
+
+--- a/src/tool_schemas.py
++++ b/src/tool_schemas.py
+@@ -1141,6 +1141,23 @@
+                 },
+             }
+         }
+     },
++    {
++        "type": "function",
++        "function": {
++            "name": "search_emails",
++            "description": "Search emails by free-text query matched against sender, subject, and body. Walks INBOX, Sent, and Archive by default so older threads are findable, not just the recent inbox slice. Use whenever the user asks to find or search for specific emails, or names a sender or topic. Returns matching emails with UIDs for read_email/reply_to_email.",
++            "parameters": {
++                "type": "object",
++                "properties": {
++                    "query": {"type": "string", "description": "Free-text query. Matches FROM, SUBJECT, and body TEXT."},
++                    "folders": {"type": "array", "items": {"type": "string"}, "description": "Folders to search (default: INBOX, Sent, Archive)"},
++                    "max_results": {"type": "integer", "description": "Max results per folder (default: 20)"},
++                    "account": {"type": "string", "description": "Optional account name/email/id from list_email_accounts"},
++                },
++                "required": ["query"],
++            }
++        }
++    },
+     {
+         "type": "function",
+--- a/src/tool_index.py
++++ b/src/tool_index.py
+@@ -112,2 +112,3 @@
+     "list_emails": "List emails for a folder/account, newest first, including read messages by default. Shows subject, sender, date, UID, account, and AI summary. Check inbox, find emails needing replies. Supports account from list_email_accounts for Gmail/work/custom mailboxes. For last/latest/newest email, use max_results=1 and unread_only=false.",
++    "search_emails": "Search emails by free-text query matched against sender, subject, and body text. Walks INBOX, Sent, and Archive so older threads are findable. Use to find or search for a specific email, sender, topic, invoice, or old thread. Returns matches with UIDs for read_email/reply_to_email.",
+     "read_email": "Read the full content of a specific email by UID or Message-ID. View email body, check details. Supports account from list_email_accounts when the UID belongs to a non-default mailbox.",
+--- a/src/agent_loop.py
++++ b/src/agent_loop.py
+@@ -529,2 +529,2 @@
+     "documents": {"create_document", "edit_document", "update_document", "suggest_document", "manage_documents"},
+-    "email": {"list_email_accounts", "list_emails", "read_email", "scan_email_unsubscribes", "unsubscribe_email", "send_email", "reply_to_email", "bulk_email", "archive_email", "delete_email", "mark_email_read", "resolve_contact", "manage_contact"},
++    "email": {"list_email_accounts", "list_emails", "search_emails", "read_email", "scan_email_unsubscribes", "unsubscribe_email", "send_email", "reply_to_email", "bulk_email", "archive_email", "delete_email", "mark_email_read", "resolve_contact", "manage_contact"},

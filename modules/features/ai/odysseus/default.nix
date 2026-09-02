@@ -213,8 +213,9 @@ in
         ./patches/no-substring-mode-switch.patch
         ./patches/no-terminus-domain-clamp.patch
         ./patches/mcp-email-imap-maxline.patch
+        ./patches/expose-search-emails-tool.patch
       ];
-      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ./patches/no-substring-mode-switch.patch ./patches/no-terminus-domain-clamp.patch ./patches/mcp-email-imap-maxline.patch ]";
+      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ./patches/no-substring-mode-switch.patch ./patches/no-terminus-domain-clamp.patch ./patches/mcp-email-imap-maxline.patch ./patches/expose-search-emails-tool.patch ]";
       description = ''
         Patches applied to `src` before the image is built. Each one carries its
         upstream issue in a header comment -- drop it when that issue closes.
@@ -235,6 +236,10 @@ in
         mcp-email-imap-maxline mirrors the REST path's imaplib._MAXLINE bump
         into the MCP email server, whose UID SEARCH otherwise dies on large
         mailboxes.
+
+        expose-search-emails-tool gives the MCP email server's search_emails a
+        schema, index description, and email-domain slot; upstream wired only
+        its security half, so tool selection could never offer it.
       '';
     };
 
