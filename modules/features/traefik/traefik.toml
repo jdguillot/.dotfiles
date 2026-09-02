@@ -1,0 +1,79 @@
+# Traefik static configuration, shared per host by the traefik module: the
+# @-delimited placeholders are filled from the module's options. Read once at
+# container start -- changes deploy on rebuild (restartTriggers recreate the
+# container); a hand edit under /etc does nothing until a unit restart.
+# Routing/middleware config lives in dynamic/.
+
+[global]
+  checkNewVersion = true
+  sendAnonymousUsage = false
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+    [entryPoints.web.http]
+      # Drop request headers whose name aliases another (X_Auth_User for
+      # X-Auth-User): kept, CGI-style backends read the alias as the real
+      # header, letting clients spoof headers traefik itself manages.
+      aliasHeadersStrategy = "delete"
+      [entryPoints.web.http.redirections.entryPoint]
+        to = "websecure"
+        scheme = "https"
+
+  [entryPoints.websecure]
+    address = ":443"
+    [entryPoints.websecure.http]
+      aliasHeadersStrategy = "delete"
+      [entryPoints.websecure.http.tls]
+        certResolver = "lets-encrypt"
+
+# LAN backends with self-signed or no certs; the network is the trust
+# boundary, not the hop behind traefik.
+[serversTransport]
+  insecureSkipVerify = true
+
+[log]
+  # DEBUG is what shows you why a route did not load.
+  level = "INFO"
+
+# Every request traefik handled, including the ones it answered itself (429,
+# 401, router misses) -- a request rejected at the proxy never reaches the
+# backend, so no other log can explain it. Headers dropped except UA/Referer.
+[accessLog]
+  [accessLog.fields.headers]
+    defaultMode = "drop"
+    [accessLog.fields.headers.names]
+      User-Agent = "keep"
+      Referer = "keep"
+
+[api]
+  dashboard = true
+
+[providers.docker]
+  # Opt-in only: a container without traefik.enable=true is not routed.
+  exposedByDefault = false
+  watch = true
+  # Containers are routed at their address on this network; being on the LAN
+  # or publishing a port is not enough. Single source: the `network` option.
+  network = "@NETWORK@"
+
+[providers.file]
+  directory = "/etc/traefik/dynamic"
+  watch = true
+
+# DNS-01, so issuance needs no reachability from the internet (the zone
+# resolves to LAN addresses). The resolver name appears in every routed
+# container's `tls.certresolver` label -- part of the label contract, do not
+# rename it.
+[certificatesResolvers.lets-encrypt.acme]
+  email = "@EMAIL@"
+  storage = "/acme.json"
+
+  [certificatesResolvers.lets-encrypt.acme.dnsChallenge]
+    provider = "cloudflare"
+
+    # Load-bearing: the zone is split-horizon, the LAN resolver knows no
+    # _acme-challenge TXT records, so lego's propagation check must ask
+    # public recursors -- exactly what broke renewals on the old thkpd-pve1
+    # setup. Hosts override via the dnsResolvers option.
+    resolvers = @DNS_RESOLVERS@

@@ -1,0 +1,71 @@
+# Traefik -- TLS-terminating reverse proxy for this host's containers.
+#
+# Shared by every host that enables the traefik module: default.nix fills the
+# @-delimited placeholders from cyberfighter.features.traefik.* and deploys
+# the result to /etc/traefik/; Nix otherwise only stages secrets and runs the
+# project as a systemd oneshot. Containers opt in with `traefik.enable=true`
+# labels on the module's network; dynamic/ holds file-provider routes for
+# backends that cannot carry labels. Day-2 ops: `traefik-compose logs -f` etc.
+
+services:
+  traefik:
+    # Pinned to a minor line: a major bump drops config keys (v2 -> v3
+    # removed half the headers middleware), and a reboot is not the moment.
+    image: traefik:v3.7
+    container_name: traefik
+    restart: unless-stopped
+    command: ["--configFile=/etc/traefik/traefik.toml"]
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    environment:
+      CF_API_EMAIL: "@EMAIL@"
+      # lego reads either name depending on token scope; both point at the
+      # file the unit's ExecStartPre stages from SOPS.
+      CF_DNS_API_TOKEN_FILE: /run/traefik/cf-token
+      CF_ZONE_API_TOKEN_FILE: /run/traefik/cf-token
+
+    # Lets file-provider routes reach host services by name.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      # Read-only: this is the label provider's whole attack surface.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Store symlinks, resolved by docker at container-create time; the
+      # unit's restartTriggers recreate the container on a repoint.
+      - /etc/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+      - /etc/traefik/dynamic:/etc/traefik/dynamic:ro
+      - /var/lib/traefik/acme.json:/acme.json
+      # From /run/traefik, NOT /run/secrets: sops re-renders bump the
+      # generation directory and would strand the mount.
+      - /run/traefik/cf-token:/run/traefik/cf-token:ro
+      - /run/traefik/basic-auth-users:/run/traefik/basic-auth-users:ro
+
+    # The dashboard exposes the whole routing table and the API -- do not
+    # drop simpleAuth. Hostname derives from <networking.hostName>-traefik.<zone>.
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.rule=Host(`@DASHBOARD_HOST@`)
+      - traefik.http.routers.dashboard.entrypoints=websecure
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.tls=true
+      - traefik.http.routers.dashboard.tls.certresolver=lets-encrypt
+      - traefik.http.routers.dashboard.middlewares=simpleAuth@file
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - "@NETWORK@"
+
+# Created on boot by the docker module from the same `network` option, so the
+# project declares it external and never races over ownership.
+networks:
+  "@NETWORK@":
+    external: true

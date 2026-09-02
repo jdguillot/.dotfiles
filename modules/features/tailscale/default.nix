@@ -46,6 +46,36 @@ in
         flags on boot whenever the node is logged out or stopped.
       '';
     };
+
+    serve = lib.mkOption {
+      type = lib.types.submodule {
+        options.enable = lib.mkEnableOption "Tailscale serve (expose local services over the tailnet)";
+        options.services = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.submodule ({
+            options.endpoints = lib.mkOption {
+              type = lib.types.attrsOf lib.types.str;
+              default = { };
+              description = ''
+                Local port to proxy target, e.g.
+                endpoints."tcp:11434" = "tcp://127.0.0.1:11434".
+              '';
+            };
+            options.advertised = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = "Advertise the service in the tailnet";
+            };
+          }));
+          default = { };
+          description = "Services to proxy through Tailscale";
+        };
+      };
+      default = {
+        enable = false;
+        services = { };
+      };
+      description = "Tailscale serve options (expose local services over the tailnet)";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -55,8 +85,31 @@ in
       authKeyFile = cfg.authKeyFile;
       extraUpFlags =
         cfg.extraUpFlags
-        ++ lib.optional cfg.acceptRoutes "--accept-routes=true"
-        ++ lib.optional (!cfg.acceptDns) "--accept-dns=false";
+        ++ [
+          # Always emitted, both values: prefs persist in tailscaled's state,
+          # so omitting a flag leaves a stale pref in place forever. Explicit
+          # values make the next `tailscale up` converge on the config.
+          "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
+          "--accept-dns=${lib.boolToString cfg.acceptDns}"
+        ];
+
+      serve = {
+        enable = cfg.serve.enable;
+        services = cfg.serve.services;
+      };
+    };
+
+    # Upstream's unit only *orders* after tailscaled-autoconnect (`after` is
+    # not a dependency), so a rebuild can run it against a stopped backend and
+    # fail. `requires` pulls autoconnect into the transaction -- it is
+    # Type=notify and only reports ready once the backend reaches Running --
+    # and the retry covers a backend that comes up late.
+    systemd.services.tailscale-serve = lib.mkIf cfg.serve.enable {
+      requires = [ "tailscaled-autoconnect.service" ];
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = "5s";
+      };
     };
   };
 }

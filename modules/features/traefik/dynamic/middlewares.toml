@@ -1,0 +1,37 @@
+# Header and rate-limit middlewares, plus the two chains that compose them.
+# Middleware names are part of the cross-host label contract; a name needs an
+# `@file` suffix only when referenced from a docker label. Deployed read-only
+# from the store -- changes land via rebuild, which restarts the container.
+
+# `burst` must cover a whole page load, not a single request: Odysseus pulls
+# ~80 ES modules in one HTTP/2 burst, and at burst=50 the tail got 429s that
+# broke the app with no visible error. A backstop for runaway clients, not a
+# security control; 0 disables. Rendered from the module's rateLimit option.
+[http.middlewares.middlewares-rate-limit.rateLimit]
+  average = @RATE_LIMIT_AVERAGE@
+  burst = @RATE_LIMIT_BURST@
+
+# Traefik SETS response headers (no merging), so everything listed here
+# clobbers the backend's own value -- a blanket permissionsPolicy here once
+# broke Odysseus' voice recorder. Keep only what a backend cannot set for
+# itself: HSTS (a property of the TLS edge) and the robots tag.
+[http.middlewares.middlewares-secure-headers.headers]
+  hostsProxyHeaders = ["X-Forwarded-Host"]
+  stsSeconds = 63072000
+  stsIncludeSubdomains = true
+  stsPreload = true
+  forceSTSHeader = true
+  [http.middlewares.middlewares-secure-headers.headers.customResponseHeaders]
+    X-Robots-Tag = "none,noarchive,nosnippet,notranslate,noimageindex,"
+    server = ""
+
+# Read at request time, so users rotate without a rebuild; staged from SOPS
+# by the unit (see basicAuthUsersFile). Generate lines with `htpasswd -nB`.
+[http.middlewares.simpleAuth.basicAuth]
+  usersFile = "/run/traefik/basic-auth-users"
+
+[http.middlewares.chain-no-auth.chain]
+  middlewares = ["middlewares-rate-limit", "middlewares-secure-headers"]
+
+[http.middlewares.chain-basic-auth.chain]
+  middlewares = ["middlewares-rate-limit", "middlewares-secure-headers", "simpleAuth"]
