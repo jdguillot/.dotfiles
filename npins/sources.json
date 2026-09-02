@@ -1,0 +1,99 @@
+{
+  "pins": {
+    "anthropic-skills": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "anthropics",
+        "repo": "skills"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "53048666b05b4799081517d00e09e0a2dd688678",
+      "url": "https://github.com/anthropics/skills/archive/53048666b05b4799081517d00e09e0a2dd688678.tar.gz",
+      "hash": "sha256-xaxkXFpzH4s2OIOcZqPy+HzfRAy2HbKpagjMhY+uinA="
+    },
+    "astrotuxlauncher": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "GitHub",
+        "owner": "JoeJoeTV",
+        "repo": "AstroTuxLauncher"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "1.1.12",
+      "revision": "dc97374f56a9ebdc0e3b34a1528f9be08def0c46",
+      "url": "https://api.github.com/repos/JoeJoeTV/AstroTuxLauncher/tarball/refs/tags/1.1.12",
+      "hash": "sha256-9ZFpd+4EHULDdHWB63EAbqdEW3dBEw4p6hx9MYpe30o="
+    },
+    "autoskills": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "midudev",
+        "repo": "autoskills"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "0ec725320d2137253ab2e68e7ba8a072148e741a",
+      "url": "https://github.com/midudev/autoskills/archive/0ec725320d2137253ab2e68e7ba8a072148e741a.tar.gz",
+      "hash": "sha256-N4k7YwZDYwRDQrMPe0wxzFtirOgCFAfAO4tisnQqV+8="
+    },
+    "claude-code-extensions": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "nodnarbnitram",
+        "repo": "claude-code-extensions"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "35e7f7deae689e12b94f9c242b8f59efe0f66476",
+      "url": "https://github.com/nodnarbnitram/claude-code-extensions/archive/35e7f7deae689e12b94f9c242b8f59efe0f66476.tar.gz",
+      "hash": "sha256-hupckXf0IYr5Cv08wdYNDHHAss5Ajefowioes16GgrQ="
+    },
+    "nix-skills": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "nhooey",
+        "repo": "nix-skills"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "c6a94418cb5993ffd15cc8658be02fbdecd49b22",
+      "url": "https://github.com/nhooey/nix-skills/archive/c6a94418cb5993ffd15cc8658be02fbdecd49b22.tar.gz",
+      "hash": "sha256-Io9t/Y54y96rwYyc9EqcX1w4z4d0sqgkm97MpMAeFpU="
+    },
+    "odysseus": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "odysseus-dev",
+        "repo": "odysseus"
+      },
+      "branch": "dev",
+      "submodules": false,
+      "revision": "c9dd68d890a7c0ee0df9a0e351ce22aafd6c7c0f",
+      "url": "https://github.com/odysseus-dev/odysseus/archive/c9dd68d890a7c0ee0df9a0e351ce22aafd6c7c0f.tar.gz",
+      "hash": "sha256-HWdowRMwwN4pj5GNTvhPlNq8SQU8G2i3yw2brtChuEo="
+    },
+    "tmux-sessionx": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "omerxx",
+        "repo": "tmux-sessionx"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "301ce314c9bd25b803667e00c50a4f57d4b33aa2",
+      "url": "https://github.com/omerxx/tmux-sessionx/archive/301ce314c9bd25b803667e00c50a4f57d4b33aa2.tar.gz",
+      "hash": "sha256-Iue1Y7WViAm92+qM96EowthpXwYrkeLudlWUXIzk368="
+    }
+  },
+  "version": 8
+}

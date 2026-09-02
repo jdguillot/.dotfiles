@@ -32,23 +32,6 @@
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
     vscode-server.url = "github:nix-community/nixos-vscode-server";
 
-    anthropic-skills = {
-      url = "github:anthropics/skills";
-      flake = false;
-    };
-
-    # Skill registry (rust-best-practices, tauri-v2, golang-* skills).
-    autoskills = {
-      url = "github:midudev/autoskills";
-      flake = false;
-    };
-
-    # Nix flake conventions skill (nix-flakes).
-    nix-skills = {
-      url = "github:nhooey/nix-skills";
-      flake = false;
-    };
-
     catppuccin.url = "github:catppuccin/nix";
     proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
     #    pst-bin.url = "path:./programs/pst";

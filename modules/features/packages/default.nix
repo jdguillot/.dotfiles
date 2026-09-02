@@ -64,6 +64,7 @@ let
     github-copilot-cli
     copilot-language-server
     deploy-rs
+    npins
     claude-code
     opencode
     nixd

@@ -3,8 +3,9 @@
 { pkgs }:
 
 let
-  version = "1.1.12";
-  hash = "sha256-9ZFpd+4EHULDdHWB63EAbqdEW3dBEw4p6hx9MYpe30o=";
+  # Release pinned in npins/sources.json; bump with `npins update astrotuxlauncher`.
+  src = (import ../../../../npins).astrotuxlauncher;
+  version = src.version;
 
   # pansi is not in nixpkgs; build from PyPI
   pansi = pkgs.python3Packages.buildPythonPackage rec {
@@ -52,14 +53,7 @@ let
 in
 pkgs.python3Packages.buildPythonApplication {
   pname = "AstroTuxLauncher";
-  inherit version;
-
-  src = pkgs.fetchFromGitHub {
-    owner = "JoeJoeTV";
-    repo = "AstroTuxLauncher";
-    rev = version;
-    hash = hash;
-  };
+  inherit version src;
 
   format = "other";
 

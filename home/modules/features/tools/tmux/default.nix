@@ -7,13 +7,10 @@
 
 let
   cfg = config.cyberfighter.features.tools.tmux;
+  sources = import ../../../../../npins;
   tmux-sessionx = pkgs.tmuxPlugins.tmux-sessionx.overrideAttrs (_: {
-    src = pkgs.fetchFromGitHub {
-      owner = "omerxx";
-      repo = "tmux-sessionx";
-      rev = "301ce314c9bd25b803667e00c50a4f57d4b33aa2";
-      hash = "sha256-Iue1Y7WViAm92+qM96EowthpXwYrkeLudlWUXIzk368=";
-    };
+    # Pinned in npins/sources.json; bump with `npins update tmux-sessionx`.
+    src = sources.tmux-sessionx;
     # New version uses $CURRENT_DIR/$SCRIPTS_DIR dynamically; old nixpkgs
     # postPatch substitutions no longer match and must be cleared.
     postPatch = "";

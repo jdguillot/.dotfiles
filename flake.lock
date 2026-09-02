@@ -1,37 +1,5 @@
 {
   "nodes": {
-    "anthropic-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1787332253,
-        "narHash": "sha256-nVid8vENmLDh7ffDqh+bJbEWtXcVltA0qa2rItmniZM=",
-        "owner": "anthropics",
-        "repo": "skills",
-        "rev": "3b3fad96af16a10759d930941b4520ba0c40edae",
-        "type": "github"
-      },
-      "original": {
-        "owner": "anthropics",
-        "repo": "skills",
-        "type": "github"
-      }
-    },
-    "autoskills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1784289814,
-        "narHash": "sha256-N4k7YwZDYwRDQrMPe0wxzFtirOgCFAfAO4tisnQqV+8=",
-        "owner": "midudev",
-        "repo": "autoskills",
-        "rev": "0ec725320d2137253ab2e68e7ba8a072148e741a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "midudev",
-        "repo": "autoskills",
-        "type": "github"
-      }
-    },
     "catppuccin": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -484,22 +452,6 @@
         "type": "github"
       }
     },
-    "nix-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1780790301,
-        "narHash": "sha256-Io9t/Y54y96rwYyc9EqcX1w4z4d0sqgkm97MpMAeFpU=",
-        "owner": "nhooey",
-        "repo": "nix-skills",
-        "rev": "c6a94418cb5993ffd15cc8658be02fbdecd49b22",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nhooey",
-        "repo": "nix-skills",
-        "type": "github"
-      }
-    },
     "nixos-wsl": {
       "inputs": {
         "flake-compat": "flake-compat_4",
@@ -886,8 +838,6 @@
     },
     "root": {
       "inputs": {
-        "anthropic-skills": "anthropic-skills",
-        "autoskills": "autoskills",
         "catppuccin": "catppuccin",
         "deploy-rs": "deploy-rs",
         "deptui": "deptui",
@@ -898,7 +848,6 @@
         "niri": "niri",
         "nix-flatpak": "nix-flatpak",
         "nix-index-database": "nix-index-database",
-        "nix-skills": "nix-skills",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_8",
         "nixpkgs-stable": "nixpkgs-stable_2",

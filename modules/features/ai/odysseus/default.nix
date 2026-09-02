@@ -187,18 +187,13 @@ in
 
     src = lib.mkOption {
       type = lib.types.path;
-      default = pkgs.fetchFromGitHub {
-        owner = "odysseus-dev";
-        repo = "odysseus";
-        # `dev` is upstream's default branch, where fixes land first; `main`
-        # lags it by months (it shipped a broken mcp dep for six weeks, issue
-        # #6209). Pin a dev rev a few days old and bump deliberately -- this
-        # is the only version pin. On bump, re-check which patches upstream
-        # has made redundant.
-        rev = "c9dd68d890a7c0ee0df9a0e351ce22aafd6c7c0f"; # dev, 2026-08-27
-        hash = "sha256-HWdowRMwwN4pj5GNTvhPlNq8SQU8G2i3yw2brtChuEo=";
-      };
-      defaultText = lib.literalExpression "pkgs.fetchFromGitHub { owner = \"odysseus-dev\"; ... }";
+      # `dev` is upstream's default branch, where fixes land first; `main`
+      # lags it by months (it shipped a broken mcp dep for six weeks, issue
+      # #6209). npins tracks dev but only moves on an explicit
+      # `npins update odysseus` -- on bump, re-check which patches upstream
+      # has made redundant.
+      default = (import ../../../../npins).odysseus;
+      defaultText = lib.literalExpression "(import ../../../../npins).odysseus";
       description = ''
         Source tree holding docker-compose.yml and the Dockerfile. The image is
         built from this on first start, so a bump means a rebuild of the image,

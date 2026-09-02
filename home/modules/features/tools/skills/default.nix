@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   ...
 }:
@@ -8,14 +7,13 @@
 let
   cfg = config.cyberfighter.features.tools.skills;
 
-  # Pinned in flake.lock; update with `nix flake update anthropic-skills`.
-  anthropicSkills = inputs.anthropic-skills;
+  # Skill repos are pinned in npins/sources.json, not flake.lock; update
+  # with `npins update <name>` from the repo root.
+  sources = import ../../../../../npins;
 
-  # Pinned in flake.lock; update with `nix flake update autoskills`.
-  autoskillsRegistry = inputs.autoskills + "/packages/autoskills/skills-registry";
-
-  # Pinned in flake.lock; update with `nix flake update nix-skills`.
-  nixSkills = inputs.nix-skills;
+  anthropicSkills = sources.anthropic-skills;
+  autoskillsRegistry = "${sources.autoskills}/packages/autoskills/skills-registry";
+  nixSkills = sources.nix-skills;
 
   # Local skills live in ./skills, one directory per skill (each with a SKILL.md).
   localSkills = lib.mapAttrs (name: _: ./skills + "/${name}") (

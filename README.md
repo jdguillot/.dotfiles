@@ -214,6 +214,14 @@ Update flake inputs:
 nix flake update
 ```
 
+Vendored third-party sources (agent skill repos, pinned app trees) are
+locked separately in `npins/sources.json`; update them with:
+
+```bash
+npins update            # all pins
+npins update <name>     # one pin, e.g. npins update odysseus
+```
+
 Useful aliases from the Home Manager shell module:
 
 - `ns` - rebuild system and the matching Home Manager target
