@@ -306,32 +306,19 @@ in
     xdg.configFile."nvim/lua".source = ./lua;
     xdg.configFile."nvim/snippets".source = ./snippets;
 
-    # Generate .nixd.json dynamically for the current user/host
-    home.file.".dotfiles/.nixd.json".text =
+    # Every flake host, so nixd.lua can point the NixOS option provider at
+    # whichever host's file is in the current buffer. Host attribute name,
+    # hostname and hosts/ directory are all the same string, so only the
+    # home-manager configuration name needs mapping.
+    home.file.".dotfiles/.nixd-hosts.json".text =
       let
-        dotfilesPath = "${config.home.homeDirectory}/.dotfiles";
-        hostname = hostMeta.system.hostname;
-        username = hostMeta.system.username;
-        hmConfig = "${username}@${hostname}";
+        hostConfigs = import ../../../../../hosts/default.nix;
       in
       builtins.toJSON {
-        nixos = {
-          expr = "(builtins.getFlake \"${dotfilesPath}\").nixosConfigurations.${hostname}.options";
-        };
-        home-manager = {
-          expr = "(builtins.getFlake \"${dotfilesPath}\").homeConfigurations.\"${hmConfig}\".options";
-        };
-        nixpkgs = {
-          expr = "import (builtins.getFlake \"${dotfilesPath}\").inputs.nixpkgs { }";
-        };
-        options = {
-          nixos = {
-            expr = "(builtins.getFlake \"${dotfilesPath}\").nixosConfigurations.${hostname}.options";
-          };
-          home-manager = {
-            expr = "(builtins.getFlake \"${dotfilesPath}\").homeConfigurations.\"${hmConfig}\".options";
-          };
-        };
+        default = hostMeta.system.hostname;
+        hosts = lib.mapAttrs (name: meta: {
+          home = "${meta.system.username}@${name}";
+        }) hostConfigs;
       };
   };
 }

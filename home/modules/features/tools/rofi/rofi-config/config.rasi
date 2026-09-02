@@ -1,4 +1,4 @@
-@theme "catppuccin-default"
+@theme "launcher"
 configuration {
   // keyboard bindings
   kb-element-next: "Control+j";
@@ -7,10 +7,12 @@ configuration {
   kb-accept-entry: "Return,KP_Enter";
   kb-mode-next: "Tab";
   kb-mode-previous: "Shift+Tab";
-  
+
   // Window
-  display-drun: "Applications:";
-  display-window: "Windows:";
+  show-icons: true;
+  display-drun: "󰀻 Apps";
+  display-window: "󱂬 Windows";
+  display-run: " Run";
   drun-display-format: "{name}";
   window-display-format: "{name}";
 }

@@ -1,0 +1,23 @@
+{
+    "bar": {
+        "barType": "simple",
+        "density": "compact",
+        "position": "top",
+        "backgroundOpacity": 0.93,
+        "marginVertical": 4,
+        "marginHorizontal": 4,
+        "showCapsule": true,
+        "widgetSpacing": 6
+    },
+    "ui": {
+        "panelBackgroundOpacity": 0.93,
+        "translucentWidgets": false,
+        "panelsAttachedToBar": true
+    },
+    "general": {
+        "showScreenCorners": false,
+        "radiusRatio": 1,
+        "enableShadows": true,
+        "enableBlurBehind": true
+    }
+}

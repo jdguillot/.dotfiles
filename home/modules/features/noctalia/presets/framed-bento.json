@@ -1,0 +1,24 @@
+{
+    "bar": {
+        "barType": "framed",
+        "density": "compact",
+        "position": "top",
+        "frameThickness": 8,
+        "frameRadius": 12,
+        "outerCorners": true,
+        "backgroundOpacity": 0.93,
+        "marginVertical": 4,
+        "marginHorizontal": 4
+    },
+    "ui": {
+        "panelBackgroundOpacity": 0.93,
+        "translucentWidgets": false,
+        "panelsAttachedToBar": true
+    },
+    "general": {
+        "showScreenCorners": false,
+        "radiusRatio": 1,
+        "enableShadows": true,
+        "enableBlurBehind": true
+    }
+}

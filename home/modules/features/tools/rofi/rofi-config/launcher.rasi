@@ -1,0 +1,112 @@
+// Modern centered launcher — catppuccin mocha, matches the niri "rounded"
+// style (12px radius, mauve accent).
+@import "catppuccin-mocha"
+
+* {
+    background-color: transparent;
+    text-color:       @text;
+    font:             "FiraCode Nerd Font 12";
+}
+
+window {
+    location:         center;
+    anchor:           center;
+    width:            600px;
+    background-color: @base;
+    border:           2px;
+    border-color:     @mauve;
+    border-radius:    12px;
+    padding:          16px;
+}
+
+mainbox {
+    spacing:  12px;
+    children: [ "inputbar", "listview", "mode-switcher" ];
+}
+
+inputbar {
+    background-color: @surface0;
+    border-radius:    8px;
+    padding:          10px 14px;
+    spacing:          10px;
+    children:         [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color: @mauve;
+}
+
+entry {
+    placeholder:       "Search…";
+    placeholder-color: @overlay0;
+    cursor:            text;
+}
+
+listview {
+    lines:        8;
+    fixed-height: false;
+    scrollbar:    false;
+    spacing:      4px;
+}
+
+element {
+    padding:       8px 10px;
+    border-radius: 8px;
+    spacing:       10px;
+    cursor:        pointer;
+}
+
+element-icon {
+    size:             1.4em;
+    background-color: transparent;
+    cursor:           inherit;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    cursor:           inherit;
+    vertical-align:   0.5;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+}
+element selected.normal {
+    background-color: @mauve;
+    text-color:       @crust;
+}
+element normal.urgent,
+element alternate.urgent {
+    text-color: @red;
+}
+element selected.urgent {
+    background-color: @red;
+    text-color:       @crust;
+}
+element normal.active,
+element alternate.active {
+    text-color: @mauve;
+}
+element selected.active {
+    background-color: @mauve;
+    text-color:       @crust;
+}
+
+mode-switcher {
+    spacing: 8px;
+}
+
+button {
+    padding:          6px;
+    border-radius:    8px;
+    background-color: @surface0;
+    text-color:       @subtext0;
+    cursor:           pointer;
+}
+
+button selected {
+    background-color: @mauve;
+    text-color:       @crust;
+}

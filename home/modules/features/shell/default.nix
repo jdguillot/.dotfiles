@@ -43,6 +43,21 @@ in
       };
     };
 
+    trash = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Alias `rm` to trash-put, so removals are recoverable with
+          `trash-restore`.
+
+          Turn off on hosts whose data lives outside $HOME: trash-cli only
+          does same-volume renames, so `rm` fails on any other filesystem
+          unless that volume gets its own top-level trash dir.
+        '';
+      };
+    };
+
     extraSessionVariables = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -95,7 +110,6 @@ in
           ## Overriding default operations
           ls = "eza --icons -F -H -g -h -o --group-directories-first --git -1  --tree --level=1 --ignore-glob='node_modules*'";
           ll = "ls -la";
-          rm = "trash-put";
 
           ## Command Presets
           pysrc = ". .venv/bin/activate";
@@ -112,6 +126,7 @@ in
 
           bwu = "export BW_SESSION=$(bw unlock --raw)";
         }
+        // lib.optionalAttrs cfg.trash.enable { rm = "trash-put"; }
         // cfg.extraAliases;
       };
     })
