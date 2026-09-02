@@ -4,6 +4,8 @@
   pkgs,
   config,
   inputs,
+  hostProfile,
+  hostMeta,
   ...
 }:
 {
@@ -15,13 +17,12 @@
   ];
 
   cyberfighter = {
-    profile.enable = "wsl";
+    profile.enable = hostProfile;
 
     system = {
-      hostname = "my-wsl";
-      username = "cyberfighter";
+      # Identity comes from the central metadata in hosts/default.nix.
+      inherit (hostMeta.system) hostname username stateVersion;
       userDescription = "Jonathan Guillot";
-      stateVersion = "25.05";
       extraGroups = [ "docker" ];
     };
 
@@ -63,7 +64,7 @@
 
   wsl = {
     enable = true;
-    defaultUser = "cyberfighter";
+    defaultUser = hostMeta.system.username;
     useWindowsDriver = true;
     wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;

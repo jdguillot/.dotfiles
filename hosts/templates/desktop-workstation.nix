@@ -2,6 +2,8 @@
 {
   inputs,
   pkgs,
+  hostProfile,
+  hostMeta,
   ...
 }:
 {
@@ -13,13 +15,12 @@
   ];
 
   cyberfighter = {
-    profile.enable = "desktop";
+    profile.enable = hostProfile;
 
     system = {
-      hostname = "my-workstation";
-      username = "cyberfighter";
+      # Identity comes from the central metadata in hosts/default.nix.
+      inherit (hostMeta.system) hostname username stateVersion;
       userDescription = "Jonathan Guillot";
-      stateVersion = "25.05";
 
       bootloader = {
         type = "systemd-boot";

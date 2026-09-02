@@ -1,14 +1,15 @@
 # Template for a minimal server
 {
+  inputs,
   pkgs,
   hostProfile,
   hostMeta,
   ...
-}@inputs:
+}:
 {
   imports = [
     ../../modules
-    inputs.inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-index-database.nixosModules.nix-index
     ./hardware-configuration.nix
   ];
 
@@ -16,9 +17,8 @@
     profile.enable = hostProfile;
 
     system = {
-      inherit (hostMeta.system) hostname username;
-
-      stateVersion = "25.11";
+      # Identity comes from the central metadata in hosts/default.nix.
+      inherit (hostMeta.system) hostname username stateVersion;
 
       bootloader = {
         type = "systemd-boot";
