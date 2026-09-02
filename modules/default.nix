@@ -4,34 +4,40 @@
 }:
 {
   imports = [
-    ./core/profiles
-    ./core/system
-    ./core/users
-    ./core/nix-settings
+    ./core/profiles/default.nix
+    ./core/system/default.nix
+    ./core/users/default.nix
+    ./core/nix-settings/default.nix
 
-    ./features/desktop
-    ./features/sound
-    ./features/fonts
-    ./features/networking
-    ./features/printing
-    ./features/ssh
-    ./features/sops
-    ./features/graphics
-    ./features/docker
-    ./features/tailscale
-    ./features/flatpak
-    ./features/packages
-    ./features/filesystems
-    ./features/bluetooth
-    ./features/gaming
-    ./features/vscode
-    ./features/vpn
-    ./features/security
+    ./features/ai/default.nix
+    ./features/cloudflared/default.nix
+    ./features/desktop/default.nix
+    ./features/sound/default.nix
+    ./features/fonts/default.nix
+    ./features/networking/default.nix
+    ./features/printing/default.nix
+    ./features/ssh/default.nix
+    ./features/sops/default.nix
+    ./features/graphics/default.nix
+    ./features/docker/default.nix
+    ./features/tailscale/default.nix
+    ./features/traefik/default.nix
+    ./features/searxng/default.nix
+    ./features/flatpak/default.nix
+    ./features/packages/default.nix
+    ./features/filesystems/default.nix
+    ./features/bluetooth/default.nix
+    ./features/gaming/default.nix
+    ./features/vscode/default.nix
+    ./features/vpn/default.nix
+    ./features/security/default.nix
     ./features/wine/default.nix
     ./features/proxmox/default.nix
     ./features/cachix/default.nix
     ./features/1password/default.nix
     ./features/gameserver/default.nix
+    ./features/sunshine/default.nix
+    ./features/syncthing/default.nix
 
     inputs.nix-flatpak.nixosModules.nix-flatpak
   ];

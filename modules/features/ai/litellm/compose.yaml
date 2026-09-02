@@ -1,0 +1,99 @@
+# LiteLLM proxy -- per-user API keys in front of Ollama. Placeholders are
+# filled by the module; ${VAR} interpolates from the SOPS dotenv staged at
+# /run/litellm/env. Day-2 ops: `litellm-compose`, keys: `litellm-keys`.
+
+services:
+  litellm:
+    # Pinned on purpose; a major bump can change key/DB semantics.
+    image: ghcr.io/berriai/litellm:v1.99.0
+    container_name: litellm
+    restart: unless-stopped
+    command: ["--config", "/app/config.yaml"]
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    environment:
+      DATABASE_URL: "postgresql://litellm:${POSTGRES_PASSWORD}@db:5432/litellm"
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY}"
+      # Encrypts DB rows. Set once, NEVER rotate.
+      LITELLM_SALT_KEY: "${LITELLM_SALT_KEY}"
+      # Keys are managed with `litellm-keys` from the host shell.
+      DISABLE_ADMIN_UI: "True"
+
+    # host-gateway = the host on this project's bridge, where the module
+    # opens the Ollama port.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    ports:
+      # Loopback only, for `litellm-keys`; remote access is traefik ->
+      # container over @NETWORK@.
+      - "127.0.0.1:@PORT@:4000"
+
+    volumes:
+      - /etc/litellm/config.yaml:/app/config.yaml:ro
+
+    # chain-no-auth: the virtual keys are the auth; basic auth would clobber
+    # the Authorization header.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=@NETWORK@
+      - traefik.http.routers.litellm.rule=Host(`@PUBLIC_HOST@`)
+      - traefik.http.routers.litellm.entrypoints=websecure
+      - traefik.http.routers.litellm.tls=true
+      - traefik.http.routers.litellm.tls.certresolver=lets-encrypt
+      - traefik.http.routers.litellm.middlewares=chain-no-auth@file
+      - traefik.http.routers.litellm.service=litellm-svc
+      - traefik.http.services.litellm-svc.loadbalancer.server.port=4000
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - default
+      - "@NETWORK@"
+
+  # Required for virtual keys and spend logs.
+  db:
+    # postgres 18+ moves PGDATA; keep the pin and the volume path in sync.
+    image: postgres:17-alpine
+    container_name: litellm-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_DB: litellm
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+
+    volumes:
+      - "@STATE_DIR@/postgres:/var/lib/postgresql/data"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - default
+
+networks:
+  # Fixed bridge name: the Ollama firewall hole needs a stable interface.
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: "@BRIDGE@"
+  # Traefik's network, created on boot by the docker module.
+  "@NETWORK@":
+    external: true
