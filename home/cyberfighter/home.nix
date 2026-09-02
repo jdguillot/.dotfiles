@@ -60,16 +60,23 @@
           "truenas"
           "synlgy-ds918"
           "vm-gameserver-nix"
+          "ryzn-server"
         ];
       };
 
       noctalia.enable = true;
-      niri.enable = true;
+      niri = {
+        enable = true;
+        style = "rounded"; # "minimal" | "rounded" | "showcase"
+      };
 
       shell = {
         fish.enable = true;
         starship.enable = true;
         zsh.enable = true;
+
+        # trash-put fails across ryzn-server's subvolumes; btrbk covers it.
+        trash.enable = hostMeta.system.hostname != "ryzn-server";
       };
 
       editor = {
@@ -102,6 +109,13 @@
           enable = true;
           useSecretsForIdentity = true;
         };
+        # github-pat is only decryptable by the razer-nixos user key;
+        # elsewhere the failed decrypt would take the whole user unit down.
+        mcp.enableGitHub = hostMeta.system.hostname == "razer-nixos";
+
+        # Same recipient constraint: the ollama/ryzn URLs and credentials
+        # come from secrets/secrets.yaml.
+        opencode.remoteProvider.enable = hostMeta.system.hostname == "razer-nixos";
       };
     };
   };

@@ -72,6 +72,10 @@
         carapace.enable = true;
         yazi.enable = true;
         direnv.enable = true;
+
+        # ryzn-remote credentials (Cloudflare Access token + LiteLLM key)
+        # from secrets/secrets.yaml -- this user key is a recipient.
+        opencode.remoteProvider.enable = true;
       };
     };
   };

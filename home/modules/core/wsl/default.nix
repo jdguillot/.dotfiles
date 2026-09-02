@@ -1,12 +1,6 @@
-# WSL-specific configurations module
-# This module handles Windows path integration, auto-detection, and caching
-# for fast shell startup in WSL environments.
-#
-# Key features:
-# - Auto-detects Windows username and caches it (adds ~140ms once)
-# - Subsequent shells use cache (~0.5ms overhead)
-# - No username stored in git (cached in ~/.cache/wsl-paths)
-# - Shell functions in: home/modules/features/shell/shell-functions.{sh,fish}
+# WSL: Windows path integration with an auto-detected, cached username
+# (~140ms once, ~0.5ms after; cache in ~/.cache/wsl-paths, nothing in git).
+# Shell functions: home/modules/features/shell/shell-functions.{sh,fish}.
 {
   config,
   lib,

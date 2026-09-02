@@ -11,6 +11,12 @@ let
   # Pinned in flake.lock; update with `nix flake update anthropic-skills`.
   anthropicSkills = inputs.anthropic-skills;
 
+  # Pinned in flake.lock; update with `nix flake update autoskills`.
+  autoskillsRegistry = inputs.autoskills + "/packages/autoskills/skills-registry";
+
+  # Pinned in flake.lock; update with `nix flake update nix-skills`.
+  nixSkills = inputs.nix-skills;
+
   # Local skills live in ./skills, one directory per skill (each with a SKILL.md).
   localSkills = lib.mapAttrs (name: _: ./skills + "/${name}") (
     lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./skills)
@@ -20,6 +26,19 @@ let
     localSkills
     // (lib.optionalAttrs cfg.enableWebappTesting {
       webapp-testing = "${anthropicSkills}/skills/webapp-testing";
+    })
+    // (lib.optionalAttrs cfg.enableRustSkill {
+      rust-best-practices = "${autoskillsRegistry}/rust-best-practices";
+    })
+    // (lib.optionalAttrs cfg.enableTauriSkill {
+      tauri-v2 = "${autoskillsRegistry}/tauri-v2";
+    })
+    // (lib.optionalAttrs cfg.enableGoSkills {
+      golang-patterns = "${autoskillsRegistry}/golang-patterns";
+      golang-testing = "${autoskillsRegistry}/golang-testing";
+    })
+    // (lib.optionalAttrs cfg.enableNixSkill {
+      nix-flakes = "${nixSkills}/skills/nix-flakes";
     });
 in
 {
@@ -32,6 +51,30 @@ in
       type = lib.types.bool;
       default = true;
       description = "Include the webapp-testing skill from anthropics/skills (Playwright-driven UI verification).";
+    };
+
+    enableRustSkill = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the rust-best-practices skill from midudev/autoskills (Apollo GraphQL Rust handbook)";
+    };
+
+    enableTauriSkill = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the tauri-v2 skill from midudev/autoskills (Tauri commands, IPC, capabilities, plugins)";
+    };
+
+    enableGoSkills = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the golang-patterns and golang-testing skills from midudev/autoskills (idiomatic Go patterns, TDD, benchmarks)";
+    };
+
+    enableNixSkill = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the nix-flakes skill from nhooey/nix-skills (flake conventions, input pinning, *2nix strategies)";
     };
   };
 
