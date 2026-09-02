@@ -348,13 +348,15 @@
   sops.secrets."tailscale-authkey" = { };
 
   # Traefik's DNS-01 token (Zone:Read + DNS:Edit) and dashboard htpasswd,
-  # shared with thkpd-pve1.
-  sops.secrets."cloudflare-dns-token" = { };
-  sops.secrets."traefik-basic-auth" = { };
+  # shared with thkpd-pve1. The unit stages both at start (its restartTriggers
+  # only cover config files), so a secrets-only deploy needs this restart.
+  sops.secrets."cloudflare-dns-token".restartUnits = [ "traefik.service" ];
+  sops.secrets."traefik-basic-auth".restartUnits = [ "traefik.service" ];
 
   # Tunnel token from the Zero Trust dashboard; runs the connector only,
-  # grants no account access.
-  sops.secrets."cloudflared-tunnel-token" = { };
+  # grants no account access. LoadCredential reads it at unit start, so a
+  # secrets-only deploy needs this restart.
+  sops.secrets."cloudflared-tunnel-token".restartUnits = [ "cloudflared-tunnel.service" ];
 
   # Syncthing GUI login, applied over its REST API at boot.
   sops.secrets."syncthing-username" = { };
