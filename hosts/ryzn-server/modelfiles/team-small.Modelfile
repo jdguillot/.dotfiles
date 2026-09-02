@@ -1,0 +1,5 @@
+# Aux model for litellm/hermes. num_ctx capped: at the 256K server window
+# even this 4B allocates 9.2GiB of KV and evicts the 27B primary; at 16K it
+# costs ~3.8GiB and both stay resident.
+FROM qwen3.5:4b-q4_K_M
+PARAMETER num_ctx 16384

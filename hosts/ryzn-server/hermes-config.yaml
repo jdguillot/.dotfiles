@@ -1,0 +1,71 @@
+# Hermes Agent config for ryzn-server, selected via ai.hermes.configFile and
+# installed verbatim as $HERMES_HOME/config.yaml -- runtime edits are
+# overwritten on rebuild; edit here instead.
+#
+# NEVER put API keys here (world-readable store); secrets arrive through
+# `.secrets.envSecret` as $HERMES_HOME/.env.
+
+# Local inference via ai.ollama. provider "custom" is upstream's profile for
+# any OpenAI-compatible endpoint (base_url required, no key). Loopback ON
+# PURPOSE: hermes is a native unit, and upstream only trusts a custom
+# base_url on loopback -- containerised clients use the bridge address.
+model:
+  # Same model litellm serves as team-coder: one shared resident primary.
+  default: "qwen3.8:27b-q4_K_M"
+  provider: "custom"
+  base_url: "http://127.0.0.1:11434/v1"
+
+  # Conservative; raise only with a measured nvidia-smi check.
+  context_length: 65536
+
+# A cold start pays a ~18GB SSD read before the first token; the cloud-tuned
+# default gives up first.
+providers:
+  custom:
+    request_timeout_seconds: 600
+
+toolsets:
+  - hermes-cli
+
+terminal:
+  backend: local
+  # Resolves against the unit's WorkingDirectory.
+  cwd: "."
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+compression:
+  enabled: true
+  threshold: 0.50
+  target_ratio: 0.20
+
+agent:
+  # Idle timeout for gateway agent runs, in seconds. 0 disables the cap.
+  gateway_timeout: 1800
+
+# `team-small` is the context-capped derived model (ai.ollama.derivedModels),
+# shared with litellm -- the uncapped base 4B evicts the primary.
+auxiliary:
+  compression:
+    provider: "main"
+    model: "team-small"
+    reasoning_effort: "low"
+
+  title_generation:
+    enabled: true
+    provider: "main"
+    model: "team-small"
+
+  # "auto" resolves to OpenRouter/Nous when .env has those credentials;
+  # team-small could do it locally, but the cloud models are better eyes.
+  vision:
+    provider: "auto"
+    model: ""
+
+# MCP servers, as { name: { command, args, env } } or { name: { url, headers } }.
+mcp_servers:
+  nixos:
+    command: "mcp-nixos"

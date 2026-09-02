@@ -1,0 +1,34 @@
+# LiteLLM gateway config, deployed verbatim by ai.litellm.configFile.
+# Reference: https://docs.litellm.ai/docs/proxy/configs
+#
+# model_list is the whole team catalog (keys are minted against these
+# names). Keep it ONE big model + one small, names model-agnostic (team-*)
+# so a swap never touches teammate configs.
+
+model_list:
+  # ollama_chat/ (the /api/chat route) is upstream's recommendation for
+  # chat models and passes image input through.
+  - model_name: team-coder
+    litellm_params:
+      model: ollama_chat/qwen3.8:27b-q4_K_M
+      api_base: http://host.docker.internal:11434
+
+  # Aux for opencode's automatic title/background calls. `team-small` is
+  # the num_ctx-capped derived model (ai.ollama.derivedModels) -- the
+  # uncapped 4B at the 256K server window evicts the primary.
+  - model_name: team-small
+    litellm_params:
+      model: ollama_chat/team-small
+      api_base: http://host.docker.internal:11434
+
+general_settings:
+  # config.yaml is the source of truth; the DB holds keys and spend only.
+  store_model_in_db: false
+
+  # An authed /health otherwise fires real requests, loading every model
+  # onto the GPU; background checks serve a cached result.
+  background_health_checks: true
+  health_check_interval: 300
+
+# On Cloudflare 524s (125s first-byte edge timeout): see stream_timeout /
+# keepalive_seconds in docs.litellm.ai/docs/proxy/config_settings.

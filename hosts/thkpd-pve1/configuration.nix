@@ -1,5 +1,6 @@
 # Template for a minimal server
 {
+  config,
   lib,
   pkgs,
   hostProfile,
@@ -24,15 +25,16 @@ in
     inputs.inputs.nix-index-database.nixosModules.nix-index
     ./disk-config.nix
     ./hardware-configuration.nix
-    # ./containers
   ];
 
   cyberfighter = {
     profile.enable = hostProfile;
 
-    system = hostMeta.system // {
+    system = {
+      inherit (hostMeta.system) hostname username stateVersion;
+
       bootloader = {
-        systemd-boot = true;
+        type = "systemd-boot";
         efiCanTouchVariables = true;
       };
 
@@ -57,11 +59,22 @@ in
         permitRootLogin = "yes";
       };
 
-      docker = {
-        enable = true;
-        networks = [ "web" ];
-      };
+      docker.enable = true;
       tailscale.enable = true;
+
+      # Shared traefik module, replacing the hand-run copy under
+      # /home/cyberfighter/docker/traefik (same credentials via SOPS, same
+      # `web` network and resolver, so existing labels keep resolving).
+      # Cutover: copy its acme.json to /var/lib/traefik, port its dynamic
+      # routes (upsnap) into dynamicFiles, and add DNS for
+      # thkpd-pve1-traefik.cyberfighter.space -> 192.168.101.39.
+      traefik = {
+        enable = true;
+        dnsDomain = "cyberfighter.space";
+        email = "cyberfighter@gmail.com";
+        tokenFile = config.sops.secrets."cloudflare-dns-token".path;
+        basicAuthUsersFile = config.sops.secrets."traefik-basic-auth".path;
+      };
 
       sops = {
         enable = true;
@@ -70,6 +83,10 @@ in
       };
     };
   };
+
+  # Traefik's DNS-01 token and dashboard htpasswd, shared with ryzn-server.
+  sops.secrets."cloudflare-dns-token" = { };
+  sops.secrets."traefik-basic-auth" = { };
 
   systemd.tmpfiles.rules = [
     "L+ /bin/true - - - - ${pkgs.coreutils}/bin/true"
