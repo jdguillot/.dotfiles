@@ -227,6 +227,7 @@ Useful aliases from the Home Manager shell module:
 - `ns` - rebuild system and the matching Home Manager target
 - `hs` - switch Home Manager only
 - `nu` - update flake inputs
+- `np` - update npins pins (all, or `np <name>` for one)
 - `nb` - build for next boot and switch Home Manager
 
 ## Deployment

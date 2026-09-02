@@ -30,7 +30,8 @@ instead of guessing, and keep them current (see "Documentation"):
 - Home Manager only: `home-manager switch --flake .#<user>@<hostname>`
 - Interactive-shell aliases exist for the human workflow: `ns`
   (system + home), `hs` (home only), `nb` (boot + home), `nu` (flake
-  update). Agents should use the full commands above.
+  update), `np` (npins update). Agents should use the full commands
+  above.
 - Build one host without activating (good pre-flight check):
   `nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel`
 - Hostnames and users are centralized in `hosts/default.nix`; the flake
@@ -39,7 +40,9 @@ instead of guessing, and keep them current (see "Documentation"):
   …); `npins/sources.json` pins vendored third-party sources (skill
   repos, pinned app trees) — update those with `npins update <name>`,
   never by hand-editing revs. New pins: `npins add github <owner> <repo>
-  --branch <br>` (see `docs/RECOMMENDATIONS.md`).
+  --branch <br>`, or declare by hand in `sources.json` (spec fields
+  only, `null` revision/url/hash) and run `npins update <name>` to
+  resolve. See `docs/RECOMMENDATIONS.md`.
 
 ### Build on hosts with horsepower
 

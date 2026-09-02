@@ -118,6 +118,8 @@ in
           ns = "sudo nixos-rebuild switch --flake ~/.dotfiles && home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
           hs = "home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
           nu = "nix flake update --flake ~/.dotfiles";
+          # `np` updates all pins, `np <name>` just one.
+          np = "npins -d ~/.dotfiles/npins update";
           nb = "sudo nixos-rebuild boot --flake ~/.dotfiles && home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
 
           myip = "curl http://ip-api.com/json/ -s | jq";
