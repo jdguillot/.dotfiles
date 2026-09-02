@@ -208,8 +208,9 @@ in
       default = [
         ./patches/research-probe-timeout.patch
         ./patches/no-substring-mode-switch.patch
+        ./patches/pin-mcp-sdk-v1.patch
       ];
-      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ./patches/no-substring-mode-switch.patch ]";
+      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ./patches/no-substring-mode-switch.patch ./patches/pin-mcp-sdk-v1.patch ]";
       description = ''
         Patches applied to `src` before the image is built. Each one carries its
         upstream issue in a header comment -- drop it when that issue closes.
@@ -222,6 +223,10 @@ in
         no-substring-mode-switch stops the UI from silently flipping agent mode
         to chat mode (and persisting it) whenever an error message happens to
         contain "tool" or "auto".
+
+        pin-mcp-sdk-v1 pins the mcp dependency below 2.0; unpinned, the image
+        pulls the 2.x SDK and all four built-in MCP servers (Email, Memory,
+        RAG, Image Generation) crash at startup, costing the agent their tools.
       '';
     };
 
