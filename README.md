@@ -25,6 +25,8 @@ Use the README for the quick map, then jump into the focused docs:
 - [`docs/SOPS.md`](docs/SOPS.md) - system, home, and SSH-host secret workflows
 - [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) - repo
   recommendations and why they are worth following
+- [`AGENTS.md`](AGENTS.md) - working conventions for coding agents
+  (`CLAUDE.md`, `GEMINI.md`, and the Copilot instructions point here)
 
 ## Repository layout
 
