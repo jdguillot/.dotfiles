@@ -1,0 +1,24 @@
+Keep personal-assistant tools when the Terminus heuristic misfires.
+
+Upstream https://github.com/odysseus-dev/odysseus/issues/6194 (open).
+
+_LOCAL_COMPUTER_REFERENCE_RE treats any "on/from <word>" as a machine
+name -- "summarize my emails from today" matches on "from today" -- and
+the clamp then REPLACES the retrieved tool set with the shell/file
+Terminus toolset, so the agent truthfully reports it has no email tools.
+Bail out when intent detection confidently fired a personal-assistant
+domain, the same way the clamp already defers to an active document.
+
+--- a/src/agent_loop.py
++++ b/src/agent_loop.py
+@@ -3977,6 +3977,10 @@
+             )
+             and not _active_document_relevant
+             and not active_email
++            # "from today" / "from gmail" in a mail request is not a hostname:
++            # a confidently-detected personal-assistant domain must never be
++            # clamped away to the shell/file toolset. Upstream #6194.
++            and not ({"email", "notes_calendar_tasks", "documents"} & set(_intent.get("domains") or []))
+         ):
+             _relevant_tools = set(_WORKSPACE_TERMINUS_TOOLS)
+             logger.info("[tool-rag] Workspace file/terminal request; using Odysseus Terminus toolset")

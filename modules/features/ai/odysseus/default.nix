@@ -190,10 +190,13 @@ in
       default = pkgs.fetchFromGitHub {
         owner = "odysseus-dev";
         repo = "odysseus";
-        # `main` is upstream's curated branch; `dev` is the default and moves
-        # faster. Bump deliberately -- this is the only version pin.
-        rev = "451900fc151554f4c8654d1e4d3dadc1d029b047"; # 2026-08-25
-        hash = "sha256-xdu+OOrbLxHIK3EtXzE4gW5O+lUHkRxLD3SvgvMKq3s=";
+        # `dev` is upstream's default branch, where fixes land first; `main`
+        # lags it by months (it shipped a broken mcp dep for six weeks, issue
+        # #6209). Pin a dev rev a few days old and bump deliberately -- this
+        # is the only version pin. On bump, re-check which patches upstream
+        # has made redundant.
+        rev = "c9dd68d890a7c0ee0df9a0e351ce22aafd6c7c0f"; # dev, 2026-08-27
+        hash = "sha256-HWdowRMwwN4pj5GNTvhPlNq8SQU8G2i3yw2brtChuEo=";
       };
       defaultText = lib.literalExpression "pkgs.fetchFromGitHub { owner = \"odysseus-dev\"; ... }";
       description = ''
@@ -208,9 +211,9 @@ in
       default = [
         ./patches/research-probe-timeout.patch
         ./patches/no-substring-mode-switch.patch
-        ./patches/pin-mcp-sdk-v1.patch
+        ./patches/no-terminus-domain-clamp.patch
       ];
-      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ./patches/no-substring-mode-switch.patch ./patches/pin-mcp-sdk-v1.patch ]";
+      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ./patches/no-substring-mode-switch.patch ./patches/no-terminus-domain-clamp.patch ]";
       description = ''
         Patches applied to `src` before the image is built. Each one carries its
         upstream issue in a header comment -- drop it when that issue closes.
@@ -224,9 +227,9 @@ in
         to chat mode (and persisting it) whenever an error message happens to
         contain "tool" or "auto".
 
-        pin-mcp-sdk-v1 pins the mcp dependency below 2.0; unpinned, the image
-        pulls the 2.x SDK and all four built-in MCP servers (Email, Memory,
-        RAG, Image Generation) crash at startup, costing the agent their tools.
+        no-terminus-domain-clamp stops the local-machine heuristic ("from
+        <word>" reads as a hostname) from replacing a detected email/calendar
+        toolset with the shell/file one.
       '';
     };
 
