@@ -205,16 +205,23 @@ in
 
     patches = lib.mkOption {
       type = lib.types.listOf lib.types.path;
-      default = [ ./patches/research-probe-timeout.patch ];
-      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ]";
+      default = [
+        ./patches/research-probe-timeout.patch
+        ./patches/no-substring-mode-switch.patch
+      ];
+      defaultText = lib.literalExpression "[ ./patches/research-probe-timeout.patch ./patches/no-substring-mode-switch.patch ]";
       description = ''
         Patches applied to `src` before the image is built. Each one carries its
         upstream issue in a header comment -- drop it when that issue closes.
 
-        The default fixes deep research against a local model: upstream probes
-        the endpoint with a hardcoded 15s timeout and no retry, which a cold
-        model load loses to, so research fails unless an earlier chat happened
-        to warm the model. See `researchProbeTimeout`.
+        research-probe-timeout fixes deep research against a local model:
+        upstream probes the endpoint with a hardcoded 15s timeout and no retry,
+        which a cold model load loses to, so research fails unless an earlier
+        chat happened to warm the model. See `researchProbeTimeout`.
+
+        no-substring-mode-switch stops the UI from silently flipping agent mode
+        to chat mode (and persisting it) whenever an error message happens to
+        contain "tool" or "auto".
       '';
     };
 
@@ -541,6 +548,9 @@ in
         sops.secrets.${cfg.secrets.envSecret} = {
           mode = "0400";
           sopsFile = lib.mkIf (cfg.secrets.sopsFile != null) cfg.secrets.sopsFile;
+          # The unit stages the env at start (ExecStartPre), so a secrets-only
+          # deploy needs this restart to reach the container.
+          restartUnits = [ "odysseus.service" ];
         };
       })
     ]

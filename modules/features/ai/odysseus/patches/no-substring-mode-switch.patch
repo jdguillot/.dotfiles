@@ -1,0 +1,37 @@
+Stop errors from silently switching agent mode to chat mode.
+
+Upstream https://github.com/odysseus-dev/odysseus/issues/5766 (open).
+
+Any chat_stream error whose text contains the substring "tool" or "auto"
+-- a tool timeout, an MCP server dropping, anything -- replaces the real
+error with "This model doesn't support agent tools", flips the UI to Chat
+mode, and persists that to localStorage. Every later message in the
+session then runs without tools: the model narrates what it would do and
+stops. Show the real error and leave the mode alone instead.
+
+--- a/static/js/chat.js
++++ b/static/js/chat.js
+@@ -1861,23 +1861,6 @@
+           if (m) errText = m[1].replace(/\\"/g, '"');
+           else if (errBody.length < 200) errText = errBody;
+         } catch {}
+-        // Auto-switch to chat mode for tool-related errors
+-        if (errText.includes('tool') || errText.includes('auto')) {
+-          errText = 'This model doesn\'t support agent tools — switched to Chat mode. Try again.';
+-          const _ab = document.getElementById('mode-agent-btn');
+-          const _cb = document.getElementById('mode-chat-btn');
+-          if (_ab && _cb) {
+-            _ab.classList.remove('active');
+-            _cb.classList.add('active');
+-            const _toggle = _ab.closest('.mode-toggle');
+-            if (_toggle) _toggle.classList.add('mode-chat');
+-          }
+-          if (typeof Storage !== 'undefined' && Storage.KEYS) {
+-            const _st = Storage.getJSON(Storage.KEYS.TOGGLES, {});
+-            _st.mode = 'chat';
+-            Storage.setJSON(Storage.KEYS.TOGGLES, _st);
+-          }
+-        }
+         typewriterInto(holder.querySelector('.body'), errText);
+         enableResearchBtn();
+         return;
