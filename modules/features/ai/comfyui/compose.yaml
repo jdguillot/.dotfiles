@@ -1,0 +1,77 @@
+# ComfyUI -- diffusion runtime for image generation.
+#
+# Not packaged in the flake: custom nodes pip-install at runtime, so a
+# writable container layer is the point, and a bad release can never block a
+# rebuild -- the image tag below is the only pin. Shared per host by
+# ai.comfyui.server, which fills the @-delimited placeholders and deploys to
+# /etc/comfyui/compose.yaml. Day-2 ops: `comfyui-compose logs -f` etc.
+
+services:
+  comfyui:
+    # The maintained community image (there is no official one). cu130, not
+    # cu126: CUDA 12.6 predates Blackwell and the 5090 is sm_120. "-slim"
+    # ships ComfyUI + Manager; nodes install from the web UI.
+    image: yanwk/comfyui-boot:cu130-slim-v2
+    container_name: comfyui
+    restart: unless-stopped
+
+    # ComfyUI has NO auth: anything reaching the port runs arbitrary
+    # workflows and reads every mount. Keep the publish on 127.0.0.1 (the
+    # native shim's path) and let the authed traefik route below be the
+    # network-facing door; docker's DNAT bypasses the NixOS firewall.
+    ports:
+      - "@BIND@:@PORT@:8188"
+
+    environment:
+      CLI_ARGS: "@CLI_ARGS@"
+
+    # chain-basic-auth: traefik's htpasswd gate is the only login in front
+    # of arbitrary workflow execution.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=@NETWORK@
+      - traefik.http.routers.comfyui.rule=Host(`@PUBLIC_HOST@`)
+      - traefik.http.routers.comfyui.entrypoints=websecure
+      - traefik.http.routers.comfyui.tls=true
+      - traefik.http.routers.comfyui.tls.certresolver=lets-encrypt
+      - traefik.http.routers.comfyui.middlewares=chain-basic-auth@file
+      - traefik.http.routers.comfyui.service=comfyui-svc
+      - traefik.http.services.comfyui-svc.loadbalancer.server.port=8188
+
+    networks:
+      - default
+      - "@NETWORK@"
+
+    # CDI, not the deprecated `driver: nvidia` form; needs
+    # graphics.nvidia.containerToolkit (asserted by server.nix).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: cdi
+              capabilities: [gpu]
+              device_ids:
+                - nvidia.com/gpu=all
+
+    # Split by churn rate; bind-mounted custom_nodes and ~/.local are what
+    # make node installs survive image updates.
+    volumes:
+      - "@DATA_DIR@/cache/dot-cache:/root/.cache"
+      - "@DATA_DIR@/cache/dot-config:/root/.config"
+      - "@DATA_DIR@/nodes/dot-local:/root/.local"
+      - "@DATA_DIR@/nodes/custom_nodes:/root/ComfyUI/custom_nodes"
+      - "@DATA_DIR@/models/models:/root/ComfyUI/models"
+      - "@DATA_DIR@/models/hf-hub:/root/.cache/huggingface/hub"
+      - "@DATA_DIR@/models/torch-hub:/root/.cache/torch/hub"
+      # Under $HOME by default: workflows/outputs are the only data a rebuild
+      # cannot recreate, and the home snapshots cover them there.
+      - "@USER_DATA_DIR@/input:/root/ComfyUI/input"
+      - "@USER_DATA_DIR@/output:/root/ComfyUI/output"
+      - "@USER_DATA_DIR@/user-profile:/root/ComfyUI/user"
+      - "@USER_DATA_DIR@/user-scripts:/root/user-scripts"
+
+networks:
+  default:
+  # Traefik's network, created on boot by the docker module.
+  "@NETWORK@":
+    external: true

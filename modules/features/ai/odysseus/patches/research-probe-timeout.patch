@@ -1,0 +1,29 @@
+Raise the deep-research liveness-probe timeout, and make it tunable.
+
+Upstream https://github.com/odysseus-dev/odysseus/issues/4620 (open).
+PR #4628 proposed the same fix and was closed unmerged.
+
+--- a/src/research_handler.py
++++ b/src/research_handler.py
+@@ -10,6 +10,7 @@
+ import asyncio
+ import json
+ import logging
++import os
+ import re
+ import time
+ from pathlib import Path
+@@ -729,7 +730,12 @@
+                 temperature=0,
+                 max_tokens=5,
+                 headers=headers,
+-                timeout=15,
++                # Upstream hardcodes 15s here. A cold local model load exceeds
++                # that -- Ollama needs ~40s to page a 30B q4 into VRAM -- so
++                # deep research fails unless an earlier chat prewarmed it.
++                # Upstream issue #4620; PR #4628 proposed exactly this and was
++                # closed unmerged. Drop this patch when it lands upstream.
++                timeout=int(os.getenv("ODYSSEUS_RESEARCH_PROBE_TIMEOUT") or 15),
+                 max_retries=1,
+             )
+             logger.info(f"Endpoint probe OK: {model}")
