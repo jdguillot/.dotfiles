@@ -161,6 +161,7 @@ Key options:
 Notes:
 
 - `includeBase` is the gate for the combined package list and the `trash-empty` systemd service.
+- Base packages include a troubleshooting toolkit: `htpasswd` (Apache), `openssl`, `curl`, `bind` (dig/host), `netcat`, `socat`, `tcpdump`, `strace`.
 - Development packages include tooling such as `deploy-rs`, `github-copilot-cli`, `claude-code`, `nixd`, language servers, and Node tooling.
 - Desktop packages include `kitty`, `wofi`, `bitwarden-desktop`, and `1Password` GUI packages.
 

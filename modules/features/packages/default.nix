@@ -33,6 +33,15 @@ let
       distrobox
       nmap
       parted
+      # Troubleshooting toolkit: HTTP/SSL, DNS, TCP, packet capture, tracing
+      apacheHttpd # htpasswd; nixpkgs has no apache2-utils (Debian name)
+      openssl
+      curl
+      bind # dig/host/nslookup
+      netcat
+      socat
+      tcpdump
+      strace
       trash-cli
       isd
       usbutils
