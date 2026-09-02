@@ -14,6 +14,7 @@ let
   anthropicSkills = sources.anthropic-skills;
   autoskillsRegistry = "${sources.autoskills}/packages/autoskills/skills-registry";
   nixSkills = sources.nix-skills;
+  cceSkills = "${sources.claude-code-extensions}/.claude/skills";
 
   # Local skills live in ./skills, one directory per skill (each with a SKILL.md).
   localSkills = lib.mapAttrs (name: _: ./skills + "/${name}") (
@@ -29,7 +30,7 @@ let
       rust-best-practices = "${autoskillsRegistry}/rust-best-practices";
     })
     // (lib.optionalAttrs cfg.enableTauriSkill {
-      tauri-v2 = "${autoskillsRegistry}/tauri-v2";
+      tauri-v2 = "${cceSkills}/tauri-v2";
     })
     // (lib.optionalAttrs cfg.enableGoSkills {
       golang-patterns = "${autoskillsRegistry}/golang-patterns";
@@ -60,7 +61,7 @@ in
     enableTauriSkill = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Include the tauri-v2 skill from midudev/autoskills (Tauri commands, IPC, capabilities, plugins)";
+      description = "Include the tauri-v2 skill from nodnarbnitram/claude-code-extensions (Tauri commands, IPC, capabilities, plugins, plus reference docs)";
     };
 
     enableGoSkills = lib.mkOption {
