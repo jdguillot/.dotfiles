@@ -17,7 +17,9 @@
   cyberfighter = {
     profile.enable = hostProfile;
 
-    system = hostMeta.system // {
+    system = {
+      inherit (hostMeta.system) hostname username stateVersion;
+
       extraGroups = [ "docker" ];
     };
 

@@ -122,13 +122,26 @@ in
   config = lib.mkIf cfg.includeBase {
     environment.systemPackages = allPackages;
 
+    # Keeps the trash cans bounded; trash-empty walks every mounted volume,
+    # not just ~/.local/share/Trash.
     systemd.services.trash-empty = {
       description = "Empty trash items older than 30 days";
-      wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
         User = config.cyberfighter.system.username;
         ExecStart = "${pkgs.trash-cli}/bin/trash-empty 30";
+      };
+    };
+
+    # A timer, not wantedBy = multi-user.target -- as a boot-only oneshot the
+    # sweep never ran on hosts that stay up for months.
+    systemd.timers.trash-empty = {
+      description = "Daily sweep of trash items older than 30 days";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "daily";
+        Persistent = true;
+        RandomizedDelaySec = "30m";
       };
     };
   };

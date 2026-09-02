@@ -34,6 +34,8 @@ let
     ++ (lib.optionals cfg.electronics electronicsPackages)
     ++ (lib.optionals (features.gaming.enable && cfg.enable) gamingPackages)
     ++ cfg.extraPackages;
+  # Dedupe: a host may list a flatpak explicitly that a preset also adds.
+  flatpakPackages = lib.unique allPackages;
 in
 {
   options.cyberfighter.features.flatpak = {
@@ -61,7 +63,7 @@ in
   config = lib.mkIf cfg.enable {
     services.flatpak = {
       enable = true;
-      packages = allPackages;
+      packages = flatpakPackages;
       update.auto = {
         enable = true;
         onCalendar = "weekly";

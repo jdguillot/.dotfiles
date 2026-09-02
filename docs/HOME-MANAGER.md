@@ -143,7 +143,7 @@ All tool submodules live below `cyberfighter.features.tools.*`.
 | `fastfetch` | `enable` | system info output |
 | `opencode` | `enable`, `theme` | opencode config |
 | `mc` | `enable` | Midnight Commander wrapper; note the option name is `mc`, not `midnight-commander` |
-| `copilotMcp` | `enable`, `enableFilesystem`, `enableNix`, `enableAwesomeCopilot` | writes `~/.copilot/mcp-config.json` for Copilot MCP servers |
+| `copilotMcp` | `enable`, `enableFilesystem`, `enableNix`, `enableGitHub`, `enableContext7`, `enableFetch` | writes `~/.copilot/mcp-config.json` for Copilot MCP servers |
 
 ## SSH and SOPS integration
 

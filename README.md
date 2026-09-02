@@ -49,17 +49,11 @@ Use the README for the quick map, then jump into the focused docs:
 | --- | --- | --- | --- | --- | --- |
 | `razer-nixos` | `desktop` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
 | `sys-galp-nix` | `desktop` | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
-| `nixos-portable` | `desktop` | `hosts/nixos-portable/` | none | no | portable desktop profile with NVIDIA, gaming, Docker, VPN, and SOPS |
-| `work-nix-wsl` | `wsl` | `hosts/work-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
-| `ryzn-nix-wsl` | `wsl` | `hosts/ryzn-wsl/` | `cyberfighter@ryzn-nix-wsl` | no | WSL with Docker, Flatpak, SSH, Cachix, and SOPS |
+| `work-nix-wsl` | `wsl` | `hosts/work-nix-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
 | `thkpd-pve1` | `minimal` | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
 | `simple-vm` | `minimal` | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
 | `vm-gameserver-nix` | `minimal` | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
-
-Two flake output names intentionally differ from their folders:
-
-- `work-nix-wsl` uses `hosts/work-wsl/`
-- `ryzn-nix-wsl` uses `hosts/ryzn-wsl/`
+| `ryzn-server` | `desktop` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | NVIDIA desktop/server with gaming, Waydroid, Docker, Tailscale, SOPS, and the Hermes Agent gateway |
 
 For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
 
@@ -89,6 +83,7 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
 - Services and infrastructure: `docker`, `security`, `sops`, `proxmox`
 - Gaming and hosting: `gaming`, `gameserver`,
   `gameserver.astroneer`, `gameserver.playit`
+- AI agents: `ai.hermes`
 
 Common host shape:
 
@@ -287,7 +282,7 @@ Main secret locations:
 - `secrets/secrets_common.yaml` - shared home and identity secrets
 - `home/modules/features/ssh/ssh-hosts.yaml` - encrypted SSH config
   snippets used by the Home Manager SSH module
-- `hosts/work-wsl/100-PKROOTCA290-CA.yaml` - work CA bundle for `work-nix-wsl`
+- `hosts/work-nix-wsl/100-PKROOTCA290-CA.yaml` - work CA bundle for `work-nix-wsl`
 
 The system SOPS wrapper also supports `deployUserAgeKey = true` for
 hosts that should derive a user-readable age key from the host SSH key
@@ -298,8 +293,8 @@ For the practical secret workflow, see [`docs/SOPS.md`](docs/SOPS.md).
 ## New host checklist
 
 1. Start from a template in `hosts/templates/`.
-2. Add host metadata to `hosts/default.nix`.
-3. Create `hosts/<name>/configuration.nix`.
+2. Create `hosts/<name>/configuration.nix`.
+3. Add host metadata to `hosts/default.nix`.
 4. Export the host from `flake.nix` under `nixosConfigurations`.
 5. Add a Home Manager target under `homeConfigurations` if needed.
 6. Add a `deploy.nodes` entry if the host will be maintained remotely.

@@ -19,9 +19,11 @@
   cyberfighter = {
     profile.enable = hostProfile;
 
-    system = hostMeta.system // {
+    system = {
+      inherit (hostMeta.system) hostname username stateVersion;
+
       bootloader = {
-        systemd-boot = true;
+        type = "systemd-boot";
         efiCanTouchVariables = true;
       };
     };

@@ -8,7 +8,7 @@
   imports = [
     ../../modules
     inputs.nix-index-database.nixosModules.nix-index
-    
+
     ./hardware-configuration.nix
   ];
 
@@ -17,17 +17,20 @@
 
     system = {
       hostname = "gaming-rig";
-      username = "gamer";
-      userDescription = "Gamer Name";
+      username = "cyberfighter";
+      userDescription = "Jonathan Guillot";
       stateVersion = "25.05";
 
       bootloader = {
-        systemd-boot = true;
+        type = "systemd-boot";
         efiCanTouchVariables = true;
       };
     };
 
-    nix.trustedUsers = [ "root" "gamer" ];
+    nix.trustedUsers = [
+      "root"
+      "cyberfighter"
+    ];
 
     features = {
       desktop = {
@@ -49,11 +52,11 @@
       sound.enable = true;
       fonts.enable = true;
       bluetooth.enable = true;
-      
+
       gaming.enable = true;
 
       flatpak.extraPackages = [
-        "com.discord.Discord"
+        "com.discordapp.Discord"
         "com.heroicgameslauncher.hgl"
       ];
 
@@ -61,5 +64,5 @@
     };
   };
 
-  virtualisation.waydroid.enable = true;  # For Android gaming
+  virtualisation.waydroid.enable = true; # For Android gaming
 }

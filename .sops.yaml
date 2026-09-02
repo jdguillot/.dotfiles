@@ -1,29 +1,92 @@
-# This example uses YAML anchors which allows reuse of multiple keys
-# without having to repeat yourself.
-# Also see https://github.com/Mic92/dotfiles/blob/master/nixos/.sops.yaml
-# for a more complex example.
-keys: &all
+# Key inventory. What matters is who can read the private half: a recipient
+# decrypts every file whose creation rule lists it.
+#   host keys -> /etc/ssh/ssh_host_ed25519_key, root-only; what the system
+#                sops module decrypts with.
+#   user keys -> ~/.config/sops/age/keys.txt, readable by ANY process running
+#                as that user -- much weaker; keep credentials out of reach.
+
+keys:
+  # Recovery key, backed up in Bitwarden. This is also the key home-manager
+  # generated on razer-nixos, so it is what `sops` uses when editing here.
   - &bitwarden age1sw9nqgpj8a0yz55k4ezsl040lx0u5ysqv7qzxkqldcmaugndl5fsqf4lc8
+
+  # --- host keys (root-only) -------------------------------------------
   - &razer-nixos age1g98hga3gn0qmtelwmcm3gpfpjpmt6zs60xww2vj7fk4v8n48qc5shnnvq3
-  - &razer-nixos-admin age1w04gmlhglqns8sqvq9e4h85hggph8028n7xn6n7tz20nh23wxezsvm5n0d
   - &work-wsl age15tde43t4ms7k24xhewrt58eznfn6l3vht70gxmmpg4j5ykm2n4uqt20ga0
-  - &work-jdguillot age1exdsgk0hlf47ks2qf7jyls7k7q52e2d82306f3w859vyv3vqna5s4qygyc
   - &ryzn-nixos-wsl age1qdcaucwsf52y0ak9uv8lr48p20tu407lasw9rlddd894qfluhptsy05adf
   - &thkpd-pve1 age1rfh8tflpx2d0j6p00284t4ep7tsqut2c9uz58ljw2k0lvr08vqtqklzqv8
   - &simple-vm age12kq643k846phl8zx4n30q486z2n3wf5y73qvqhd6e8e5ks62tq3sds4xqu
   - &sys-galp-nix age1qfe2h4mxt66lplx3vzcyz88wux0n7vqegy2wu0hg29fy7apjtqlqnr5fw6
   - &vm-gameserver-nix age1dxs6p30u9spu7fq0n42720c8e7pln6y2t2ffet0mktp88cyfu3vqv9yazp
+  - &ryzn-server age1j6nk6g2yt06ccqm7ptzlqpa2ve73z7cyzyvdnv67eh49zm3thqhszhx6x0
+
+  # --- per-user home-manager keys (readable by that user) ---------------
+  - &razer-nixos-admin age1w04gmlhglqns8sqvq9e4h85hggph8028n7xn6n7tz20nh23wxezsvm5n0d
+  - &work-jdguillot age1exdsgk0hlf47ks2qf7jyls7k7q52e2d82306f3w859vyv3vqna5s4qygyc
+  - &ryzn-server-cyberfighter age1z554l6fxpcymp6rfv82s72m2erfh0uj5uj9hkrjj06nwcj46qu9q6l0hjs
+
+# sops applies the FIRST matching rule, so narrow paths must come before the
+# catch-all.
 creation_rules:
-  - path_regex: secrets/.*
+  # Read by home-manager on every host, so the per-user keys need it.
+  # Contents are personal-info only: no credentials.
+  - path_regex: ^secrets/secrets_common\.yaml$
     key_groups:
-      - age: *all
-  - path_regex: secrets/secrets_common.yaml
+      - age:
+          - *bitwarden
+          - *razer-nixos
+          - *work-wsl
+          - *ryzn-nixos-wsl
+          - *thkpd-pve1
+          - *simple-vm
+          - *sys-galp-nix
+          - *vm-gameserver-nix
+          - *ryzn-server
+          - *razer-nixos-admin
+          - *work-jdguillot
+          - *ryzn-server-cyberfighter
+
+  # Also read by home-manager. SSH host aliases and jump hosts -- topology,
+  # not credentials.
+  - path_regex: ^home/modules/features/ssh/ssh-hosts\.yaml$
     key_groups:
-      - age: *all
-  - path_regex: home/modules/features/ssh/ssh-hosts.yaml
+      - age:
+          - *bitwarden
+          - *razer-nixos
+          - *work-wsl
+          - *ryzn-nixos-wsl
+          - *thkpd-pve1
+          - *simple-vm
+          - *sys-galp-nix
+          - *vm-gameserver-nix
+          - *ryzn-server
+          - *razer-nixos-admin
+          - *work-jdguillot
+          - *ryzn-server-cyberfighter
+
+  # Real credentials, read as root with the host key.
+  #
+  # razer-nixos-admin and work-jdguillot stay pending a decision on what they
+  # are; if they turn out to be user keys, exclude them like
+  # ryzn-server-cyberfighter below.
+  - path_regex: ^secrets/
     key_groups:
-      - age: *all
-  - path_regex: "hosts/work-wsl/100-PKROOTCA290-CA.yaml"
+      - age:
+          - *bitwarden
+          - *razer-nixos
+          - *work-wsl
+          - *ryzn-nixos-wsl
+          - *thkpd-pve1
+          - *simple-vm
+          - *sys-galp-nix
+          - *vm-gameserver-nix
+          - *ryzn-server
+          - *razer-nixos-admin
+          - *work-jdguillot
+          # NOT *ryzn-server-cyberfighter: home-manager only needs
+          # secrets_common.yaml and ssh-hosts.yaml, both covered above.
+
+  - path_regex: hosts/work-nix-wsl/100-PKROOTCA290-CA.yaml
     key_groups:
       - age:
           - *work-wsl

@@ -16,7 +16,7 @@ There are three main secret flows:
 | `secrets/secrets.yaml` | shared system/host secrets |
 | `secrets/secrets_common.yaml` | shared Home Manager and identity secrets |
 | `home/modules/features/ssh/ssh-hosts.yaml` | encrypted SSH host snippets for Home Manager |
-| `hosts/work-wsl/100-PKROOTCA290-CA.yaml` | host-local work CA secret used by `work-nix-wsl` |
+| `hosts/work-nix-wsl/100-PKROOTCA290-CA.yaml` | host-local work CA secret used by `work-nix-wsl` |
 
 ## System-side SOPS module
 
@@ -48,6 +48,24 @@ When enabled, the module:
   };
 }
 ```
+
+### Dotenv-style secrets (Hermes Agent)
+
+`cyberfighter.features.ai.hermes` expects one SOPS key holding a whole dotenv
+blob rather than a single value, because upstream merges the file into
+`$HERMES_HOME/.env`:
+
+```yaml
+# secrets/secrets.yaml
+hermes-env: |
+  ANTHROPIC_API_KEY=sk-ant-...
+  OPENROUTER_API_KEY=sk-or-...
+```
+
+The AI module declares the `sops.secrets."hermes-env"` entry itself, so a host
+only needs `cyberfighter.features.sops.enable = true` plus
+`cyberfighter.features.ai.hermes.secrets.envSecret = "hermes-env"`. Add or edit
+the blob with `sops secrets/secrets.yaml`.
 
 ### When to use `deployUserAgeKey`
 
@@ -188,7 +206,7 @@ That flow is designed to help with:
 Current hosts use SOPS for things like:
 
 - the shared host secrets file at `secrets/secrets.yaml`
-- the work CA on `work-nix-wsl` via `hosts/work-wsl/100-PKROOTCA290-CA.yaml`
+- the work CA on `work-nix-wsl` via `hosts/work-nix-wsl/100-PKROOTCA290-CA.yaml`
 - Playit and Astroneer secrets on `vm-gameserver-nix`
 - shared personal identity values for Home Manager
 - encrypted SSH host aliases consumed by the Home Manager SSH module

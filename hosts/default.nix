@@ -1,3 +1,6 @@
+# Centralized per-host metadata. The attribute name, `system.hostname` and the
+# directory under hosts/ holding the host's configuration.nix are all the same
+# string -- flake.nix and .nixd-hosts.json both rely on that.
 {
   razer-nixos = {
     profile = "desktop";
@@ -15,15 +18,6 @@
     system = {
       hostname = "work-nix-wsl";
       username = "jdguillot";
-      stateVersion = "25.05";
-    };
-  };
-
-  ryzn-nix-wsl = {
-    profile = "wsl";
-    system = {
-      hostname = "ryzn-nix-wsl";
-      username = "cyberfighter";
       stateVersion = "25.05";
     };
   };
@@ -46,14 +40,6 @@
     };
   };
 
-  nixos-portable = {
-    profile = "desktop";
-    system = {
-      hostname = "nixos-portable";
-      username = "cyberfighter";
-      stateVersion = "25.05";
-    };
-  };
   simple-vm = {
     profile = "minimal";
     system = {
@@ -69,6 +55,15 @@
       hostname = "vm-gameserver-nix";
       username = "cyberfighter";
       stateVersion = "25.11";
+    };
+  };
+
+  ryzn-server = {
+    profile = "desktop";
+    system = {
+      hostname = "ryzn-server";
+      username = "cyberfighter";
+      stateVersion = "26.11";
     };
   };
 }

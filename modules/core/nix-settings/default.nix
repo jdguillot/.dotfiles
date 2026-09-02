@@ -24,14 +24,31 @@ in
 
     keepOutputs = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Keep build outputs";
+      default = false;
+      description = ''
+        `keep-outputs`. Pins the build *outputs* of every .drv reachable from a
+        GC root -- source tarballs, cargo lockfiles, compiler intermediates,
+        the entire build graph of every live generation.
+
+        Off by default because it defeats garbage collection on a machine that
+        rebuilds often: razer-nixos reached 99% of a 217G disk with the weekly
+        GC running and succeeding, because what it was allowed to delete was a
+        rounding error next to what this kept alive. Turning it off freed 18G
+        on the next collection.
+
+        Turn it on for a machine that spends its time in `nix develop` and
+        wants shell inputs to survive a GC, and pay for it with disk.
+      '';
     };
 
     keepDerivations = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Keep derivations";
+      description = ''
+        `keep-derivations`. Keeps the .drv for every live output. Cheap -- a
+        .drv is a small file, unlike the outputs `keepOutputs` retains -- and
+        it is what lets you inspect how a live path was built.
+      '';
     };
 
     extraOptions = lib.mkOption {
@@ -56,10 +73,19 @@ in
   config = lib.mkMerge [
     {
       sops.secrets."github-pat" = { };
-      sops.templates."access-tokens".content = ''
-        access-tokens = github.com=${config.sops.placeholder."github-pat"}
-      '';
+      sops.templates."access-tokens" = {
+        content = ''
+          access-tokens = github.com=${config.sops.placeholder."github-pat"}
+        '';
+        mode = "0440";
+        group = "wheel";
+      };
+
       nix.settings = {
+        # BOOTSTRAP: a newly added substituter does not help the rebuild that
+        # adds it (the build runs on the previous generation's nix.conf).
+        # Switch twice, or pass --option extra-substituters /
+        # extra-trusted-public-keys by hand once (trusted-users only).
         substituters = [
           "https://devenv.cachix.org"
           "https://jdguillot.cachix.org"
@@ -67,6 +93,9 @@ in
           "https://niri.cachix.org"
           "https://noctalia.cachix.org"
           "https://cache.saumon.network/proxmox-nixos"
+          # Hydra never builds unfree CUDA variants; without this cache
+          # every CUDA package is a local compile.
+          "https://cache.nixos-cuda.org"
         ];
         trusted-public-keys = [
           "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
@@ -75,6 +104,7 @@ in
           "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
           "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
           "proxmox-nixos:D9RYSWpQQC/msZUWphOY2I5RLH5Dd6yQcaHIuug7dWM="
+          "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
         ];
         trusted-users = cfg.trustedUsers;
         keep-outputs = cfg.keepOutputs;
@@ -90,7 +120,6 @@ in
         !include ${config.sops.templates."access-tokens".path}
       ''
       +
-        # If you have extra options as a string, use extraOptions
         cfg.extraOptions;
 
     }
@@ -105,7 +134,8 @@ in
         gc = {
           automatic = true;
           dates = "weekly";
-          options = "--delete-older-than 30d";
+          # 14d still leaves a fortnight of rollbacks; 30d pinned too much.
+          options = "--delete-older-than 14d";
         };
       };
     })

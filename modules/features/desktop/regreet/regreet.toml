@@ -1,12 +1,6 @@
-# ReGreet configuration — native TOML, imported into Nix via lib.importTOML
-# (see modules/features/desktop/default.nix, the greetd/regreet branch).
-#
-# Injected from Nix and intentionally NOT set here:
-#   * [background].path -> a world-readable Nix store image fetched from the
-#     walls-catppuccin-mocha fork. The greeter user cannot read $HOME, so the
-#     wallpaper must live in the store. Change it in default.nix.
-#   * [GTK] theme/font/cursor/icon names -> driven by the programs.regreet
-#     options (Catppuccin Frappé + Lavender).
+# ReGreet native TOML, imported via lib.importTOML (see the desktop module's
+# regreet branch). [background].path and the GTK theme names are injected
+# from Nix, not set here.
 
 # Whether to skip asking for username and session, and use the last used ones.
 skip_selection = true

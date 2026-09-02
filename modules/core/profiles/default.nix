@@ -47,7 +47,7 @@ in
         };
 
         system = {
-          bootloader.systemd-boot = lib.mkDefault true;
+          bootloader.type = lib.mkDefault "systemd-boot";
         };
       };
     })
@@ -65,7 +65,7 @@ in
         };
 
         system = {
-          bootloader.systemd-boot = lib.mkDefault false;
+          bootloader.type = lib.mkDefault "none";
         };
       };
 
@@ -101,7 +101,7 @@ in
         };
 
         system = {
-          bootloader.systemd-boot = lib.mkDefault true;
+          bootloader.type = lib.mkDefault "systemd-boot";
         };
 
       };

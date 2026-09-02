@@ -2,6 +2,7 @@
   pkgs,
   hostProfile,
   hostMeta,
+  config,
   ...
 }@inputs:
 {
@@ -14,10 +15,11 @@
   cyberfighter = {
     profile.enable = hostProfile;
 
-    system = hostMeta.system // {
+    system = {
+      inherit (hostMeta.system) hostname username stateVersion;
 
       bootloader = {
-        systemd-boot = true;
+        type = "systemd-boot";
         efiCanTouchVariables = true;
         luksDevice = "490adcca-e0d1-4876-a6c4-72a61b0652e7";
       };
@@ -83,7 +85,10 @@
       cachix.enable = true;
 
       docker.enable = true;
-      tailscale.enable = true;
+      tailscale = {
+        enable = true;
+        authKeyFile = config.sops.secrets."tailscale-authkey".path;
+      };
 
       security.firejail = true;
 
@@ -113,6 +118,8 @@
       };
     };
   };
+
+  sops.secrets."tailscale-authkey" = { };
 
   programs.fish.enable = true;
   boot = {

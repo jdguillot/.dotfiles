@@ -3,7 +3,6 @@
   description = "My First Flake";
 
   inputs = {
-    # # This is the long form of both of below
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
@@ -38,6 +37,18 @@
       flake = false;
     };
 
+    # Skill registry (rust-best-practices, tauri-v2, golang-* skills).
+    autoskills = {
+      url = "github:midudev/autoskills";
+      flake = false;
+    };
+
+    # Nix flake conventions skill (nix-flakes).
+    nix-skills = {
+      url = "github:nhooey/nix-skills";
+      flake = false;
+    };
+
     catppuccin.url = "github:catppuccin/nix";
     proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
     #    pst-bin.url = "path:./programs/pst";
@@ -49,6 +60,15 @@
       url = "github:noctalia-dev/noctalia/legacy-v4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.1.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Hermes Agent (Nous Research). Deliberately not `follows`-ing nixpkgs:
+    # the module builds its package from its own uv2nix/pyproject-nix lock
+    # against its own pinned nixpkgs, and repointing it invites build breakage.
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
   outputs =
@@ -65,6 +85,7 @@
       deploy-rs,
       niri,
       noctalia,
+      lanzaboote,
       ...
     }@inputs:
     let
@@ -103,25 +124,27 @@
 
       # Helper function to create NixOS system configuration
       mkNixosSystem =
-        hostname: hostMeta:
+        hostMeta:
         nixpkgs.lib.nixosSystem {
           inherit system;
           specialArgs = (sharedSpecialArgs hostMeta) // {
             inherit proxmox-nixos;
           };
           modules = [
-            ./hosts/${hostname}/configuration.nix
+            ./hosts/${hostMeta.system.hostname}/configuration.nix
             sops-nix.nixosModules.sops
             disko.nixosModules.disko
             catppuccin.nixosModules.catppuccin
+            # Imported for every host: boot.lanzaboote.* is referenced under
+            # mkIf, and options must exist even when the condition is false.
+            lanzaboote.nixosModules.lanzaboote
             proxmox-nixos.nixosModules.proxmox-ve
             {
               nixpkgs.overlays = [
                 niri.overlays.niri
               ];
-              # catppuccin is themed per-user via home-manager, not system-wide.
-              # Setting autoEnable explicitly opts out of the legacy auto-enroll
-              # default and silences the upcoming-behaviour eval warning.
+              # Themed per-user via home-manager; explicit opt-out silences
+              # the auto-enroll eval warning.
               catppuccin.autoEnable = false;
             }
           ];
@@ -151,6 +174,10 @@
         in
         {
           inherit hostname;
+          # The host's own user, never root: the home profile needs a real
+          # login session (`sudo -u` from root has no D-Bus, so
+          # `systemctl --user` fails).
+          sshUser = username;
         }
         // (
           if withHome then
@@ -188,24 +215,23 @@
     in
     {
       nixosConfigurations = {
-        razer-nixos = mkNixosSystem "razer-nixos" hostConfigs.razer-nixos;
-        work-nix-wsl = mkNixosSystem "work-wsl" hostConfigs.work-nix-wsl;
-        ryzn-nix-wsl = mkNixosSystem "ryzn-wsl" hostConfigs.ryzn-nix-wsl;
-        sys-galp-nix = mkNixosSystem "sys-galp-nix" hostConfigs.sys-galp-nix;
-        nixos-portable = mkNixosSystem "nixos-portable" hostConfigs.nixos-portable;
-        thkpd-pve1 = mkNixosSystem "thkpd-pve1" hostConfigs.thkpd-pve1;
-        simple-vm = mkNixosSystem "simple-vm" hostConfigs.simple-vm;
-        vm-gameserver-nix = mkNixosSystem "vm-gameserver-nix" hostConfigs.vm-gameserver-nix;
+        razer-nixos = mkNixosSystem hostConfigs.razer-nixos;
+        work-nix-wsl = mkNixosSystem hostConfigs.work-nix-wsl;
+        sys-galp-nix = mkNixosSystem hostConfigs.sys-galp-nix;
+        thkpd-pve1 = mkNixosSystem hostConfigs.thkpd-pve1;
+        simple-vm = mkNixosSystem hostConfigs.simple-vm;
+        vm-gameserver-nix = mkNixosSystem hostConfigs.vm-gameserver-nix;
+        ryzn-server = mkNixosSystem hostConfigs.ryzn-server;
       };
 
       homeConfigurations = {
         "cyberfighter@razer-nixos" = mkHomeConfig "cyberfighter" hostConfigs.razer-nixos;
         "jdguillot@work-nix-wsl" = mkHomeConfig "jdguillot" hostConfigs.work-nix-wsl;
-        "cyberfighter@ryzn-nix-wsl" = mkHomeConfig "cyberfighter" hostConfigs.ryzn-nix-wsl;
         "cyberfighter@sys-galp-nix" = mkHomeConfig "cyberfighter" hostConfigs.sys-galp-nix;
         "cyberfighter@thkpd-pve1" = mkHomeConfig "cyberfighter" hostConfigs.thkpd-pve1;
         "cyberfighter@simple-vm" = mkHomeConfig "cyberfighter" hostConfigs.simple-vm;
         "cyberfighter@vm-gameserver-nix" = mkHomeConfig "minimal" hostConfigs.vm-gameserver-nix;
+        "cyberfighter@ryzn-server" = mkHomeConfig "cyberfighter" hostConfigs.ryzn-server;
       };
 
       deploy.nodes = {
@@ -213,6 +239,7 @@
         simple-vm = mkDeployNode "simple-vm" hostConfigs.simple-vm false;
         vm-gameserver-nix = mkDeployNode "vm-gameserver-nix" hostConfigs.vm-gameserver-nix true;
         sys-galp-nix = mkDeployNode "sys-galp-nix" hostConfigs.sys-galp-nix true;
+        ryzn-server = mkDeployNode "ryzn-server" hostConfigs.ryzn-server true;
       };
 
       # This is highly advised, and will prevent many possible mistakes

@@ -1,0 +1,53 @@
+# .github/workflows/update-flake-lock.yml
+#
+# Opens a weekly PR bumping every flake input. Dependabot cannot do this --
+# `.github/dependabot.yml` only understands `github-actions`, so without this
+# workflow flake.lock (nixpkgs, hermes-agent, deptui, niri, ...) only ever moves
+# when someone runs `nix flake update` by hand.
+#
+# Fast-moving inputs are the reason: hermes-agent ships several times a week, so
+# a lock left alone for a month is a month of missed releases in a package that
+# has no other update path.
+name: Update flake.lock
+
+on:
+  schedule:
+    # Mondays 05:00 UTC -- lands before the week starts, and after most
+    # upstreams have cut their weekend releases.
+    - cron: "0 5 * * 1"
+  workflow_dispatch: # manual runs, for when an input needs bumping now
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: DeterminateSystems/determinate-nix-action@main
+        with:
+          extra-conf: |
+            connect-timeout = 30
+            fallback = true
+
+      - uses: DeterminateSystems/update-flake-lock@main
+        with:
+          # A PR opened with the default GITHUB_TOKEN does NOT trigger other
+          # workflows -- GitHub suppresses that to avoid recursive runs. So
+          # cachix.yml would never validate the bump, which is the entire point
+          # of opening a PR instead of pushing to main.
+          #
+          # Set a FLAKE_UPDATE_TOKEN repo secret (a fine-grained PAT with
+          # contents:write + pull-requests:write) to get CI on these PRs.
+          # Without it this still works, but you must close and reopen the PR
+          # by hand to make the build run.
+          token: ${{ secrets.FLAKE_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+          pr-title: "chore(flake): update flake.lock"
+          pr-labels: |
+            dependencies
+            automated
+          # Squash into one commit so the PR diff is just the lock file.
+          commit-msg: "chore(flake): update flake.lock"

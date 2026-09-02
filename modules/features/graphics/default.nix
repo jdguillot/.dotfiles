@@ -40,6 +40,23 @@ in
         default = true;
         description = "Use open source Nvidia kernel module";
       };
+
+      containerToolkit = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Expose the GPU to Docker containers.
+
+          Two settings are needed, not one: the toolkit generates CDI device
+          specs at boot, and the docker daemon has to have the `cdi` feature
+          turned on before it will honour them. Enabling only the first leaves
+          containers starting fine but seeing no GPU.
+
+          Containers then request the device with the CDI syntax
+          (`driver: cdi`, `device_ids: [nvidia.com/gpu=all]`), which replaces
+          the deprecated `driver: nvidia` / `count: all` form.
+        '';
+      };
     };
 
     amd = {
@@ -57,6 +74,7 @@ in
           vulkan-loader
           virtualgl
           mesa
+          nvtopPackages.nvidia
         ];
       }
 
@@ -83,6 +101,11 @@ in
           nvidiaSettings = true;
           package = config.boot.kernelPackages.nvidiaPackages.stable;
         };
+      })
+
+      (lib.mkIf (cfg.nvidia.enable && cfg.nvidia.containerToolkit) {
+        hardware.nvidia-container-toolkit.enable = true;
+        virtualisation.docker.daemon.settings.features.cdi = true;
       })
 
       (lib.mkIf (cfg.nvidia.enable && cfg.nvidia.prime.enable) {

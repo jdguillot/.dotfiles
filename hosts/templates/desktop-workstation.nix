@@ -8,7 +8,7 @@
   imports = [
     ../../modules
     inputs.nix-index-database.nixosModules.nix-index
-    
+
     ./hardware-configuration.nix
   ];
 
@@ -17,12 +17,12 @@
 
     system = {
       hostname = "my-workstation";
-      username = "myuser";
-      userDescription = "My Full Name";
+      username = "cyberfighter";
+      userDescription = "Jonathan Guillot";
       stateVersion = "25.05";
 
       bootloader = {
-        systemd-boot = true;
+        type = "systemd-boot";
         efiCanTouchVariables = true;
       };
 
@@ -31,7 +31,10 @@
 
     nix = {
       enableDevenv = true;
-      trustedUsers = [ "root" "myuser" ];
+      trustedUsers = [
+        "root"
+        "cyberfighter"
+      ];
     };
 
     packages.extraPackages = with pkgs; [
@@ -40,15 +43,15 @@
 
     features = {
       desktop = {
-        environment = "plasma6";  # or "gnome", "hyprland"
+        environment = "plasma6"; # or "gnome", "hyprland"
         firefox = true;
       };
 
       graphics.enable = true;
-      
+
       fonts.enable = true;
       bluetooth.enable = true;
-      
+
       flatpak.extraPackages = [
         # Add host-specific flatpaks
       ];

@@ -5,4 +5,4 @@ secret-key*
 result/*
 
 ## Generated Nixd config
-.nixd.json
+.nixd-hosts.json

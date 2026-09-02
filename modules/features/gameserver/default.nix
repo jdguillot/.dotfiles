@@ -26,8 +26,8 @@ let
 in
 {
   imports = [
-    ./astroneer
-    ./playit
+    ./astroneer/default.nix
+    ./playit/default.nix
   ];
 
   options.cyberfighter.features.gameserver = {

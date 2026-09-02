@@ -43,15 +43,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        # Must match flake.nix `nixosConfigurations` exactly. A name that no
+        # longer exists fails the whole job with a confusing eval error, and a
+        # host missing from this list is simply never built by CI.
         host:
           [
             razer-nixos,
             work-nix-wsl,
-            nixos-portable,
-            ryzn-nix-wsl,
             sys-galp-nix,
             thkpd-pve1,
+            simple-vm,
             vm-gameserver-nix,
+            ryzn-server,
           ]
       fail-fast: false # Continue other builds if one fails
     steps:
@@ -69,9 +72,16 @@ jobs:
 
       - uses: DeterminateSystems/determinate-nix-action@main
         with:
+          # The CUDA cache has to be declared HERE, not just in
+          # modules/core/nix-settings. That module configures the nix daemon on
+          # the built hosts; it has no effect on this runner's nix, which is
+          # what actually performs the build. Without it, ryzn-server's
+          # ollama-cuda is compiled from source on a GitHub runner.
           extra-conf: |
             connect-timeout = 30
             fallback = true
+            extra-substituters = https://cache.nixos-cuda.org
+            extra-trusted-public-keys = cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=
       - uses: nix-community/cache-nix-action@v7
         with:
           primary-key: nix-${{ runner.os }}-${{ matrix.host }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}

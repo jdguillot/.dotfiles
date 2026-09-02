@@ -47,10 +47,44 @@ in
     };
 
     bootloader = {
-      systemd-boot = lib.mkOption {
+      type = lib.mkOption {
+        type = lib.types.enum [
+          "systemd-boot"
+          "lanzaboote"
+          "limine"
+          "none"
+        ];
+        default = "none";
+        description = ''
+          Which bootloader to install. This is a single choice rather than a
+          flag per loader because each of them defines
+          `system.build.installBootLoader`, so enabling two is a conflict
+          rather than a combination.
+
+          - `systemd-boot`: the plain EFI stub loader.
+          - `lanzaboote`: signed unified kernel images. Secure Boot is the
+            entire point of it, so `secureBoot` is implied.
+          - `limine`: themeable menu, chainloads other OSes across disks, and
+            uses far less ESP space than unified kernel images. Boots fine
+            unsigned; set `secureBoot` to sign it.
+          - `none`: nothing is installed. Correct for WSL and containers,
+            where NixOS does not own the boot process.
+        '';
+      };
+
+      secureBoot = lib.mkOption {
         type = lib.types.bool;
-        default = false;
-        description = "Enable systemd-boot bootloader";
+        default = cfg.bootloader.type == "lanzaboote";
+        defaultText = lib.literalExpression ''config.cyberfighter.system.bootloader.type == "lanzaboote"'';
+        description = ''
+          Sign the boot chain with the sbctl PKI in /var/lib/sbctl, so the
+          firmware will load it with Secure Boot enabled.
+
+          Run `sbctl create-keys` on the host before the first switch, and
+          `sbctl enroll-keys --microsoft` before turning Secure Boot on --
+          the Microsoft keys are what keep Windows bootable and let signed
+          option ROMs (e.g. an NVIDIA GPU) initialise.
+        '';
       };
 
       efiCanTouchVariables = lib.mkOption {
@@ -95,9 +129,46 @@ in
     };
 
     boot = lib.mkMerge [
-      (lib.mkIf cfg.bootloader.systemd-boot {
-        loader.systemd-boot.enable = true;
+      # Shared by every real bootloader; skipped for "none" so WSL never
+      # tries to write EFI variables it has no access to.
+      (lib.mkIf (cfg.bootloader.type != "none") {
         loader.efi.canTouchEfiVariables = cfg.bootloader.efiCanTouchVariables;
+      })
+
+      (lib.mkIf (cfg.bootloader.type == "systemd-boot") {
+        loader.systemd-boot.enable = true;
+      })
+
+      # Options live at boot.lanzaboote.*, NOT boot.loader.lanzaboote.*.
+      (lib.mkIf (cfg.bootloader.type == "lanzaboote") {
+        lanzaboote = {
+          enable = true;
+          # sbctl >= 0.14 keeps its PKI here; older guides still say
+          # /etc/secureboot.
+          pkiBundle = "/var/lib/sbctl";
+          # Unbounded by default, and every generation is a full unified
+          # kernel image on the ESP -- without a cap a 1G ESP fills up.
+          configurationLimit = 10;
+        };
+        # The editor is an `init=/bin/sh` root shell the moment Secure Boot
+        # is ever turned off; sd-stub only ignores the cmdline while it is on.
+        loader.systemd-boot.editor = false;
+      })
+
+      (lib.mkIf (cfg.bootloader.type == "limine") {
+        loader.limine = {
+          enable = true;
+          efiSupport = true;
+          # Bound what the ESP holds (cheap: limine stores plain files, not
+          # per-generation images).
+          maxGenerations = 10;
+          # `init=/bin/sh` at the menu, exploitable even with Secure Boot on
+          # (no sd-stub equivalent); the module refuses secureBoot with it.
+          enableEditor = false;
+          # Signs the limine binary, hashes limine.conf into it, and turns on
+          # fatal checksum validation for the kernel and initrd it loads.
+          secureBoot.enable = cfg.bootloader.secureBoot;
+        };
       })
 
       (lib.mkIf (cfg.bootloader.luksDevice != null) {
@@ -105,6 +176,10 @@ in
           "/dev/disk/by-uuid/${cfg.bootloader.luksDevice}";
       })
     ];
+
+    environment.systemPackages = lib.mkIf (
+      cfg.bootloader.type == "lanzaboote" || cfg.bootloader.type == "limine"
+    ) [ pkgs.sbctl ];
 
     users.defaultUserShell = pkgs.zsh;
     programs.zsh.enable = true;
@@ -122,11 +197,27 @@ in
 
     nixpkgs.config.allowUnfree = true;
 
-    assertions = lib.mkIf (profile.enable != "wsl") [
-      {
-        assertion = cfg.wslOptions.windowsUsername == "cyberfighter";
-        message = "wslOptions.windowsUsername can only be set when profile.enable is 'wsl'";
-      }
-    ];
+    assertions =
+      (lib.optionals (profile.enable != "wsl") [
+        {
+          assertion = cfg.wslOptions.windowsUsername == "cyberfighter";
+          message = "wslOptions.windowsUsername can only be set when profile.enable is 'wsl'";
+        }
+      ])
+      ++ [
+        {
+          assertion =
+            cfg.bootloader.secureBoot
+            -> (builtins.elem cfg.bootloader.type [
+              "lanzaboote"
+              "limine"
+            ]);
+          message = "cyberfighter.system.bootloader.secureBoot requires bootloader.type to be \"lanzaboote\" or \"limine\"; systemd-boot cannot sign its own boot chain.";
+        }
+        {
+          assertion = (cfg.bootloader.type == "lanzaboote") -> cfg.bootloader.secureBoot;
+          message = "cyberfighter.system.bootloader.type = \"lanzaboote\" always signs the boot chain; secureBoot cannot be disabled for it.";
+        }
+      ];
   };
 }

@@ -87,27 +87,17 @@ in
 
       (lib.mkIf (cfg.displayManager == "greetd" && cfg.greeter == "regreet") (
         let
-          # Single wallpaper pulled from the same walls-catppuccin-mocha fork
-          # used elsewhere, pinned by commit. Lives in the store (world
-          # readable) because the greeter user cannot read $HOME. To switch
-          # wallpaper: change the filename + sha256 (nix-prefetch-url <url>).
+          # In the store because the greeter user cannot read $HOME; switch
+          # by changing filename + sha256.
           wallpaper = pkgs.fetchurl {
             url = "https://raw.githubusercontent.com/jdguillot/walls-catppuccin-mocha/7bfdf10d16ad3a689f9f0cf3a0930da3d1a245a8/dark-waves.jpg";
             sha256 = "0jillya220x4713wmn1vdspm46wvij2jnp8fib2sfbz42vddvb5k";
           };
         in
         {
-          # services.displayManager.regreet enables greetd and runs ReGreet
-          # inside cage. ReGreet lists sessions from the registered
-          # wayland-sessions files (niri.desktop is registered), so no --cmd is
-          # needed here.
-          #
-          # Renamed from programs.regreet in nixpkgs PR #545504.
-          #
-          # The former pkgs.regreet.overrideAttrs GStreamer override (needed
-          # because ReGreet's animated [background]/playbin3 shipped without
-          # GStreamer plugins) is gone: nixpkgs PR #530302 (merged 2026-06-16)
-          # bakes the plugins into the package, so plain pkgs.regreet works.
+          # Enables greetd and runs ReGreet inside cage; sessions come from
+          # the registered wayland-sessions files, so no --cmd. GStreamer
+          # plugins are baked into pkgs.regreet since nixpkgs #530302.
           services.displayManager.regreet = {
             enable = true;
 
@@ -135,10 +125,8 @@ in
             extraCss = ./regreet/catppuccin-frappe.css;
           };
 
-          # GTK4 software renderer for the greeter -- backend-independent and
-          # avoids any GL/Vulkan-under-cage renderer quirks on this iGPU. The
-          # crash was GStreamer, not the renderer, so this is just a safe
-          # default; drop it later if you want the GPU renderer.
+          # Software renderer: avoids GL-under-cage quirks on this iGPU; a
+          # safe default, not a fix.
           systemd.services.greetd.environment.GSK_RENDERER = "cairo";
         }
       ))

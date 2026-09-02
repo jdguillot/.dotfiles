@@ -8,21 +8,15 @@ This page summarizes the current flake outputs, the folders they come from, the 
 | --- | --- | --- | --- | --- | --- |
 | `razer-nixos` | `desktop` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
 | `sys-galp-nix` | `desktop` | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
-| `nixos-portable` | `desktop` | `hosts/nixos-portable/` | none | no | portable desktop with NVIDIA, gaming, Docker, VPN, and SOPS |
-| `work-nix-wsl` | `wsl` | `hosts/work-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
-| `ryzn-nix-wsl` | `wsl` | `hosts/ryzn-wsl/` | `cyberfighter@ryzn-nix-wsl` | no | WSL with graphics support, Docker, Flatpak, SSH, Cachix, and SOPS |
+| `ryzn-server` | `desktop` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | Plasma 6 workstation on an RTX 5090: local inference (Ollama + Hermes), ComfyUI container, gaming, lanzaboote Secure Boot, SOPS |
+| `work-nix-wsl` | `wsl` | `hosts/work-nix-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
 | `thkpd-pve1` | `minimal` | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
 | `simple-vm` | `minimal` | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
 | `vm-gameserver-nix` | `minimal` | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer server VM with Ludusavi, Playit, Tailscale, and SOPS |
 
 ## Naming notes
 
-The flake output name is the name you use with `nixos-rebuild`, `home-manager`, `deploy`, and `nix flake show`.
-
-Two outputs intentionally use different folder names:
-
-- `work-nix-wsl` is defined in `hosts/work-wsl/`
-- `ryzn-nix-wsl` is defined in `hosts/ryzn-wsl/`
+The flake output name is the name you use with `nixos-rebuild`, `home-manager`, `deploy`, and `nix flake show`. It is also the folder under `hosts/` and the value of `system.hostname` -- all three are the same string.
 
 Examples:
 
@@ -84,6 +78,10 @@ Templates live in `hosts/templates/`.
 5. Add a Home Manager output if the machine should get one.
 6. Add a `deploy.nodes` entry if the machine will be updated remotely.
 7. If the host needs secrets or shared SSH aliases, run the `nixos-anywhere` helper with `--secrets`, `--ssh-host`, and one or more `--user` flags.
+8. **Add the host to the build matrix in `.github/workflows/cachix.yml`.** The matrix is a hand-maintained copy of `nixosConfigurations`, and nothing checks that the two agree. A host missing from it is silently never built by CI; a host left in it after being removed fails the job with a confusing eval error. Update the table at the top of this file at the same time.
+9. If the host needs a binary cache that CI does not already have (a CUDA-enabled package, say), add it to the `extra-conf` of the build job too. `modules/core/nix-settings` configures the nix daemon *on the built hosts* -- it has no effect on the runner performing the build.
+
+Steps 8 and 9 are the ones that rot quietly: everything still works locally, and only CI is wrong.
 
 ## Provisioning example
 
