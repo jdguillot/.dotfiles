@@ -1,0 +1,22 @@
+Raise imaplib's 1MB line limit in the MCP email server.
+
+Upstream https://github.com/odysseus-dev/odysseus/issues/2883 fixed this
+for the REST path only (routes/email_helpers.py bumps _MAXLINE to 50MB),
+which is why the inbox UI works on a large mailbox while the agent's
+list_emails fails with "Error: command: UID => got more than 1000000
+bytes" -- the MCP server is a separate process and UID SEARCH (UNSEEN)
+against a six-figure mailbox returns a response line over imaplib's
+default cap. Mirror the same bump here.
+
+--- a/mcp_servers/email_server.py
++++ b/mcp_servers/email_server.py
+@@ -9,5 +9,9 @@
+ import asyncio
+ import imaplib
++# Match routes/email_helpers.py: raise the IMAP line-length limit from the
++# default 1 MB so large mailboxes don't crash with "got more than 1000000
++# bytes" on UID SEARCH. Upstream #2883 fixed only the REST path.
++imaplib._MAXLINE = 50_000_000
+ import smtplib
+ import email
+ import email.header
