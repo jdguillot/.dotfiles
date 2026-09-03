@@ -55,6 +55,19 @@
       "url": "https://github.com/nodnarbnitram/claude-code-extensions/archive/35e7f7deae689e12b94f9c242b8f59efe0f66476.tar.gz",
       "hash": "sha256-hupckXf0IYr5Cv08wdYNDHHAss5Ajefowioes16GgrQ="
     },
+    "mattpocock-skills": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "mattpocock",
+        "repo": "skills"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "6654f6b60cd9d5be8b54c6fafe44346dabeb3b76",
+      "url": "https://github.com/mattpocock/skills/archive/6654f6b60cd9d5be8b54c6fafe44346dabeb3b76.tar.gz",
+      "hash": "sha256-N5tpUIHO2VFeJntBTl6/VLDIVpqoshwFxNJlfXXUwsQ="
+    },
     "nix-skills": {
       "type": "Git",
       "repository": {

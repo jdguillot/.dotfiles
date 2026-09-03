@@ -144,7 +144,7 @@ All tool submodules live below `cyberfighter.features.tools.*`.
 | `opencode` | `enable`, `theme` | opencode config |
 | `mc` | `enable` | Midnight Commander wrapper; note the option name is `mc`, not `midnight-commander` |
 | `copilotMcp` | `enable`, `enableFilesystem`, `enableNix`, `enableGitHub`, `enableContext7`, `enableFetch` | writes `~/.copilot/mcp-config.json` for Copilot MCP servers |
-| `skills` | `enable`, `enableWebappTesting`, `enableRustSkill`, `enableTauriSkill`, `enableGoSkills`, `enableNixSkill` | shared agent skills for Claude Code and opencode; third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
+| `skills` | `enable`, `enableWebappTesting`, `enableRustSkill`, `enableTauriSkill`, `enableGoSkills`, `enableNixSkill`, `enableGrillSkill` | shared agent skills for Claude Code and opencode; third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
 
 ## SSH and SOPS integration
 

@@ -15,6 +15,7 @@ let
   autoskillsRegistry = "${sources.autoskills}/packages/autoskills/skills-registry";
   nixSkills = sources.nix-skills;
   cceSkills = "${sources.claude-code-extensions}/.claude/skills";
+  mattpocockSkills = "${sources.mattpocock-skills}/skills";
 
   # Local skills live in ./skills, one directory per skill (each with a SKILL.md).
   localSkills = lib.mapAttrs (name: _: ./skills + "/${name}") (
@@ -38,6 +39,12 @@ let
     })
     // (lib.optionalAttrs cfg.enableNixSkill {
       nix-flakes = "${nixSkills}/skills/nix-flakes";
+    })
+    // (lib.optionalAttrs cfg.enableGrillSkill {
+      # grill-me is only the /grill-me slash trigger; the interview logic
+      # lives in grilling, so both must ship together.
+      grill-me = "${mattpocockSkills}/productivity/grill-me";
+      grilling = "${mattpocockSkills}/productivity/grilling";
     });
 in
 {
@@ -74,6 +81,12 @@ in
       type = lib.types.bool;
       default = true;
       description = "Include the nix-flakes skill from nhooey/nix-skills (flake conventions, input pinning, *2nix strategies)";
+    };
+
+    enableGrillSkill = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the grill-me/grilling skills from mattpocock/skills (relentless interview to stress-test a plan or design; invoked via /grill-me)";
     };
   };
 
