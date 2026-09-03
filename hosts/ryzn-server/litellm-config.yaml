@@ -12,6 +12,10 @@ model_list:
     litellm_params:
       model: ollama_chat/qwen3.8:27b-q4_K_M
       api_base: http://host.docker.internal:11434
+      # Cloudflare kills proxied requests silent >125s; big-context prompt
+      # eval exceeds that before Ollama's first token. `: ping` SSE comments
+      # (sent even before the first upstream chunk) keep the edge open.
+      keepalive_seconds: 30
 
   # Aux for opencode's automatic title/background calls. `team-small` is
   # the num_ctx-capped derived model (ai.ollama.derivedModels) -- the
@@ -20,6 +24,7 @@ model_list:
     litellm_params:
       model: ollama_chat/team-small
       api_base: http://host.docker.internal:11434
+      keepalive_seconds: 30
 
 general_settings:
   # config.yaml is the source of truth; the DB holds keys and spend only.
@@ -29,6 +34,3 @@ general_settings:
   # onto the GPU; background checks serve a cached result.
   background_health_checks: true
   health_check_interval: 300
-
-# On Cloudflare 524s (125s first-byte edge timeout): see stream_timeout /
-# keepalive_seconds in docs.litellm.ai/docs/proxy/config_settings.
