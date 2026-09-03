@@ -1,7 +1,5 @@
 {
   inputs,
-  pkgs,
-  config,
   ...
 }:
 {
@@ -81,7 +79,7 @@
       docker.enable = true;
       tailscale = {
         enable = true;
-        authKeyFile = config.sops.secrets."tailscale-authkey".path;
+        secrets.authKey = "tailscale-authkey";
       };
 
       security.firejail = true;
@@ -112,8 +110,6 @@
       };
     };
   };
-
-  sops.secrets."tailscale-authkey" = { };
 
   programs.fish.enable = true;
   boot = {

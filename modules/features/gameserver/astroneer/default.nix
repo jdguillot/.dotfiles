@@ -45,29 +45,58 @@ in
       description = "Open firewall ports for the game port (UDP)";
     };
 
+    secrets = {
+      publicIp = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "playit-tunnel-ip";
+        description = ''
+          Name of the sops secret whose contents are the public IP for Playfab
+          registration (e.g. the playit.gg tunnel IP); the module declares the
+          secret, owned by the astroneer user. When set, overrides the
+          launcher's WAN IP auto-detection on every start.
+        '';
+      };
+
+      serverPassword = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "astroneer-server-password";
+        description = "Name of the sops secret holding the server password; null leaves the server passwordless.";
+      };
+    };
+
     publicIpFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = ''
-        Path to a file whose contents are the public IP for Playfab registration.
-        When set, overrides the launcher's WAN IP auto-detection on every start.
-        Intended to be set to a sops secret path containing the playit.gg tunnel IP.
-      '';
+      description = "Escape hatch: explicit path to the public-IP file, bypassing the sops declaration from `secrets.publicIp`.";
     };
 
     serverPasswordFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = ''
-        Path to a file containing the server password.
-        When null, the server is passwordless.
-        Intended to be set to a sops secret path.
-      '';
+      description = "Escape hatch: explicit path to the password file, bypassing the sops declaration from `secrets.serverPassword`.";
     };
   };
 
   config = lib.mkIf cfg.enable (
     let
+      # Name-style secrets by default; the *File options bypass sops entirely.
+      effectivePublicIpFile =
+        if cfg.publicIpFile != null then
+          cfg.publicIpFile
+        else if cfg.secrets.publicIp != null then
+          config.sops.secrets.${cfg.secrets.publicIp}.path
+        else
+          null;
+      effectiveServerPasswordFile =
+        if cfg.serverPasswordFile != null then
+          cfg.serverPasswordFile
+        else if cfg.secrets.serverPassword != null then
+          config.sops.secrets.${cfg.secrets.serverPassword}.path
+        else
+          null;
+
       astroTuxLauncher = pkgs.callPackage ./astrotuxlauncher.nix { };
       mergeConfigPython = pkgs.python3;
       mergeConfigScript = ./merge-config.py;
@@ -88,6 +117,15 @@ in
         enable = true;
         enable32Bit = true;
       };
+
+      # The launcher reads both as the astroneer user.
+      sops.secrets =
+        lib.optionalAttrs (cfg.secrets.publicIp != null && cfg.publicIpFile == null) {
+          ${cfg.secrets.publicIp}.owner = "astroneer";
+        }
+        // lib.optionalAttrs (cfg.secrets.serverPassword != null && cfg.serverPasswordFile == null) {
+          ${cfg.secrets.serverPassword}.owner = "astroneer";
+        };
 
       users.users.astroneer = {
         isSystemUser = true;
@@ -142,12 +180,12 @@ in
             ${mergeConfigPython}/bin/python ${mergeConfigScript} ini ${engineIni} "${configDir}/Engine.ini"
             chmod 0644 "${stateDir}/launcher.toml" "${configDir}/AstroServerSettings.ini" "${configDir}/Engine.ini"
           ''
-          + lib.optionalString (cfg.publicIpFile != null) ''
-            TUNNEL_IP=$(cat ${toString cfg.publicIpFile})
+          + lib.optionalString (effectivePublicIpFile != null) ''
+            TUNNEL_IP=$(cat ${toString effectivePublicIpFile})
             sed -i "s|^PublicIP=.*|PublicIP=$TUNNEL_IP|" "${configDir}/AstroServerSettings.ini"
           ''
-          + lib.optionalString (cfg.serverPasswordFile != null) ''
-            SERVER_PASS=$(cat ${toString cfg.serverPasswordFile})
+          + lib.optionalString (effectiveServerPasswordFile != null) ''
+            SERVER_PASS=$(cat ${toString effectiveServerPasswordFile})
             sed -i "s|^ServerPassword=.*|ServerPassword=$SERVER_PASS|" "${configDir}/AstroServerSettings.ini"
           '';
 

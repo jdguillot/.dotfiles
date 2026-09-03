@@ -61,7 +61,7 @@
         acceptRoutes = true; # don't pull others' subnet routes into the shared stack
         acceptDns = false; # don't overwrite the shared /etc/resolv.conf
         extraUpFlags = [ "--netfilter-mode=off" ]; # don't install iptables/nftables rules
-        authKeyFile = config.sops.secrets."tailscale-authkey".path;
+        secrets.authKey = "tailscale-authkey";
       };
 
       vscode.enable = true;
@@ -100,11 +100,6 @@
     key = "data";
     mode = "0444";
   };
-
-  # Decrypts the "tailscale-authkey" key from secrets/secrets.yaml (the default
-  # sopsFile) to /run/secrets/tailscale-authkey, root-only (0400), for
-  # tailscaled-autoconnect.
-  sops.secrets."tailscale-authkey" = { };
 
   # Make nix-daemon use the custom bundle (must run after install-work-ca)
   systemd.services.nix-daemon = {

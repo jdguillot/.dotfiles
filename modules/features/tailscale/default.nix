@@ -35,16 +35,24 @@ in
       description = "Extra flags to pass to tailscale up";
     };
 
+    secrets.authKey = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "tailscale-authkey";
+      description = ''
+        Name of the sops secret holding a Tailscale auth key; the module
+        declares the secret itself. Without an auth key (this or
+        authKeyFile), extraUpFlags/acceptRoutes/acceptDns are never applied
+        automatically — someone must run `tailscale up` by hand. With one,
+        tailscaled-autoconnect runs `tailscale up` with all configured flags
+        on boot whenever the node is logged out or stopped.
+      '';
+    };
+
     authKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = ''
-        Path to a file containing a Tailscale auth key (point this at a sops
-        secret path). Without this, extraUpFlags/acceptRoutes/acceptDns are
-        never applied automatically — someone must run `tailscale up` by hand.
-        With it, tailscaled-autoconnect runs `tailscale up` with all configured
-        flags on boot whenever the node is logged out or stopped.
-      '';
+      description = "Escape hatch: explicit path to an auth key file, bypassing the sops declaration from `secrets.authKey`.";
     };
 
     serve = lib.mkOption {
@@ -79,10 +87,27 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.secrets.authKey == null || (config.cyberfighter.features.sops.enable or false);
+        message = "cyberfighter.features.tailscale.secrets.authKey needs cyberfighter.features.sops.enable = true; set authKeyFile to bypass sops.";
+      }
+    ];
+
+    sops.secrets = lib.optionalAttrs (cfg.secrets.authKey != null && cfg.authKeyFile == null) {
+      ${cfg.secrets.authKey}.mode = "0400";
+    };
+
     services.tailscale = {
       enable = true;
       useRoutingFeatures = cfg.useRoutingFeatures;
-      authKeyFile = cfg.authKeyFile;
+      authKeyFile =
+        if cfg.authKeyFile != null then
+          cfg.authKeyFile
+        else if cfg.secrets.authKey != null then
+          config.sops.secrets.${cfg.secrets.authKey}.path
+        else
+          null;
       extraUpFlags =
         cfg.extraUpFlags
         ++ [

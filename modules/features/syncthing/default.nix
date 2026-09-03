@@ -9,7 +9,22 @@ let
   cfg = config.cyberfighter.features.syncthing;
   configDir = "${cfg.dataDir}/.config/syncthing";
   guiPort = lib.last (lib.splitString ":" cfg.guiAddress);
-  guiAuthConfigured = cfg.guiUserFile != null && cfg.guiPasswordFile != null;
+  # Name-style secrets by default; the *File options bypass sops entirely.
+  effectiveGuiUserFile =
+    if cfg.guiUserFile != null then
+      cfg.guiUserFile
+    else if cfg.secrets.guiUser != null then
+      config.sops.secrets.${cfg.secrets.guiUser}.path
+    else
+      null;
+  effectiveGuiPasswordFile =
+    if cfg.guiPasswordFile != null then
+      cfg.guiPasswordFile
+    else if cfg.secrets.guiPassword != null then
+      config.sops.secrets.${cfg.secrets.guiPassword}.path
+    else
+      null;
+  guiAuthConfigured = effectiveGuiUserFile != null && effectiveGuiPasswordFile != null;
 in
 {
   options.cyberfighter.features.syncthing = {
@@ -55,18 +70,32 @@ in
       '';
     };
 
+    secrets = {
+      guiUser = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "syncthing-username";
+        description = "Name of the sops secret holding the GUI username, applied over the REST API at boot; the module declares the secret itself.";
+      };
+
+      guiPassword = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "syncthing-password";
+        description = "Name of the sops secret holding the GUI password (plaintext; syncthing bcrypts it on save).";
+      };
+    };
+
     guiUserFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      example = lib.literalExpression ''config.sops.secrets."syncthing-username".path'';
-      description = "File holding the GUI username, applied over the REST API at boot.";
+      description = "Escape hatch: explicit path to the GUI username file, bypassing the sops declaration from `secrets.guiUser`.";
     };
 
     guiPasswordFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
-      example = lib.literalExpression ''config.sops.secrets."syncthing-password".path'';
-      description = "File holding the GUI password (plaintext; syncthing bcrypts it on save).";
+      description = "Escape hatch: explicit path to the GUI password file, bypassing the sops declaration from `secrets.guiPassword`.";
     };
   };
 
@@ -74,9 +103,23 @@ in
     assertions = [
       {
         assertion = !cfg.openGuiFirewall || guiAuthConfigured;
-        message = "cyberfighter.features.syncthing: refusing to open the GUI to the LAN without guiUserFile/guiPasswordFile -- it is an unauthenticated admin surface for the daemon's user.";
+        message = "cyberfighter.features.syncthing: refusing to open the GUI to the LAN without GUI credentials (secrets.guiUser/guiPassword or the *File options) -- it is an unauthenticated admin surface for the daemon's user.";
+      }
+      {
+        assertion =
+          (cfg.secrets.guiUser == null && cfg.secrets.guiPassword == null)
+          || (config.cyberfighter.features.sops.enable or false);
+        message = "cyberfighter.features.syncthing.secrets.* need cyberfighter.features.sops.enable = true; set the *File options to bypass sops.";
       }
     ];
+
+    sops.secrets =
+      lib.optionalAttrs (cfg.secrets.guiUser != null && cfg.guiUserFile == null) {
+        ${cfg.secrets.guiUser}.mode = "0400";
+      }
+      // lib.optionalAttrs (cfg.secrets.guiPassword != null && cfg.guiPasswordFile == null) {
+        ${cfg.secrets.guiPassword}.mode = "0400";
+      };
 
     services.syncthing = {
       enable = true;
@@ -120,7 +163,7 @@ in
             "http://127.0.0.1:${guiPort}/rest/system/ping" >/dev/null 2>&1 && break
           sleep 1
         done
-        jq -n --rawfile u ${cfg.guiUserFile} --rawfile p ${cfg.guiPasswordFile} \
+        jq -n --rawfile u ${effectiveGuiUserFile} --rawfile p ${effectiveGuiPasswordFile} \
           '{ user: ($u | rtrimstr("\n")), password: ($p | rtrimstr("\n")) }' \
           | curl -fsS -X PATCH -H "X-API-Key: $key" -H 'Content-Type: application/json' \
               -d @- "http://127.0.0.1:${guiPort}/rest/config/gui" >/dev/null

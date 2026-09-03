@@ -258,7 +258,7 @@ Example:
 | --- | --- | --- | --- |
 | `docker` | `enable`, `rootless`, `enableOnBoot`, `networks` | Docker engine plus optional named bridge networks | <https://mynixos.com/search?q=virtualisation.docker.enable> |
 | `compose` | `projects.<name>` (`files`, `networks`, `envFile`, `prepare`, `runtimeDirectory`, `timeout`, `extraUpFlags`, `restartTriggers`) | shared scaffolding for compose projects as boot-time systemd oneshots — owns the unit ordering/lifecycle invariants and a `<name>-compose` day-2 wrapper; traefik, litellm, comfyui, and odysseus declare their projects through it | <https://docs.docker.com/compose/> |
-| `traefik` | `enable`, `dnsDomain`, `email`, `network`, `routes.<name>` (`host`, `port`, `auth`, `backend`, `extraHosts`, `network`), `dnsResolvers`, `rateLimit`, `dynamicFiles`, `tokenFile`, `basicAuthUsersFile` | TLS-terminating reverse proxy as a compose project; `routes` declares a routed service once and the module renders it as docker labels (`routeLabels`/`routeLabelFiles`) or a file-provider fragment, owning the entrypoint/cert-resolver/middleware-chain spelling; `dynamicFiles` stays as the escape hatch for routing `routes` cannot express | <https://doc.traefik.io/traefik/> |
+| `traefik` | `enable`, `dnsDomain`, `email`, `network`, `routes.<name>` (`host`, `port`, `auth`, `backend`, `extraHosts`, `network`), `dnsResolvers`, `rateLimit`, `dynamicFiles`, `secrets.*` | TLS-terminating reverse proxy as a compose project; declares its own sops secrets (name-style, `*File` escape hatches); `routes` declares a routed service once and the module renders it as docker labels (`routeLabels`/`routeLabelFiles`) or a file-provider fragment, owning the entrypoint/cert-resolver/middleware-chain spelling; `dynamicFiles` stays as the escape hatch for routing `routes` cannot express | <https://doc.traefik.io/traefik/> |
 | `security` | `firejail` | lightweight sandboxing toggle | <https://mynixos.com/search?q=programs.firejail.enable> |
 | `sops` | `enable`, `defaultSopsFile`, `sshKeyPath`, `deployUserAgeKey` | wraps `sops-nix`; can derive a user age key from the host SSH key | <https://github.com/Mic92/sops-nix> |
 | `proxmox` | `enable`, `ipAddress` | Proxmox VE integration via `proxmox-nixos` | <https://github.com/SaumonNet/proxmox-nixos> |
@@ -808,8 +808,10 @@ sudo odysseus-compose exec odysseus sh
       gamePort = 10806;
       maxPlayers = 8;
       openFirewall = true;
-      publicIpFile = config.sops.secrets."playit-tunnel-ip".path;
-      serverPasswordFile = config.sops.secrets."astroneer-server-password".path;
+      secrets = {
+        publicIp = "playit-tunnel-ip";
+        serverPassword = "astroneer-server-password";
+      };
     };
   };
 }

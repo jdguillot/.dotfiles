@@ -175,12 +175,23 @@ let
       };
     };
 
+  # Name-style secrets by default; the *File options bypass sops entirely.
+  usesSopsToken = cfg.tokenFile == null;
+  usesSopsUsers = cfg.basicAuthUsersFile == null;
+  effectiveTokenFile =
+    if usesSopsToken then config.sops.secrets.${cfg.secrets.cloudflareToken}.path else cfg.tokenFile;
+  effectiveUsersFile =
+    if usesSopsUsers then
+      config.sops.secrets.${cfg.secrets.basicAuthUsers}.path
+    else
+      cfg.basicAuthUsersFile;
+
   # Stages credentials at the paths the native files hardcode.
   prepare = pkgs.writeShellScript "traefik-prepare" ''
     set -euo pipefail
     umask 077
-    ${pkgs.coreutils}/bin/install -m 0400 ${cfg.tokenFile} ${tokenPath}
-    ${pkgs.coreutils}/bin/install -m 0400 ${cfg.basicAuthUsersFile} ${usersPath}
+    ${pkgs.coreutils}/bin/install -m 0400 ${effectiveTokenFile} ${tokenPath}
+    ${pkgs.coreutils}/bin/install -m 0400 ${effectiveUsersFile} ${usersPath}
   '';
 
 in
@@ -300,24 +311,40 @@ in
       '';
     };
 
+    secrets = {
+      cloudflareToken = lib.mkOption {
+        type = lib.types.str;
+        default = "cloudflare-dns-token";
+        description = ''
+          Name of the sops secret holding the Cloudflare API token for the
+          DNS-01 challenge, needing Zone:Read and DNS:Edit on the zone. The
+          module declares the secret and its restartUnits itself; staged to
+          ${tokenPath} at start, where compose.yaml's CF_*_TOKEN_FILE point.
+        '';
+      };
+
+      basicAuthUsers = lib.mkOption {
+        type = lib.types.str;
+        default = "traefik-basic-auth";
+        description = ''
+          Name of the sops secret holding the htpasswd file backing the
+          `simpleAuth` middleware (and the dashboard). Staged to ${usersPath}
+          at start, where dynamic/middlewares.toml's `usersFile` points.
+          Generate a line with `htpasswd -nB <user>`.
+        '';
+      };
+    };
+
     tokenFile = lib.mkOption {
-      type = lib.types.str;
-      example = lib.literalExpression ''config.sops.secrets."cloudflare-dns-token".path'';
-      description = ''
-        Path to a file holding the Cloudflare API token for the DNS-01
-        challenge, needing Zone:Read and DNS:Edit on the zone. Staged to
-        ${tokenPath} at start, where compose.yaml's CF_*_TOKEN_FILE point.
-      '';
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Escape hatch: explicit path to the Cloudflare token file, bypassing the sops declaration from `secrets.cloudflareToken`.";
     };
 
     basicAuthUsersFile = lib.mkOption {
-      type = lib.types.str;
-      example = lib.literalExpression ''config.sops.secrets."traefik-basic-auth".path'';
-      description = ''
-        htpasswd file backing the `simpleAuth` middleware (and the dashboard).
-        Staged to ${usersPath} at start, where dynamic/middlewares.toml's
-        `usersFile` points. Generate a line with `htpasswd -nB <user>`.
-      '';
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Escape hatch: explicit path to the htpasswd file, bypassing the sops declaration from `secrets.basicAuthUsers`.";
     };
   };
 
@@ -352,7 +379,28 @@ in
         ) (lib.attrValues cfg.routes);
         message = "cyberfighter.features.traefik.routes hosts must be DNS names (or compose \${VAR} references)";
       }
+      {
+        assertion =
+          (!usesSopsToken && !usesSopsUsers) || (config.cyberfighter.features.sops.enable or false);
+        message = "cyberfighter.features.traefik: the default name-style secrets need cyberfighter.features.sops.enable = true; set tokenFile/basicAuthUsersFile to bypass sops.";
+      }
     ];
+
+    # The unit stages both at start (its restartTriggers only cover config
+    # files), so a secrets-only deploy needs this restart to take effect.
+    sops.secrets =
+      lib.optionalAttrs usesSopsToken {
+        ${cfg.secrets.cloudflareToken} = {
+          mode = "0400";
+          restartUnits = [ "traefik.service" ];
+        };
+      }
+      // lib.optionalAttrs usesSopsUsers {
+        ${cfg.secrets.basicAuthUsers} = {
+          mode = "0400";
+          restartUnits = [ "traefik.service" ];
+        };
+      };
 
     # Appends, so a host may declare further networks of its own.
     cyberfighter.features.docker.networks = [ cfg.network ];

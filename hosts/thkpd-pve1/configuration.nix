@@ -1,7 +1,6 @@
 # Template for a minimal server
 {
   inputs,
-  config,
   lib,
   pkgs,
   ...
@@ -67,8 +66,8 @@ in
         enable = true;
         dnsDomain = "cyberfighter.space";
         email = "cyberfighter@gmail.com";
-        tokenFile = config.sops.secrets."cloudflare-dns-token".path;
-        basicAuthUsersFile = config.sops.secrets."traefik-basic-auth".path;
+        # DNS-01 token and dashboard htpasswd come from the default secret
+        # names, shared with ryzn-server.
       };
 
       sops = {
@@ -78,12 +77,6 @@ in
       };
     };
   };
-
-  # Traefik's DNS-01 token and dashboard htpasswd, shared with ryzn-server.
-  # The unit stages both at start (its restartTriggers only cover config
-  # files), so a secrets-only deploy needs this restart.
-  sops.secrets."cloudflare-dns-token".restartUnits = [ "traefik.service" ];
-  sops.secrets."traefik-basic-auth".restartUnits = [ "traefik.service" ];
 
   systemd.tmpfiles.rules = [
     "L+ /bin/true - - - - ${pkgs.coreutils}/bin/true"

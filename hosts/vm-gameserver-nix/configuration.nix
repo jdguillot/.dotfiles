@@ -60,8 +60,10 @@
           autoSaveInterval = 900;
           openFirewall = true;
           gamePort = 10806;
-          publicIpFile = config.sops.secrets."playit-tunnel-ip".path;
-          serverPasswordFile = config.sops.secrets."astroneer-server-password".path;
+          secrets = {
+            publicIp = "playit-tunnel-ip";
+            serverPassword = "astroneer-server-password";
+          };
         };
       };
     };
@@ -72,11 +74,7 @@
     secretPath = config.sops.secrets."playit-agent-secret".path;
   };
 
+  # Upstream services.playit takes a path, so this one secret stays
+  # host-declared.
   sops.secrets."playit-agent-secret" = { };
-  sops.secrets."playit-tunnel-ip" = {
-    owner = "astroneer";
-  };
-  sops.secrets."astroneer-server-password" = {
-    owner = "astroneer";
-  };
 }

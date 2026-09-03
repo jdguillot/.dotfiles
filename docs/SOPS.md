@@ -170,7 +170,30 @@ That flow is designed to help with:
 
 ## Manual patterns
 
-### Referencing a system secret
+### Module secrets are name-style
+
+`cyberfighter.*` modules that consume secrets take a secret *name* (with
+a sensible default) and declare the `sops.secrets` entry themselves —
+including `mode`, `owner`, and the `restartUnits` needed for a
+secrets-only deploy to reach the service. Hosts only override the name
+when it differs, and never re-declare the secret:
+
+```nix
+{
+  cyberfighter.features.tailscale.secrets.authKey = "tailscale-authkey";
+  cyberfighter.features.gameserver.astroneer.secrets.serverPassword =
+    "astroneer-server-password";
+}
+```
+
+Each of these modules keeps a `*File` escape hatch (`tokenFile`,
+`authKeyFile`, …) taking an explicit path for non-sops sources; setting
+it bypasses the module's sops declaration.
+
+### Referencing a system secret directly
+
+For upstream services with no `cyberfighter.*` module (e.g.
+`services.playit`), the host declares the secret and passes the path:
 
 ```nix
 {
@@ -178,15 +201,6 @@ That flow is designed to help with:
 
   systemd.services.my-service.serviceConfig.EnvironmentFile =
     config.sops.secrets."my-secret".path;
-}
-```
-
-### Referencing a game server secret
-
-```nix
-{
-  cyberfighter.features.gameserver.astroneer.serverPasswordFile =
-    config.sops.secrets."astroneer-server-password".path;
 }
 ```
 

@@ -89,22 +89,25 @@
         ];
       };
 
-      # Web UI on the LAN (http://192.168.101.94:8384), login from sops.
+      # Web UI on the LAN (http://192.168.101.94:8384), login from sops
+      # (applied over its REST API at boot).
       syncthing = {
         enable = true;
         guiAddress = "0.0.0.0:8384";
         openGuiFirewall = true;
-        guiUserFile = config.sops.secrets."syncthing-username".path;
-        guiPasswordFile = config.sops.secrets."syncthing-password".path;
+        secrets = {
+          guiUser = "syncthing-username";
+          guiPassword = "syncthing-password";
+        };
       };
 
-      # Decrypts secrets/secrets.yaml with the host SSH key. Every
-      # config.sops.secrets."..." reference below depends on this.
+      # Decrypts secrets/secrets.yaml with the host SSH key. Every module
+      # declaring a name-style secret below depends on this.
       sops.enable = true;
 
       tailscale = {
         enable = true;
-        authKeyFile = config.sops.secrets."tailscale-authkey".path;
+        secrets.authKey = "tailscale-authkey";
         acceptRoutes = false;
         extraUpFlags = [
           "--ssh"
@@ -292,8 +295,8 @@
         enable = true;
         dnsDomain = "cyberfighter.space";
         email = "cyberfighter@gmail.com";
-        tokenFile = config.sops.secrets."cloudflare-dns-token".path;
-        basicAuthUsersFile = config.sops.secrets."traefik-basic-auth".path;
+        # DNS-01 token (Zone:Read + DNS:Edit) and dashboard htpasswd come
+        # from the default secret names, shared with thkpd-pve1.
 
         routes = {
           # SearXNG runs natively (no labels), so it routes as a file-provider
@@ -328,10 +331,10 @@
       # Outbound-only tunnel: the Zero Trust dashboard routes the published
       # hostnames down to traefik :443, with Cloudflare Access in front at
       # the edge. No inbound ports.
-      cloudflared = {
-        enable = true;
-        tokenFile = config.sops.secrets."cloudflared-tunnel-token".path;
-      };
+      # Tunnel token from the Zero Trust dashboard; runs the connector only,
+      # grants no account access. Secret name defaults to
+      # cloudflared-tunnel-token.
+      cloudflared.enable = true;
 
       docker = {
         enable = true;
@@ -342,25 +345,6 @@
 
     };
   };
-
-  # Not declared by the tailscale module itself -- the host opts in to
-  # decrypting this key from the default SOPS file.
-  sops.secrets."tailscale-authkey" = { };
-
-  # Traefik's DNS-01 token (Zone:Read + DNS:Edit) and dashboard htpasswd,
-  # shared with thkpd-pve1. The unit stages both at start (its restartTriggers
-  # only cover config files), so a secrets-only deploy needs this restart.
-  sops.secrets."cloudflare-dns-token".restartUnits = [ "traefik.service" ];
-  sops.secrets."traefik-basic-auth".restartUnits = [ "traefik.service" ];
-
-  # Tunnel token from the Zero Trust dashboard; runs the connector only,
-  # grants no account access. LoadCredential reads it at unit start, so a
-  # secrets-only deploy needs this restart.
-  sops.secrets."cloudflared-tunnel-token".restartUnits = [ "cloudflared-tunnel.service" ];
-
-  # Syncthing GUI login, applied over its REST API at boot.
-  sops.secrets."syncthing-username" = { };
-  sops.secrets."syncthing-password" = { };
 
   virtualisation.waydroid.enable = true; # For Android gaming
 
