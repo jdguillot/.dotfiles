@@ -12,6 +12,7 @@
     ./tools/default.nix
     ./tools/btop/default.nix
     ./tools/mcp/default.nix
+    ./tools/agent-browser/default.nix
     ./tools/skills/default.nix
     ./tools/lazygit/default.nix
     ./tools/midnight-commander/default.nix
