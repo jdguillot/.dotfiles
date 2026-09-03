@@ -1,6 +1,6 @@
 ---
 name: browser-automation
-description: Drive a real browser for any web task — opening pages, clicking, filling forms, screenshots, scraping, or checking a site or UI in an actual browser. Use whenever browser automation is needed.
+description: Drive a real browser for ad-hoc, interactive web tasks — opening pages, clicking, filling forms, screenshots, scraping, or quickly eyeballing a site or UI. For scripted Playwright test runs against a local app under development, use webapp-testing instead.
 ---
 
 # Browser automation with agent-browser
