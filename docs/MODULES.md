@@ -275,13 +275,13 @@ N copies of the weights resident on one GPU.
 
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
-| `ai.ollama` | `enable`, `acceleration`, `modelsDir`, `models`, `syncModels`, `host`, `port`, `exposeToContainers`, `containerBridge`, `keepAlive`, `maxLoadedModels`, `numParallel`, `flashAttention`, `kvCacheType`, `groupMembers`, `environmentVariables` | local OpenAI-compatible inference server at `/v1` | <https://mynixos.com/search?q=services.ollama> |
+| `ai.ollama` | `enable`, `acceleration`, `modelsDir`, `models`, `syncModels`, `host`, `port`, `exposeToContainers`, `keepAlive`, `maxLoadedModels`, `numParallel`, `flashAttention`, `kvCacheType`, `groupMembers`, `environmentVariables` | local OpenAI-compatible inference server at `/v1` | <https://mynixos.com/search?q=services.ollama> |
 | `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `groupMembers`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a systemd service | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
 | `ai.odysseus` | `enable`, `src`, `patches`, `researchProbeTimeout`, `projectName`, `stateDir`, `bind`, `port`, `auth`, `allowedOrigins`, `ollamaBaseUrl`, `llmHost`, `bundledSearxng`, `searxngInstance`, `bridgeName`, `puid`, `pgid`, `extraEnv`, `secrets.envSecret`, `secrets.sopsFile` | self-hosted AI workspace; a systemd oneshot drives `docker compose` off a pinned source tree | <https://github.com/odysseus-dev/odysseus> |
-| `searxng` | `enable`, `package`, `listen`, `port`, `baseUrl`, `jsonApi`, `limiter`, `openFirewall`, `containerBridges`, `secretKeyFile`, `settings` | host-native metasearch (lives outside `ai.*` -- the AI stack is just one client), usable on its own and as the search backend for `ai.odysseus` | <https://mynixos.com/search?q=services.searx> |
+| `searxng` | `enable`, `package`, `listen`, `port`, `baseUrl`, `jsonApi`, `limiter`, `openFirewall`, `exposeToContainers`, `secretKeyFile`, `settings` | host-native metasearch (lives outside `ai.*` -- the AI stack is just one client), usable on its own and as the search backend for `ai.odysseus` | <https://mynixos.com/search?q=services.searx> |
 | `ai.comfyui` | `enable`, `modelsDir`, `user`, `group`, `hfTokenFile`, `models` | declarative checkpoint downloads only; the runtime itself is `ai.comfyui.server` | <https://github.com/comfyanonymous/ComfyUI> |
 | `ai.comfyui.server` | `enable`, `bind`, `port`, `cliArgs`, `dataDir`, `userDataDir`, `user`, `group` | ComfyUI itself: the shared native compose.yaml rendered per host, run by a systemd oneshot (`comfyui-compose` for day-2 ops) | <https://github.com/comfyanonymous/ComfyUI> |
-| `ai.comfyui.openaiApi` | `enable`, `comfyuiUrl`, `listen`, `port`, `workflows`, `freeAfterRun`, `timeout`, `containerBridges` | translates `/v1/images/generations` to a ComfyUI workflow run, so image clients can use ComfyUI as a model | <https://docs.comfy.org/development/comfyui-server/comms_routes> |
+| `ai.comfyui.openaiApi` | `enable`, `comfyuiUrl`, `listen`, `port`, `workflows`, `freeAfterRun`, `timeout`, `exposeToContainers` | translates `/v1/images/generations` to a ComfyUI workflow run, so image clients can use ComfyUI as a model | <https://docs.comfy.org/development/comfyui-server/comms_routes> |
 
 #### Local inference (`ai.ollama`)
 
@@ -369,8 +369,9 @@ ollama create {name} -f Modelfile
 
 #### Reaching the server from containers
 
-`exposeToContainers = true` binds `0.0.0.0` and opens the port on
-`containerBridge` (`docker0`) **only**. This is not
+`exposeToContainers = true` binds `0.0.0.0` and opens the port on every
+bridge registered in `cyberfighter.features.docker.containerBridges`
+**only** (docker0 plus each compose module's published bridge). This is not
 `networking.firewall.allowedTCPPorts`, which would expose an unauthenticated
 inference server to the whole LAN.
 
@@ -531,9 +532,9 @@ latents are 16-channel and the SD-era node emits 4.
 
 Wiring into Odysseus: add it as a model endpoint with **model type = image**,
 base URL `http://host.docker.internal:7860/v1`, then set it as `image_model` in
-settings. `containerBridges` defaults to the `ai.odysseus` compose bridge and
-opens the port there only -- same reasoning as `ai.ollama`, and for the same
-reason it is not `allowedTCPPorts`.
+settings. `exposeToContainers` opens the port on the registered container
+bridges only -- same reasoning as `ai.ollama`, and for the same reason it is
+not `allowedTCPPorts`.
 
 ```bash
 curl -s localhost:7860/v1/models          # exposed workflow names
@@ -601,11 +602,11 @@ Exposure is scoped the same way `ai.ollama` does it, and for the same reason:
 
 - `openFirewall` puts `port` on the LAN and binds 0.0.0.0. SearXNG has no
   authentication, so that is a trusted-network-only call.
-- `containerBridges` opens `port` on the compose bridge, defaulting to
-  `ai.odysseus.bridgeName` when that module is enabled. Unlike Docker's
-  published ports, this direction *does* traverse INPUT -- a container reaching
-  the host via `host.docker.internal` arrives on its own bridge, so without a
-  hole there the packet is dropped.
+- `exposeToContainers` opens `port` on every bridge registered in
+  `cyberfighter.features.docker.containerBridges` (compose modules publish
+  theirs). Unlike Docker's published ports, this direction *does* traverse
+  INPUT -- a container reaching the host via `host.docker.internal` arrives on
+  its own bridge, so without a hole there the packet is dropped.
 
 `baseUrl` is worth setting for anything past loopback. It is what SearXNG stamps
 into the OpenSearch descriptor -- what makes "add to browser search engines"

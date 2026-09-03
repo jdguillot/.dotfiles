@@ -240,8 +240,11 @@
       };
 
       # Image generation for Odysseus through the ComfyUI already here;
-      # reachable from the compose bridge only.
-      ai.comfyui.openaiApi.enable = true;
+      # reachable from the registered container bridges only.
+      ai.comfyui.openaiApi = {
+        enable = true;
+        exposeToContainers = true;
+      };
 
       # A service in its own right: LAN at :8080, published by traefik at
       # search.cyberfighter.space, and it survives odysseus restarts --
@@ -249,6 +252,8 @@
       searxng = {
         enable = true;
         openFirewall = true;
+        # Odysseus queries it from its compose bridge.
+        exposeToContainers = true;
         # Stamped into the OpenSearch descriptor and image-proxy links.
         baseUrl = "https://search.cyberfighter.space/";
       };

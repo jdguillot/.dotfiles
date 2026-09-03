@@ -25,11 +25,36 @@ in
       default = [];
       description = "Docker networks to create on boot";
     };
+
+    containerBridges = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = ''
+        Registry of bridge interface names containers reach the host through.
+        Compose modules publish their fixed bridge here; host services with an
+        `exposeToContainers` option open their port on every registered bridge.
+        Unlike Docker's published ports, container-to-host traffic *does*
+        traverse INPUT -- a container using `host.docker.internal` arrives on
+        its own bridge, so without a hole there the firewall drops it.
+        The default docker0 bridge is always registered.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
+        assertions = [
+          {
+            # Kernel interface name limit; a longer name is silently invalid.
+            assertion = lib.all (b: lib.stringLength b <= 15 && builtins.match "[A-Za-z0-9-]+" b != null) cfg.containerBridges;
+            message = "cyberfighter.features.docker.containerBridges entries must be interface names of at most 15 characters.";
+          }
+        ];
+
+        # Where plain `docker run` containers land.
+        cyberfighter.features.docker.containerBridges = [ "docker0" ];
+
         virtualisation.docker = {
           enable = true;
           enableOnBoot = cfg.enableOnBoot;

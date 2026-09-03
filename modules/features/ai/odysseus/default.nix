@@ -448,10 +448,6 @@ in
             message = "cyberfighter.features.ai.odysseus: `secrets.envSecret` requires cyberfighter.features.sops.enable = true.";
           }
           {
-            assertion = lib.stringLength cfg.bridgeName <= 15;
-            message = "cyberfighter.features.ai.odysseus: `bridgeName` must be at most 15 characters (kernel interface name limit).";
-          }
-          {
             # Both want host 8080; whichever loses the race fails to start.
             assertion = !(cfg.bundledSearxng && searxngCfg.enable && searxngCfg.port == 8080);
             message = ''
@@ -481,13 +477,15 @@ in
             a `search_url` is set in Settings.
           ''
           ++
-            lib.optional
-              (!cfg.bundledSearxng && searxngCfg.enable && !(lib.elem cfg.bridgeName searxngCfg.containerBridges))
+            lib.optional (!cfg.bundledSearxng && searxngCfg.enable && !searxngCfg.exposeToContainers)
               ''
-                cyberfighter.features.ai.odysseus: `searxng.containerBridges` does
-                not list "${cfg.bridgeName}", so the firewall drops this container's
-                search requests to the host. Add it there.
+                cyberfighter.features.ai.odysseus: `searxng.exposeToContainers` is
+                off, so unless `searxng.openFirewall` opens the port LAN-wide the
+                firewall drops this container's search requests to the host.
               '';
+
+        # Host services with exposeToContainers open their port here.
+        cyberfighter.features.docker.containerBridges = [ cfg.bridgeName ];
 
         # Bind-mount targets, owned by the id the container drops to. `+C`
         # because the HF cache under data/ fragments badly under CoW.
@@ -518,12 +516,6 @@ in
           extraUpFlags = [ "--build" ];
         };
       }
-
-      # Compose containers reach the host through their own bridge, so the
-      # ollama hole must exist there too.
-      (lib.mkIf usesHostOllama {
-        networking.firewall.interfaces.${cfg.bridgeName}.allowedTCPPorts = [ ollamaCfg.port ];
-      })
 
       (lib.mkIf (cfg.secrets.envSecret != null && (config.cyberfighter.features.sops.enable or false)) {
         sops.secrets.${cfg.secrets.envSecret} = {

@@ -186,11 +186,10 @@ in
             assertion = config.cyberfighter.features.sops.enable or false;
             message = "cyberfighter.features.ai.litellm: `secrets.envSecret` requires cyberfighter.features.sops.enable = true.";
           }
-          {
-            assertion = lib.stringLength cfg.bridgeName <= 15;
-            message = "cyberfighter.features.ai.litellm: `bridgeName` must be at most 15 characters (kernel interface name limit).";
-          }
         ];
+
+        # Host services with exposeToContainers open their port here.
+        cyberfighter.features.docker.containerBridges = [ cfg.bridgeName ];
 
         warnings = lib.optional (!usesHostOllama) ''
           cyberfighter.features.ai.litellm: `ai.ollama` is not enabled with
@@ -246,10 +245,6 @@ in
           sopsFile = lib.mkIf (cfg.secrets.sopsFile != null) cfg.secrets.sopsFile;
         };
       }
-
-      (lib.mkIf usesHostOllama {
-        networking.firewall.interfaces.${cfg.bridgeName}.allowedTCPPorts = [ ollamaCfg.port ];
-      })
     ]
   );
 }

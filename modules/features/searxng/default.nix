@@ -14,11 +14,10 @@
 
 let
   cfg = config.cyberfighter.features.searxng;
-  odysseusCfg = config.cyberfighter.features.ai.odysseus;
 
   # Loopback unless something off-box must reach it; a container can never
   # use the host's loopback.
-  listenHost = if (cfg.openFirewall || cfg.containerBridges != [ ]) then "0.0.0.0" else cfg.listen;
+  listenHost = if (cfg.openFirewall || cfg.exposeToContainers) then "0.0.0.0" else cfg.listen;
 
   # Not in the world-readable store: this key signs session cookies.
   generatedSecretFile = "/var/lib/searxng/secret-key.env";
@@ -51,7 +50,7 @@ in
     listen = lib.mkOption {
       type = lib.types.str;
       default = "127.0.0.1";
-      description = "Bind address, when `openFirewall` is false and `containerBridges` is empty.";
+      description = "Bind address, when `openFirewall` and `exposeToContainers` are off.";
     };
 
     port = lib.mkOption {
@@ -119,20 +118,16 @@ in
       '';
     };
 
-    containerBridges = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = lib.optional odysseusCfg.enable odysseusCfg.bridgeName;
-      defaultText = lib.literalExpression "the ai.odysseus compose bridge, when that is enabled";
-      example = [ "docker0" ];
+    exposeToContainers = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
       description = ''
-        Bridges to open `port` on, for containerised clients. Non-empty binds
-        0.0.0.0.
-
-        Unlike Docker's published ports, this direction *does* traverse INPUT:
-        a container reaching the host through `host.docker.internal` arrives on
-        its own compose bridge, so without a hole there the connection is
-        dropped by the firewall. Same rule `ai.ollama.exposeToContainers`
-        follows, for the same reason.
+        Bind 0.0.0.0 and open `port` on every bridge registered in
+        `cyberfighter.features.docker.containerBridges`, for containerised
+        clients (e.g. ai.odysseus using this instance as its search backend).
+        Same rule `ai.ollama.exposeToContainers` follows, for the same reason:
+        container-to-host traffic traverses INPUT on the container's own
+        bridge.
       '';
     };
 
@@ -184,10 +179,12 @@ in
         };
       }
 
-      (lib.mkIf (cfg.containerBridges != [ ]) {
-        networking.firewall.interfaces = lib.genAttrs cfg.containerBridges (_: {
-          allowedTCPPorts = [ cfg.port ];
-        });
+      (lib.mkIf cfg.exposeToContainers {
+        networking.firewall.interfaces =
+          lib.genAttrs config.cyberfighter.features.docker.containerBridges
+            (_: {
+              allowedTCPPorts = [ cfg.port ];
+            });
       })
 
       # Must exist before searx-init.service reads it as an EnvironmentFile.

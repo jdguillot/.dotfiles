@@ -12,10 +12,9 @@
 
 let
   cfg = config.cyberfighter.features.ai.comfyui.openaiApi;
-  odysseusCfg = config.cyberfighter.features.ai.odysseus;
 
   # Bind wide only for containers; exposure scoped by per-bridge holes.
-  listenHost = if cfg.containerBridges != [ ] then "0.0.0.0" else cfg.listen;
+  listenHost = if cfg.exposeToContainers then "0.0.0.0" else cfg.listen;
 
   # Explicit interpreter rather than patchShebangs: the unit runs under
   # DynamicUser with no inherited PATH, so /usr/bin/env has nothing to find.
@@ -46,7 +45,7 @@ in
     listen = lib.mkOption {
       type = lib.types.str;
       default = "127.0.0.1";
-      description = "Bind address, when `containerBridges` is empty.";
+      description = "Bind address, when `exposeToContainers` is off.";
     };
 
     port = lib.mkOption {
@@ -115,14 +114,13 @@ in
       '';
     };
 
-    containerBridges = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = lib.optional odysseusCfg.enable odysseusCfg.bridgeName;
-      defaultText = lib.literalExpression "the ai.odysseus compose bridge, when that is enabled";
-      example = [ "docker0" ];
+    exposeToContainers = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
       description = ''
-        Bridges to open `port` on, for containerised clients. Non-empty binds
-        0.0.0.0. Not `allowedTCPPorts` -- that would put an unauthenticated
+        Bind 0.0.0.0 and open `port` on every bridge registered in
+        `cyberfighter.features.docker.containerBridges`, for containerised
+        clients. Not `allowedTCPPorts` -- that would put an unauthenticated
         image generator on the LAN.
       '';
     };
@@ -173,8 +171,10 @@ in
       };
     };
 
-    networking.firewall.interfaces = lib.genAttrs cfg.containerBridges (_: {
-      allowedTCPPorts = [ cfg.port ];
-    });
+    networking.firewall.interfaces = lib.mkIf cfg.exposeToContainers (
+      lib.genAttrs config.cyberfighter.features.docker.containerBridges (_: {
+        allowedTCPPorts = [ cfg.port ];
+      })
+    );
   };
 }

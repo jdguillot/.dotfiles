@@ -120,7 +120,8 @@ in
       type = lib.types.bool;
       default = false;
       description = ''
-        Bind 0.0.0.0 and open `port` on `containerBridge` only.
+        Bind 0.0.0.0 and open `port` on every bridge registered in
+        `cyberfighter.features.docker.containerBridges` -- and only there.
 
         Needed for any client that runs in a container: inside one, 127.0.0.1
         is the container's own loopback, not the host, so a loopback-bound
@@ -129,13 +130,6 @@ in
         This is not the same as `networking.firewall.allowedTCPPorts` -- that
         would expose an unauthenticated inference server to the whole LAN.
       '';
-    };
-
-    containerBridge = lib.mkOption {
-      type = lib.types.str;
-      default = "docker0";
-      example = "podman0";
-      description = "Interface the container firewall hole is opened on.";
     };
 
     keepAlive = lib.mkOption {
@@ -359,7 +353,11 @@ in
       })
 
       (lib.mkIf cfg.exposeToContainers {
-        networking.firewall.interfaces.${cfg.containerBridge}.allowedTCPPorts = [ cfg.port ];
+        networking.firewall.interfaces =
+          lib.genAttrs config.cyberfighter.features.docker.containerBridges
+            (_: {
+              allowedTCPPorts = [ cfg.port ];
+            });
       })
     ]
   );
