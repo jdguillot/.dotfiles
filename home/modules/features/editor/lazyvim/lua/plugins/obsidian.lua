@@ -1,3 +1,9 @@
+-- Notes stack: rides with the dev trait for now; peel off into a
+-- dedicated "notes" trait when one exists.
+if not vim.g.dotfiles_dev then
+  return {}
+end
+
 return {
 	"epwalsh/obsidian.nvim",
 	version = "*", -- recommended, use latest release instead of latest commit

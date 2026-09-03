@@ -13,6 +13,13 @@ in
   options.cyberfighter.features.editor.lazyvim = {
     enable = lib.mkEnableOption "LazyVim neovim configuration";
 
+    dev = lib.mkOption {
+      type = lib.types.bool;
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
+      description = "Full dev setup (LSPs, language extras, DAP, copilot, formatters, notes stack). When false, LazyVim is a pure editor: theme, navigation, treesitter basics.";
+    };
+
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = with pkgs; [ ];
@@ -21,73 +28,83 @@ in
 
     languageServers = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = with pkgs; [
-        lua-language-server
-        typescript-language-server
-        jdt-language-server
-        yaml-language-server
-        nixd
-        rust-analyzer
-      ];
-      description = "Language servers to install";
+      default = lib.optionals cfg.dev (
+        with pkgs;
+        [
+          lua-language-server
+          typescript-language-server
+          jdt-language-server
+          yaml-language-server
+          nixd
+          rust-analyzer
+        ]
+      );
+      description = "Language servers to install (empty unless dev)";
     };
 
     formatters = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = with pkgs; [
-        stylua
-        prettier
-        nixfmt
-        statix
-      ];
-      description = "Code formatters to install";
+      default = lib.optionals cfg.dev (
+        with pkgs;
+        [
+          stylua
+          prettier
+          nixfmt
+          statix
+        ]
+      );
+      description = "Code formatters to install (empty unless dev)";
     };
 
     treesitterParsers = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "c"
-        "lua"
-        "nix"
-        "yaml"
-        "javascript"
-        "java"
-        "typescript"
-        "tsx"
+        "bash"
+        "diff"
         "json"
+        "lua"
         "markdown"
         "markdown_inline"
-        "bash"
+        "nix"
+        "regex"
+        "toml"
         "vim"
         "vimdoc"
-        "regex"
+        "yaml"
+      ]
+      ++ lib.optionals cfg.dev [
+        "c"
+        "css"
         "dockerfile"
         "html"
-        "css"
-        "python"
-        "diff"
+        "java"
+        "javascript"
         "json5"
-        "toml"
-        "xml"
+        "python"
         "rust"
+        "tsx"
+        "typescript"
+        "xml"
       ];
-      description = "Treesitter parsers to install";
+      description = "Treesitter parsers to install (language parsers added with dev)";
     };
   };
 
   config = lib.mkIf cfg.enable {
     home.packages =
-      with pkgs;
-      [
-        markdownlint-cli2
-        # Wrap marksman with ICU library path for .NET runtime
-        (pkgs.writeShellScriptBin "marksman" ''
-          export LD_LIBRARY_PATH="${pkgs.icu}/lib:$LD_LIBRARY_PATH"
-          exec ${pkgs.marksman}/bin/marksman "$@"
-        '')
-        tailwindcss-language-server
-        vscode-langservers-extracted
-      ]
+      lib.optionals cfg.dev (
+        with pkgs;
+        [
+          markdownlint-cli2
+          # Wrap marksman with ICU library path for .NET runtime
+          (pkgs.writeShellScriptBin "marksman" ''
+            export LD_LIBRARY_PATH="${pkgs.icu}/lib:$LD_LIBRARY_PATH"
+            exec ${pkgs.marksman}/bin/marksman "$@"
+          '')
+          tailwindcss-language-server
+          vscode-langservers-extracted
+        ]
+      )
       ++ cfg.extraPackages;
 
     programs.neovim = {
@@ -220,6 +237,9 @@ in
           lazyPath = pkgs.linkFarm "lazy-plugins" (builtins.map mkEntryFromDrv plugins);
         in
         ''
+          -- Dev-gated plugin specs in lua/plugins/*.lua check this flag.
+          vim.g.dotfiles_dev = ${lib.boolToString cfg.dev}
+
           require("lazy").setup({
             defaults = {
               lazy = true,
@@ -237,10 +257,19 @@ in
               -- Nix-managed extras (must come after lazyvim.plugins but before your plugins)
               { import = "lazyvim.plugins.extras.util.dot" },
               { import = "lazyvim.plugins.extras.ui.edgy" },
+              { import = "lazyvim.plugins.extras.editor.harpoon2" },
+              { import = "lazyvim.plugins.extras.coding.mini-surround" },
+              { import = "lazyvim.plugins.extras.coding.yanky" },
+              { import = "lazyvim.plugins.extras.util.mini-hipatterns"},
+              { import = "lazyvim.plugins.extras.editor.snacks_explorer"},
+              { import = "lazyvim.plugins.extras.editor.mini-diff"},
+        ''
+        + lib.optionalString cfg.dev ''
+              -- Dev-trait extras: languages, DAP, AI, formatting. The
+              -- markdown/notes extras ride here until a notes trait exists.
               { import = "lazyvim.plugins.extras.ai.copilot" },
               -- { import = "lazyvim.plugins.extras.ai.copilot-native" }, -- waiting on blink to support accepting word by word
               { import = "lazyvim.plugins.extras.ai.sidekick" },
-              { import = "lazyvim.plugins.extras.editor.harpoon2" },
               { import = "lazyvim.plugins.extras.lang.markdown" },
               { import = "lazyvim.plugins.extras.lang.nix" },
               { import = "lazyvim.plugins.extras.lang.yaml" },
@@ -249,17 +278,14 @@ in
               { import = "lazyvim.plugins.extras.lang.python" },
               { import = "lazyvim.plugins.extras.lang.typescript" },
               { import = "lazyvim.plugins.extras.lang.rust" },
-              { import = "lazyvim.plugins.extras.coding.mini-surround" },
-              { import = "lazyvim.plugins.extras.coding.yanky" },
               { import = "lazyvim.plugins.extras.dap.core" },
               { import = "lazyvim.plugins.extras.lang.ember" },
               { import = "lazyvim.plugins.extras.formatting.prettier" },
-              { import = "lazyvim.plugins.extras.util.mini-hipatterns"},
               { import = "lazyvim.plugins.extras.lang.tailwind"},
-              { import = "lazyvim.plugins.extras.editor.snacks_explorer"},
-              { import = "lazyvim.plugins.extras.editor.mini-diff"},
               { import = "lazyvim.plugins.extras.util.gh"},
               { import = "lazyvim.plugins.extras.lang.git"},
+        ''
+        + ''
 
               -- The following configs are needed for fixing lazyvim on nix
               -- force enable telescope-fzf-native.nvim
@@ -310,15 +336,18 @@ in
     # whichever host's file is in the current buffer. Host attribute name,
     # hostname and hosts/ directory are all the same string, so only the
     # home-manager configuration name needs mapping.
-    home.file.".dotfiles/.nixd-hosts.json".text =
-      let
-        hostConfigs = import ../../../../../hosts/default.nix;
-      in
-      builtins.toJSON {
-        default = hostMeta.system.hostname;
-        hosts = lib.mapAttrs (name: meta: {
-          home = "${meta.system.username}@${name}";
-        }) hostConfigs;
-      };
+    # Only nixd.lua reads this, and nixd only runs with the dev trait.
+    home.file.".dotfiles/.nixd-hosts.json" = lib.mkIf cfg.dev {
+      text =
+        let
+          hostConfigs = import ../../../../../hosts/default.nix;
+        in
+        builtins.toJSON {
+          default = hostMeta.system.hostname;
+          hosts = lib.mapAttrs (name: meta: {
+            home = "${meta.system.username}@${name}";
+          }) hostConfigs;
+        };
+    };
   };
 }
