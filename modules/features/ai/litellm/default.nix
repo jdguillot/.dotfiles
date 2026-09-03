@@ -40,15 +40,6 @@ let
     ${pkgs.coreutils}/bin/install -m 0400 ${secretPath} ${runtimeEnv}
   '';
 
-  networkUnit = "docker-network-${traefikCfg.network}.service";
-
-  compose = "${pkgs.docker}/bin/docker compose -p litellm -f /etc/litellm/compose.yaml --env-file ${runtimeEnv}";
-
-  # Day-2 ops (logs, exec, pull) against the exact same project.
-  composeWrapper = pkgs.writeShellScriptBin "litellm-compose" ''
-    exec ${compose} "$@"
-  '';
-
   # Key management on the loopback port; root-only (the env file holding
   # the master key is 0400 root).
   keysWrapper = pkgs.writeShellScriptBin "litellm-keys" ''
@@ -188,10 +179,6 @@ in
       {
         assertions = [
           {
-            assertion = config.cyberfighter.features.docker.enable;
-            message = "cyberfighter.features.ai.litellm needs cyberfighter.features.docker.enable = true.";
-          }
-          {
             # The route, the network and the TLS edge all come from traefik.
             assertion = traefikCfg.enable;
             message = "cyberfighter.features.ai.litellm needs cyberfighter.features.traefik.enable = true.";
@@ -213,10 +200,7 @@ in
           will fail. Enable it, or point api_base elsewhere.
         '';
 
-        environment.systemPackages = [
-          composeWrapper
-          keysWrapper
-        ];
+        environment.systemPackages = [ keysWrapper ];
 
         # The image chowns PGDATA at init; `+C`: databases fragment under CoW.
         systemd.tmpfiles.rules = [
@@ -232,39 +216,19 @@ in
           "litellm/config.yaml".source = cfg.configFile;
         };
 
-        systemd.services.litellm = {
+        cyberfighter.features.compose.projects.litellm = {
           description = "LiteLLM team gateway (docker compose)";
-          after = [
-            "docker.service"
-            "docker.socket"
-            networkUnit
-          ];
-          requires = [
-            "docker.service"
-            networkUnit
-          ];
-          wantedBy = [ "multi-user.target" ];
-
+          files = [ "/etc/litellm/compose.yaml" ];
+          envFile = runtimeEnv;
+          networks = [ traefikCfg.network ];
+          inherit prepare;
+          runtimeDirectory = "litellm";
+          # First start pulls both images.
+          timeout = "15min";
           restartTriggers = [
             composeYaml
             cfg.configFile
           ];
-
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            # First start pulls both images.
-            TimeoutStartSec = "15min";
-
-            RuntimeDirectory = "litellm";
-            RuntimeDirectoryMode = "0700";
-            # ExecStop still needs the env file compose interpolates from.
-            RuntimeDirectoryPreserve = "yes";
-
-            ExecStartPre = "${prepare}";
-            ExecStart = "${compose} up -d --remove-orphans";
-            ExecStop = "${compose} down";
-          };
         };
 
         sops.secrets.${cfg.secrets.envSecret} = {

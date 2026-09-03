@@ -29,9 +29,6 @@ let
   # Complete TOML array; elements are validated by the assertion below.
   dnsResolversToml = "[${lib.concatMapStringsSep ", " (r: "\"${r}\"") cfg.dnsResolvers}]";
 
-  # Created by the docker module, so compose declares it external.
-  networkUnit = "docker-network-${cfg.network}.service";
-
   # One store path per file, listing exactly the placeholders it contains.
   composeYaml = pkgs.replaceVars ./compose.yaml {
     EMAIL = cfg.email;
@@ -70,12 +67,6 @@ let
     ${pkgs.coreutils}/bin/install -m 0400 ${cfg.basicAuthUsersFile} ${usersPath}
   '';
 
-  compose = "${pkgs.docker}/bin/docker compose -p traefik -f /etc/traefik/compose.yaml";
-
-  # Day-2 ops (logs, exec, pull) against the exact same project.
-  composeWrapper = pkgs.writeShellScriptBin "traefik-compose" ''
-    exec ${compose} "$@"
-  '';
 in
 {
   options.cyberfighter.features.traefik = {
@@ -184,10 +175,6 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = config.cyberfighter.features.docker.enable;
-        message = "cyberfighter.features.traefik needs cyberfighter.features.docker.enable = true.";
-      }
-      {
         assertion = cfg.dnsResolvers != [ ];
         message = "cyberfighter.features.traefik.dnsResolvers must not be empty: the ACME DNS-01 challenge cannot verify against no resolvers.";
       }
@@ -209,8 +196,6 @@ in
     # Appends, so a host may declare further networks of its own.
     cyberfighter.features.docker.networks = [ cfg.network ];
 
-    environment.systemPackages = [ composeWrapper ];
-
     # 0600 or traefik refuses acme.json; losing it re-issues every cert
     # against Let's Encrypt's rate limits.
     systemd.tmpfiles.rules = [
@@ -229,41 +214,18 @@ in
 
     # No firewall rules: docker's DNAT publishes 80/443 past the INPUT chain;
     # access control for a routed service is its middlewares.
-    systemd.services.traefik = {
+    cyberfighter.features.compose.projects.traefik = {
       description = "Traefik reverse proxy (docker compose)";
-      after = [
-        "docker.service"
-        "docker.socket"
-        networkUnit
-      ];
-      requires = [
-        "docker.service"
-        networkUnit
-      ];
-      wantedBy = [ "multi-user.target" ];
-
-      # ExecStart only names /etc paths, so without this an edit deploys but
-      # never takes effect; the restart also refreshes the bind mounts.
+      files = [ "/etc/traefik/compose.yaml" ];
+      networks = [ cfg.network ];
+      inherit prepare;
+      runtimeDirectory = "traefik";
+      # The restart also refreshes the bind mounts.
       restartTriggers = [
         composeYaml
         traefikToml
         dynamicTree
       ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        TimeoutStartSec = "10min";
-
-        RuntimeDirectory = "traefik";
-        RuntimeDirectoryMode = "0700";
-        # ExecStop still needs the mounted paths to exist at teardown.
-        RuntimeDirectoryPreserve = "yes";
-
-        ExecStartPre = "${prepare}";
-        ExecStart = "${compose} up -d --remove-orphans";
-        ExecStop = "${compose} down";
-      };
     };
   };
 }

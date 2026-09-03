@@ -257,6 +257,7 @@ Example:
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
 | `docker` | `enable`, `rootless`, `enableOnBoot`, `networks` | Docker engine plus optional named bridge networks | <https://mynixos.com/search?q=virtualisation.docker.enable> |
+| `compose` | `projects.<name>` (`files`, `networks`, `envFile`, `prepare`, `runtimeDirectory`, `timeout`, `extraUpFlags`, `restartTriggers`) | shared scaffolding for compose projects as boot-time systemd oneshots — owns the unit ordering/lifecycle invariants and a `<name>-compose` day-2 wrapper; traefik, litellm, comfyui, and odysseus declare their projects through it | <https://docs.docker.com/compose/> |
 | `security` | `firejail` | lightweight sandboxing toggle | <https://mynixos.com/search?q=programs.firejail.enable> |
 | `sops` | `enable`, `defaultSopsFile`, `sshKeyPath`, `deployUserAgeKey` | wraps `sops-nix`; can derive a user age key from the host SSH key | <https://github.com/Mic92/sops-nix> |
 | `proxmox` | `enable`, `ipAddress` | Proxmox VE integration via `proxmox-nixos` | <https://github.com/SaumonNet/proxmox-nixos> |

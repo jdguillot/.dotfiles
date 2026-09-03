@@ -146,26 +146,6 @@ let
 
   runtimeEnv = "/run/odysseus/env";
 
-  # -p, not the directory basename: the project directory is a store path, so
-  # without this every source bump renames the project and orphans its volumes.
-  composeArgs = lib.concatStringsSep " " [
-    "-p ${cfg.projectName}"
-    "-f ${patchedSrc}/docker-compose.yml"
-    "-f ${overrideFile}"
-    "--project-directory ${patchedSrc}"
-    "--env-file ${runtimeEnv}"
-  ];
-
-  compose = "${pkgs.docker}/bin/docker compose ${composeArgs}";
-
-  # Matches the unit names `cyberfighter.features.docker.networks` generates.
-  networkUnits = map (n: "docker-network-${n}.service") cfg.extraNetworks;
-
-  # Day-2 ops (logs, exec, pull) against the exact same project.
-  composeWrapper = pkgs.writeShellScriptBin "odysseus-compose" ''
-    exec ${compose} "$@"
-  '';
-
   secretPath = lib.optionalString (
     cfg.secrets.envSecret != null && (config.cyberfighter.features.sops.enable or false)
   ) config.sops.secrets.${cfg.secrets.envSecret}.path;
@@ -509,8 +489,6 @@ in
                 search requests to the host. Add it there.
               '';
 
-        environment.systemPackages = [ composeWrapper ];
-
         # Bind-mount targets, owned by the id the container drops to. `+C`
         # because the HF cache under data/ fragments badly under CoW.
         systemd.tmpfiles.rules = [
@@ -520,34 +498,24 @@ in
           "d ${cfg.stateDir}/logs 0750 ${toString cfg.puid} ${toString cfg.pgid} -"
         ];
 
-        systemd.services.odysseus = {
+        cyberfighter.features.compose.projects.odysseus = {
           description = "Odysseus AI workspace (docker compose)";
-          after = [
-            "docker.service"
-            "docker.socket"
-          ]
-          ++ networkUnits;
-          # Compose fails outright if an external network is missing.
-          requires = [ "docker.service" ] ++ networkUnits;
-          wantedBy = [ "multi-user.target" ];
-          path = [ pkgs.coreutils ];
-
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            # First start builds the image from source, which is long.
-            TimeoutStartSec = "60min";
-
-            RuntimeDirectory = "odysseus";
-            RuntimeDirectoryMode = "0700";
-            # Kept across restarts so ExecStop still has the env file compose
-            # needs for interpolation.
-            RuntimeDirectoryPreserve = "yes";
-
-            ExecStartPre = "${writeRuntimeEnv}";
-            ExecStart = "${compose} up -d --build --remove-orphans";
-            ExecStop = "${compose} down";
-          };
+          # Explicit -p: the project directory is a store path, so the
+          # directory basename would rename the project on every source bump
+          # and orphan its volumes.
+          inherit (cfg) projectName;
+          files = [
+            "${patchedSrc}/docker-compose.yml"
+            "${overrideFile}"
+          ];
+          projectDirectory = "${patchedSrc}";
+          envFile = runtimeEnv;
+          networks = cfg.extraNetworks;
+          prepare = writeRuntimeEnv;
+          runtimeDirectory = "odysseus";
+          # First start builds the image from source, which is long.
+          timeout = "60min";
+          extraUpFlags = [ "--build" ];
         };
       }
 

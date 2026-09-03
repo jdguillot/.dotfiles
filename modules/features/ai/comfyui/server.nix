@@ -27,15 +27,6 @@ let
     NETWORK = traefikCfg.network;
   };
 
-  networkUnit = "docker-network-${traefikCfg.network}.service";
-
-  compose = "${pkgs.docker}/bin/docker compose -p comfyui -f /etc/comfyui/compose.yaml";
-
-  # Day-2 ops (logs, exec, pull) against the exact same project.
-  composeWrapper = pkgs.writeShellScriptBin "comfyui-compose" ''
-    exec ${compose} "$@"
-  '';
-
   # Rendered into compose.yaml volume lines; keep yaml structure out.
   validDir = d: builtins.match "/[A-Za-z0-9._/-]*[A-Za-z0-9._-]" d != null;
 in
@@ -115,10 +106,6 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = config.cyberfighter.features.docker.enable;
-        message = "cyberfighter.features.ai.comfyui.server needs cyberfighter.features.docker.enable = true.";
-      }
-      {
         # compose.yaml requests the GPU via CDI unconditionally.
         assertion = config.cyberfighter.features.graphics.nvidia.containerToolkit;
         message = "cyberfighter.features.ai.comfyui.server needs cyberfighter.features.graphics.nvidia.containerToolkit = true (the compose file requests the GPU via CDI).";
@@ -143,8 +130,6 @@ in
       }
     ];
 
-    environment.systemPackages = [ composeWrapper ];
-
     # Bind-mount targets, user-owned so no sudo is needed. `h +C`: CoW
     # fragments multi-gigabyte checkpoints. `Z` re-chowns what the container
     # creates as root; mode `-` keeps .safetensors non-executable.
@@ -167,31 +152,13 @@ in
     environment.etc."comfyui/compose.yaml".source = composeYaml;
 
     # Boot-start only. Everything else (logs, pull, exec) is `comfyui-compose`.
-    systemd.services.comfyui = {
+    cyberfighter.features.compose.projects.comfyui = {
       description = "ComfyUI (docker compose)";
-      after = [
-        "docker.service"
-        "docker.socket"
-        networkUnit
-      ];
-      requires = [
-        "docker.service"
-        networkUnit
-      ];
-      wantedBy = [ "multi-user.target" ];
-
-      # ExecStart is a literal /etc path, so the unit never changes when
-      # compose.yaml does. Without this, edits deploy but never take effect.
+      files = [ "/etc/comfyui/compose.yaml" ];
+      networks = [ traefikCfg.network ];
+      # Pulling a multi-gigabyte CUDA image on a cold start takes a while.
+      timeout = "30min";
       restartTriggers = [ composeYaml ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        # Pulling a multi-gigabyte CUDA image on a cold start takes a while.
-        TimeoutStartSec = "30min";
-        ExecStart = "${compose} up -d --remove-orphans";
-        ExecStop = "${compose} down";
-      };
     };
   };
 }
