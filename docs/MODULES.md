@@ -9,6 +9,7 @@ A small but important detail: not everything is under `cyberfighter.features.*`.
 | Namespace | Purpose |
 | --- | --- |
 | `cyberfighter.profile.*` | system profile defaults |
+| `cyberfighter.traits.*` | per-host purpose flags (`dev`), defaulted from `hosts/default.nix` |
 | `cyberfighter.system.*` | host identity, locale, boot, and user metadata |
 | `cyberfighter.nix.*` | Nix daemon and CLI settings |
 | `cyberfighter.packages.*` | shared package bundles |
@@ -71,6 +72,17 @@ modules/
 | `none` | applies no bundled defaults |
 
 ## Core and top-level modules
+
+### `cyberfighter.traits`
+
+`modules/core/traits/default.nix` — one file imported by BOTH the system
+and Home Manager module trees. Each trait named on a host's `traits`
+list in `hosts/default.nix` becomes a `cyberfighter.traits.<name>` bool
+(via the `hostMeta` specialArg) that module defaults key off; either
+side can override its copy independently. Current traits: `dev` (drives
+`packages.includeDev`, home agent tooling, dev CLIs, full LazyVim).
+Adding a trait: add the name to `knownTraits` in the module, declare it
+on hosts, gate module defaults on `config.cyberfighter.traits.<name>`.
 
 ### `cyberfighter.profile`
 
@@ -161,6 +173,7 @@ Key options:
 Notes:
 
 - `includeBase` is the gate for the combined package list and the `trash-empty` systemd service.
+- `includeDev` defaults to `config.cyberfighter.traits.dev` — hosts declare the trait in `hosts/default.nix` instead of setting this per host.
 - Base packages include a troubleshooting toolkit: `htpasswd` (Apache), `openssl`, `curl`, `bind` (dig/host), `netcat`, `socat`, `tcpdump`, `strace`.
 - Development packages include tooling such as `deploy-rs`, `github-copilot-cli`, `claude-code`, `nixd`, language servers, and Node tooling.
 - Desktop packages include `kitty`, `wofi`, `bitwarden-desktop`, and `1Password` GUI packages.
@@ -744,7 +757,6 @@ sudo odysseus-compose exec odysseus sh
     };
 
     nix.trustedUsers = [ "root" "myuser" ];
-    packages.includeDev = true;
 
     features = {
       desktop = {

@@ -47,15 +47,15 @@ Use the README for the quick map, then jump into the focused docs:
 
 ## Current hosts
 
-| Host | Profile | Folder | Home config | `deploy-rs` | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `razer-nixos` | `desktop` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
-| `sys-galp-nix` | `desktop` | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
-| `work-nix-wsl` | `wsl` | `hosts/work-nix-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
-| `thkpd-pve1` | `minimal` | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
-| `simple-vm` | `minimal` | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
-| `vm-gameserver-nix` | `minimal` | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
-| `ryzn-server` | `desktop` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | NVIDIA desktop/server with gaming, Waydroid, Docker, Tailscale, SOPS, and the Hermes Agent gateway |
+| Host | Profile | Traits | Folder | Home config | `deploy-rs` | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| `razer-nixos` | `desktop` | `dev` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
+| `sys-galp-nix` | `desktop` | — | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
+| `work-nix-wsl` | `wsl` | `dev` | `hosts/work-nix-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
+| `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
+| `simple-vm` | `minimal` | — | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
+| `vm-gameserver-nix` | `minimal` | — | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
+| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | NVIDIA desktop/server with gaming, Waydroid, Docker, Tailscale, SOPS, and the Hermes Agent gateway |
 
 For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
 
@@ -67,6 +67,9 @@ System modules live in `modules/`.
 
 - `cyberfighter.profile.enable` - profile selector: `desktop`, `wsl`,
   `minimal`, or `none`
+- `cyberfighter.traits.*` - per-host purpose flags (currently `dev`),
+  defaulted from `traits` in `hosts/default.nix` on both the system and
+  home side
 - `cyberfighter.system.*` - hostname, username, locale, timezone,
   bootloader, and platform metadata
 - `cyberfighter.nix.*` - trusted users, substituters, GC, optimization,
@@ -101,7 +104,8 @@ Common host shape:
     };
 
     nix.trustedUsers = [ "root" "myuser" ];
-    packages.includeDev = true;
+    # Dev packages/tooling come from `traits = [ "dev" ]` on the host's
+    # entry in hosts/default.nix, not from per-host enables.
 
     features = {
       desktop.environment = "plasma6";
@@ -153,8 +157,6 @@ Common home shape:
       homeDirectory = "/home/myuser";
       stateVersion = "24.11";
     };
-
-    packages.includeDev = true;
 
     features = {
       ssh = {

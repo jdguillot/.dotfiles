@@ -118,7 +118,7 @@ Notes:
 
 | Submodule | Main options | Notes |
 | --- | --- | --- |
-| `editor.lazyvim` | `enable`, `extraPackages`, `languageServers`, `formatters`, `treesitterParsers` | packaged LazyVim stack plus tooling |
+| `editor.lazyvim` | `enable`, `dev`, `extraPackages`, `languageServers`, `formatters`, `treesitterParsers` | packaged LazyVim stack; `dev` (default: the host's dev trait) gates LSPs, language extras, DAP, copilot, formatters, and the notes stack — off it, LazyVim is a pure editor |
 | `editor.zed` | `enable` | Zed editor module |
 | `editor.micro` | `enable` | Micro editor module |
 
@@ -126,7 +126,11 @@ The base `editor` module also supports simple `vim`, `neovim`, and `vscode` togg
 
 ## Tool submodules
 
-All tool submodules live below `cyberfighter.features.tools.*`.
+All tool submodules live below `cyberfighter.features.tools.*`. The
+agent-tooling modules (`mcp`, `skills`, `lsp`, `agentBrowser`,
+`opencode`) and the dev half of the shared CLI list default to
+`cyberfighter.traits.dev`, so non-dev hosts get none of them without
+per-user lines.
 
 | Submodule | Main options | Notes |
 | --- | --- | --- |

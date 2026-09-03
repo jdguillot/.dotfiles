@@ -93,6 +93,12 @@ flake and `.nixd-hosts.json` rely on that.
    (`scripts/nixos-anywhere.sh`, `docs/DEPLOYMENT.md`).
 5. Update the host table in `README.md` and `docs/HOSTS.md`.
 
+What a host is *for* is declared as `traits = [ "dev" ]` on its
+`hosts/default.nix` entry; `modules/core/traits` exposes each as
+`cyberfighter.traits.<name>` to both system and home modules, whose
+dev-flavored defaults key off it. Don't add per-host/per-user enable
+lines for things a trait already covers.
+
 Host configs set `cyberfighter.*` options in one properly **nested**
 attrset — do not flatten into repeated dotted paths:
 
