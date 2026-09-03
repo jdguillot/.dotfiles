@@ -24,4 +24,12 @@ in
       description = "Whether this host carries the ${name} trait (declared in hosts/default.nix; override per system or home to break the host/user symmetry).";
     }
   );
+
+  # A typo'd trait in hosts/default.nix would otherwise be silently inert.
+  config.assertions = [
+    {
+      assertion = lib.all (t: lib.elem t knownTraits) (hostMeta.traits or [ ]);
+      message = "hosts/default.nix declares unknown traits: ${lib.concatStringsSep ", " (lib.filter (t: !(lib.elem t knownTraits)) (hostMeta.traits or [ ]))}. Known: ${lib.concatStringsSep ", " knownTraits}.";
+    }
+  ];
 }

@@ -177,6 +177,9 @@ come from Nix packages, not ad-hoc installs.
   chunks of work. Ask before pushing.
 - Commit messages follow conventional style seen in history:
   `feat(hosts): …`, `fix(secrets): …`, `docs(…): …`.
+- Never include agent-session links or IDs in commit messages (e.g.
+  `Claude-Session:` trailers pointing at a claude.ai session). A
+  `Co-Authored-By` line is fine; session references are not.
 
 ## Security and privacy (public repo)
 
