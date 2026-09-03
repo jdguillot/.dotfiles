@@ -1,45 +1,37 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
 let
   cfg = config.cyberfighter.features.terminal.ghostty;
+
+  defaultSettings = {
+    theme = "catppuccin-frappe.conf";
+    fullscreen = "true";
+    command = if cfg.launchTmux then "tmux new-session -A -s new-session" else null;
+    confirm-close-surface = "false";
+    background-opacity = 0.9;
+  };
 in
 {
   options.cyberfighter.features.terminal.ghostty = {
     enable = lib.mkEnableOption "Ghostty terminal emulator";
 
-    theme = lib.mkOption {
-      type = lib.types.str;
-      default = "catppuccin-frappe.conf";
-      description = "Ghostty color theme";
-    };
-
-    fullscreen = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Start in fullscreen mode";
-    };
-
-    enableZshIntegration = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Enable Zsh integration";
-    };
-
     launchTmux = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Launch tmux on startup";
+      description = "Launch tmux on startup (attach-or-create, so every window joins one session).";
     };
 
-    confirmClose = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Confirm before closing";
+    settings = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+      example = {
+        fullscreen = "false";
+      };
+      description = "Ghostty settings merged over the module defaults; the full upstream surface, no renames.";
     };
   };
 
@@ -50,14 +42,8 @@ in
 
     programs.ghostty = {
       enable = true;
-      enableZshIntegration = cfg.enableZshIntegration;
-      settings = {
-        theme = cfg.theme;
-        fullscreen = if cfg.fullscreen then "true" else "false";
-        command = if cfg.launchTmux then "tmux new-session -A -s new-session" else null;
-        confirm-close-surface = if cfg.confirmClose then "true" else "false";
-        background-opacity = 0.9;
-      };
+      enableZshIntegration = lib.mkDefault true;
+      settings = lib.recursiveUpdate defaultSettings cfg.settings;
     };
   };
 }

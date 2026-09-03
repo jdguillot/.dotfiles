@@ -81,7 +81,7 @@
         enable = true;
         alacritty.enable = true;
         ghostty.enable = true;
-        ghostty.fullscreen = false;
+        ghostty.settings.fullscreen = "false";
       };
 
       desktop = {

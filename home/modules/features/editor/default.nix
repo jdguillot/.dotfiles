@@ -22,52 +22,22 @@ in
       description = "Editor configuration";
     };
 
-    vim = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable Vim editor";
-      };
-
-      plugins = lib.mkOption {
-        type = lib.types.listOf lib.types.package;
-        default = with pkgs.vimPlugins; [ vim-airline ];
-        description = "Vim plugins to install";
-      };
-    };
-
-    neovim = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable Neovim editor";
-      };
-    };
-
-    vscode = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable VSCode configuration";
-      };
-
-      extensions = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "VSCode extensions to install";
-      };
-    };
+    # Selectors only; deeper configuration goes straight to the upstream
+    # programs.* options (everything here is mkDefault).
+    vim.enable = lib.mkEnableOption "Vim editor";
+    neovim.enable = lib.mkEnableOption "Neovim editor";
+    vscode.enable = lib.mkEnableOption "VSCode configuration";
   };
 
   config = lib.mkMerge [
     (lib.mkIf (cfg.enable && cfg.vim.enable) {
       programs.vim = {
         enable = true;
-        inherit (cfg.vim) plugins;
+        plugins = lib.mkDefault [ pkgs.vimPlugins.vim-airline ];
         settings = {
-          ignorecase = true;
+          ignorecase = lib.mkDefault true;
         };
-        extraConfig = ''
+        extraConfig = lib.mkDefault ''
           set mouse=a
           set cursorline
         '';
@@ -75,22 +45,21 @@ in
     })
 
     (lib.mkIf (cfg.enable && cfg.neovim.enable) {
+      # All mkDefault: the lazyvim module writes programs.neovim too, and
+      # its definitions must win when both are enabled.
       programs.neovim = {
         enable = true;
-        viAlias = true;
-        vimAlias = true;
+        viAlias = lib.mkDefault true;
+        vimAlias = lib.mkDefault true;
         # No legacy pynvim/ruby-host plugins in use; opt into the new
         # upstream defaults (false) and drop the provider wrappers.
-        withRuby = false;
-        withPython3 = false;
+        withRuby = lib.mkDefault false;
+        withPython3 = lib.mkDefault false;
       };
     })
 
     (lib.mkIf (cfg.enable && cfg.vscode.enable) {
-      programs.vscode = {
-        enable = true;
-        inherit (cfg.vscode) extensions;
-      };
+      programs.vscode.enable = true;
     })
   ];
 }

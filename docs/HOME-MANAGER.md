@@ -111,8 +111,8 @@ Notes:
 
 | Submodule | Main options | Notes |
 | --- | --- | --- |
-| `terminal.alacritty` | `enable`, `opacity`, `theme`, `font`, `shell`, `startupMode`, `launchTmux` | Alacritty config wrapper |
-| `terminal.ghostty` | `enable`, `theme`, `fullscreen`, `enableZshIntegration`, `launchTmux`, `confirmClose` | Ghostty config wrapper |
+| `terminal.alacritty` | `enable`, `launchTmux`, `settings` | shared Alacritty defaults (theme, font, tmux launch); `settings` merges over them with the full upstream surface, no renamed options |
+| `terminal.ghostty` | `enable`, `launchTmux`, `settings` | shared Ghostty defaults; `settings` merges over them with the full upstream surface, no renamed options |
 
 ## Editor submodules
 
