@@ -108,8 +108,9 @@ in
 
     includeDev = lib.mkOption {
       type = lib.types.bool;
-      default = false;
-      description = "Include development packages (nodejs, platformio, etc.)";
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
+      description = "Include development packages (nodejs, platformio, etc.). Defaults to the host's dev trait.";
     };
 
     includeDesktop = lib.mkOption {

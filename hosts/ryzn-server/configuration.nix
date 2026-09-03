@@ -33,7 +33,6 @@
     };
 
     packages = {
-      includeDev = true;
       extraPackages = [
         # `hf`, for gated GGUF repos `ollama pull` cannot reach (separate
         # auth): `hf download` then `ollama create -f Modelfile`.

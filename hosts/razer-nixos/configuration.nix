@@ -41,7 +41,6 @@
     };
 
     packages = {
-      includeDev = true;
       includeVirt = true;
       extraPackages = [
       ];

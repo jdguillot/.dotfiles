@@ -1,9 +1,13 @@
 # Centralized per-host metadata. The attribute name, `system.hostname` and the
 # directory under hosts/ holding the host's configuration.nix are all the same
 # string -- flake.nix and .nixd-hosts.json both rely on that.
+# `traits` (optional) names what the host is for; modules/core/traits
+# turns each entry into cyberfighter.traits.<name> on both the system
+# and home side.
 {
   razer-nixos = {
     profile = "desktop";
+    traits = [ "dev" ];
     system = {
       hostname = "razer-nixos";
       username = "cyberfighter";
@@ -15,6 +19,7 @@
 
   work-nix-wsl = {
     profile = "wsl";
+    traits = [ "dev" ];
     system = {
       hostname = "work-nix-wsl";
       username = "jdguillot";
@@ -60,6 +65,7 @@
 
   ryzn-server = {
     profile = "desktop";
+    traits = [ "dev" ];
     system = {
       hostname = "ryzn-server";
       username = "cyberfighter";

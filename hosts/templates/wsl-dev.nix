@@ -34,8 +34,9 @@
       ];
     };
 
+    # Dev packages come from `traits = [ "dev" ]` on the host's entry in
+    # hosts/default.nix, not from a per-host includeDev line.
     packages = {
-      includeDev = true;
       extraPackages = with pkgs; [
         # Add WSL-specific packages
       ];

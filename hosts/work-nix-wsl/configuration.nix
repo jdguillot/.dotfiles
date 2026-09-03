@@ -35,7 +35,6 @@
     };
 
     packages = {
-      includeDev = true;
       extraPackages = with pkgs; [
         moonlight-qt
         nil

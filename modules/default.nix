@@ -5,6 +5,7 @@
 {
   imports = [
     ./core/profiles/default.nix
+    ./core/traits/default.nix
     ./core/system/default.nix
     ./core/users/default.nix
     ./core/nix-settings/default.nix
