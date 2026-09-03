@@ -1,8 +1,6 @@
 {
   inputs,
   pkgs,
-  hostProfile,
-  hostMeta,
   ...
 }:
 {
@@ -14,11 +12,7 @@
 
   cyberfighter = {
 
-    profile.enable = hostProfile;
-
     system = {
-      inherit (hostMeta.system) hostname username stateVersion;
-
       bootloader = {
         type = "systemd-boot";
         efiCanTouchVariables = true;

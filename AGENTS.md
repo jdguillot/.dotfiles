@@ -104,7 +104,6 @@ attrset — do not flatten into repeated dotted paths:
 ```nix
 {
   cyberfighter = {
-    profile.enable = "desktop";
     system.extraGroups = [ "docker" ];
     features = {
       docker.enable = true;
@@ -113,6 +112,10 @@ attrset — do not flatten into repeated dotted paths:
   };
 }
 ```
+
+Profile and system identity (hostname, username, stateVersion) default
+from the host's entry in `hosts/default.nix` — hosts set only what
+deviates.
 
 ## Pattern: adding a new module
 

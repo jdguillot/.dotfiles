@@ -16,14 +16,9 @@
   ];
 
   cyberfighter = {
-    profile.enable = "desktop";
-
     system = {
-      hostname = "ryzn-server";
-      username = "cyberfighter";
       userDescription = "Jonathan Guillot";
       extraGroups = [ "docker" ];
-      stateVersion = "26.11";
 
       bootloader = {
         efiCanTouchVariables = true;

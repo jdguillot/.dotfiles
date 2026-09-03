@@ -1,10 +1,9 @@
 {
   config,
   lib,
-  hostProfile,
   ...
 }:
-lib.mkIf (hostProfile != "minimal") {
+lib.mkIf (config.cyberfighter.profile.enable != "minimal") {
   cyberfighter.features.sops.enable = lib.mkDefault true;
 
   home.sessionVariables.OP_ACCOUNT = "my.1password.com";

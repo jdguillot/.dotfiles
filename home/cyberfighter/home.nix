@@ -2,7 +2,6 @@
   config,
   pkgs,
   inputs,
-  hostProfile,
   hostMeta,
   ...
 }:
@@ -19,13 +18,6 @@
   # - .markdownlint.yaml file
 
   cyberfighter = {
-    profile.enable = hostProfile;
-
-    system = {
-      inherit (hostMeta.system) username stateVersion;
-      homeDirectory = "/home/${hostMeta.system.username}";
-    };
-
     packages = {
       extraPackages = with pkgs; [
         inputs.deptui.packages.${stdenv.hostPlatform.system}.default

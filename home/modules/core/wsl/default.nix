@@ -5,13 +5,12 @@
   config,
   lib,
   pkgs,
-  hostProfile,
   ...
 }:
 
 let
   cfg = config.cyberfighter.wsl;
-  isWsl = hostProfile == "wsl";
+  isWsl = config.cyberfighter.profile.enable == "wsl";
   # Bridge the Windows 1Password named pipe to ~/.1password/agent.sock via
   # npiperelay.exe (Windows) + socat (Linux). Starts once per shell session.
   npiperelayBridge = ''

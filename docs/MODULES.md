@@ -62,7 +62,7 @@ modules/
 
 ## Profile defaults
 
-`cyberfighter.profile.enable` accepts `desktop`, `wsl`, `minimal`, or `none`.
+`cyberfighter.profile.enable` accepts `desktop`, `wsl`, `minimal`, or `none`; it defaults from the host's `profile` in `hosts/default.nix` (via the `hostMeta` specialArg), as do `system.hostname`, `system.username`, and `system.stateVersion` — hosts only set what deviates.
 
 | Profile | Defaults applied |
 | --- | --- |
@@ -748,14 +748,7 @@ sudo odysseus-compose exec odysseus sh
 ```nix
 {
   cyberfighter = {
-    profile.enable = "desktop";
-
-    system = {
-      hostname = "my-desktop";
-      username = "myuser";
-      stateVersion = "25.05";
-    };
-
+    # profile and identity default from the host's hosts/default.nix entry
     nix.trustedUsers = [ "root" "myuser" ];
 
     features = {
@@ -782,13 +775,7 @@ sudo odysseus-compose exec odysseus sh
 ```nix
 {
   cyberfighter = {
-    profile.enable = "minimal";
-
-    system = {
-      hostname = "my-server";
-      username = "myuser";
-      stateVersion = "25.11";
-    };
+    # profile and identity default from the host's hosts/default.nix entry
 
     features = {
       ssh = {

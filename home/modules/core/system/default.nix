@@ -1,13 +1,16 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, hostMeta, ... }:
 
 let
   cfg = config.cyberfighter.system;
 in
 {
+  # username/stateVersion default from the host's entry in
+  # hosts/default.nix (same pattern as modules/core/traits).
   options.cyberfighter.system = {
     username = lib.mkOption {
       type = lib.types.str;
-      default = "cyberfighter";
+      default = hostMeta.system.username;
+      defaultText = lib.literalExpression "hostMeta.system.username";
       description = "Username for the home environment";
     };
 
@@ -19,7 +22,8 @@ in
 
     stateVersion = lib.mkOption {
       type = lib.types.str;
-      default = "24.11";
+      default = hostMeta.system.stateVersion;
+      defaultText = lib.literalExpression "hostMeta.system.stateVersion";
       description = "Home Manager state version";
     };
   };

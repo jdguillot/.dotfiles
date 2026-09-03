@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  hostMeta,
   ...
 }:
 
@@ -10,10 +11,14 @@ let
   inherit (config.cyberfighter) profile;
 in
 {
+  # hostname/username/stateVersion default from the host's entry in
+  # hosts/default.nix (same pattern as modules/core/traits); hosts only
+  # set what deviates from their metadata.
   options.cyberfighter.system = {
     username = lib.mkOption {
       type = lib.types.str;
-      default = "cyberfighter";
+      default = hostMeta.system.username;
+      defaultText = lib.literalExpression "hostMeta.system.username";
       description = "Primary username for the system";
     };
 
@@ -25,6 +30,8 @@ in
 
     hostname = lib.mkOption {
       type = lib.types.str;
+      default = hostMeta.system.hostname;
+      defaultText = lib.literalExpression "hostMeta.system.hostname";
       description = "System hostname";
     };
 
@@ -42,7 +49,8 @@ in
 
     stateVersion = lib.mkOption {
       type = lib.types.str;
-      default = "25.05";
+      default = hostMeta.system.stateVersion;
+      defaultText = lib.literalExpression "hostMeta.system.stateVersion";
       description = "NixOS state version";
     };
 

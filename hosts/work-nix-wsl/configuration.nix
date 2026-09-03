@@ -3,8 +3,6 @@
   lib,
   config,
   pkgs,
-  hostProfile,
-  hostMeta,
   ...
 }:
 {
@@ -16,11 +14,7 @@
   ];
 
   cyberfighter = {
-    profile.enable = hostProfile;
-
     system = {
-      inherit (hostMeta.system) hostname username stateVersion;
-
       extraGroups = [ "docker" ];
     };
 
@@ -81,7 +75,7 @@
 
   wsl = {
     enable = true;
-    defaultUser = hostMeta.system.username;
+    defaultUser = config.cyberfighter.system.username;
     docker-desktop.enable = true;
     useWindowsDriver = true;
     # wslConf.automount.root = "/";

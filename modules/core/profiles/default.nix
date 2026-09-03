@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  hostMeta,
   ...
 }:
 
@@ -16,8 +17,9 @@ in
         "minimal"
         "none"
       ];
-      default = "none";
-      description = "Predefined system profile that bundles common settings";
+      default = hostMeta.profile or "none";
+      defaultText = lib.literalExpression "hostMeta.profile";
+      description = "Predefined system profile that bundles common settings; defaults from the host's entry in hosts/default.nix";
     };
   };
 

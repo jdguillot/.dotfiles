@@ -102,7 +102,6 @@
           hostMeta
           ;
         hostSystem = system;
-        hostProfile = hostMeta.profile;
       };
 
       # Helper function to create NixOS system configuration

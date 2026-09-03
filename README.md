@@ -95,14 +95,8 @@ Common host shape:
 ```nix
 {
   cyberfighter = {
-    profile.enable = "desktop";
-
-    system = {
-      hostname = "my-host";
-      username = "myuser";
-      stateVersion = "25.05";
-    };
-
+    # profile and system identity (hostname, username, stateVersion)
+    # default from the host's entry in hosts/default.nix
     nix.trustedUsers = [ "root" "myuser" ];
     # Dev packages/tooling come from `traits = [ "dev" ]` on the host's
     # entry in hosts/default.nix, not from per-host enables.
@@ -126,8 +120,8 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 
 ### Core home namespaces
 
-- `cyberfighter.profile.enable` - home profile selector, usually set from
-  `hostProfile`
+- `cyberfighter.profile.enable` - home profile selector, defaulting from
+  the host's `profile` in `hosts/default.nix`
 - `cyberfighter.system.*` - username, home directory, and state version
 - `cyberfighter.common.enable` - baseline shell and CLI setup
 - `cyberfighter.packages.*` - shared user package bundles
@@ -143,20 +137,14 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`
 - Tool submodules: `tmux`, `zellij`, `yazi`, `btop`, `lazygit`,
   `jujutsu`, `carapace`, `direnv`, `rofi`, `sesh`, `fastfetch`,
-  `opencode`, `mc`, `copilotMcp`
+  `opencode`, `mc`, `mcp`, `skills`, `lsp`
 
 Common home shape:
 
 ```nix
 {
   cyberfighter = {
-    profile.enable = hostProfile;
-
-    system = {
-      username = "myuser";
-      homeDirectory = "/home/myuser";
-      stateVersion = "24.11";
-    };
+    # profile and system identity default from hosts/default.nix
 
     features = {
       ssh = {

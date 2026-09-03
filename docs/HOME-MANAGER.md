@@ -31,7 +31,7 @@ home/modules/
 
 - `cyberfighter.profile.enable` with `desktop`, `minimal`, or `wsl`
 
-In this repo, `home/<user>/home.nix` usually sets `cyberfighter.profile.enable = hostProfile;` so the Home Manager profile follows the host metadata exported from `flake.nix`.
+Defaults from the host's `profile` in `hosts/default.nix` (via the `hostMeta` specialArg, same pattern as traits); set it only to break the host/home symmetry.
 
 ### `cyberfighter.system`
 
@@ -203,14 +203,7 @@ See [`SOPS.md`](SOPS.md) for the full secrets workflow.
 ```nix
 {
   cyberfighter = {
-    profile.enable = hostProfile;
-
-    system = {
-      username = "myuser";
-      homeDirectory = "/home/myuser";
-      stateVersion = "24.11";
-    };
-
+    # profile and system identity default from hosts/default.nix
     packages.includeDev = true;
 
     features = {

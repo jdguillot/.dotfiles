@@ -2,8 +2,6 @@
 {
   inputs,
   pkgs,
-  hostProfile,
-  hostMeta,
   ...
 }:
 {
@@ -15,11 +13,7 @@
   ];
 
   cyberfighter = {
-    profile.enable = hostProfile;
-
     system = {
-      # Identity comes from the central metadata in hosts/default.nix.
-      inherit (hostMeta.system) hostname username stateVersion;
       userDescription = "Jonathan Guillot";
 
       bootloader = {
