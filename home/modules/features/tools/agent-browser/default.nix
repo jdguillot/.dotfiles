@@ -25,7 +25,8 @@ in
 {
   options.cyberfighter.features.tools.agentBrowser = {
     enable = lib.mkEnableOption "agent-browser CLI for AI-agent browser automation" // {
-      default = true;
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
     };
 
     browserPackage = lib.mkOption {

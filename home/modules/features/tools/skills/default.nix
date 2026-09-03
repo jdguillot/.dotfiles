@@ -45,12 +45,25 @@ let
       # lives in grilling, so both must ship together.
       grill-me = "${mattpocockSkills}/productivity/grill-me";
       grilling = "${mattpocockSkills}/productivity/grilling";
+    })
+    // (lib.optionalAttrs cfg.enableDiagnosingBugs {
+      diagnosing-bugs = "${mattpocockSkills}/engineering/diagnosing-bugs";
+    })
+    // (lib.optionalAttrs cfg.enableTdd {
+      tdd = "${mattpocockSkills}/engineering/tdd";
+    })
+    // (lib.optionalAttrs cfg.enabletoSpec {
+      to-spec = "${mattpocockSkills}/engineering/to-spec";
+    })
+    // (lib.optionalAttrs cfg.enableImproveCodebaseArchitecture {
+      improve-codebase-architecture = "${mattpocockSkills}/engineering/improve-codebase-architecture";
     });
 in
 {
   options.cyberfighter.features.tools.skills = {
     enable = lib.mkEnableOption "shared agent skills for AI coding assistants" // {
-      default = true;
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
     };
 
     enableWebappTesting = lib.mkOption {
@@ -87,6 +100,26 @@ in
       type = lib.types.bool;
       default = true;
       description = "Include the grill-me/grilling skills from mattpocock/skills (relentless interview to stress-test a plan or design; invoked via /grill-me)";
+    };
+    enableDiagnosingBugs = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the diagnosing-bugs skill from mattpocock/skills (diagnose and fix a bug in a codebase; invoked via /diagnose-bug)";
+    };
+    enableTdd = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the tdd skill from mattpocock/skills (test-driven development; invoked via /tdd)";
+    };
+    enabletoSpec = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the to-spec skill from mattpocock/skills (convert a codebase to spec; invoked via /to-spec)";
+    };
+    enableImproveCodebaseArchitecture = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Include the improve-codebase-architecture skill from mattpocock/skills (improve codebase architecture; invoked via /improve-codebase-architecture)";
     };
   };
 

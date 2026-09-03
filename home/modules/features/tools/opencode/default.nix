@@ -48,8 +48,9 @@ in
   options.cyberfighter.features.tools.opencode = {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Enable OpenCode, a code editor for developers.";
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
+      description = "Enable OpenCode, a code editor for developers. Defaults to the host's dev trait.";
     };
 
     theme = lib.mkOption {

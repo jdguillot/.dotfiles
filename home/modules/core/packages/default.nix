@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  hostProfile,
   ...
 }:
 
@@ -13,8 +12,9 @@ in
   options.cyberfighter.packages = {
     includeDev = lib.mkOption {
       type = lib.types.bool;
-      default = false;
-      description = "Include development packages";
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
+      description = "Include development packages. Defaults to the host's dev trait.";
     };
 
     extraPackages = lib.mkOption {

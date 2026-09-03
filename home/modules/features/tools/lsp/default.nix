@@ -74,7 +74,8 @@ in
 {
   options.cyberfighter.features.tools.lsp = {
     enable = lib.mkEnableOption "shared LSP diagnostics for AI coding assistants" // {
-      default = true;
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
     };
   };
 

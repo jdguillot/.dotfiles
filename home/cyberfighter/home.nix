@@ -27,7 +27,6 @@
     };
 
     packages = {
-      includeDev = true;
       extraPackages = with pkgs; [
         inputs.deptui.packages.${stdenv.hostPlatform.system}.default
       ];

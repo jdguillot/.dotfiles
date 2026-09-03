@@ -21,7 +21,8 @@ in
 {
   options.cyberfighter.features.tools.mcp = {
     enable = lib.mkEnableOption "shared MCP servers for AI coding assistants" // {
-      default = true;
+      default = config.cyberfighter.traits.dev;
+      defaultText = lib.literalExpression "config.cyberfighter.traits.dev";
     };
 
     enableFilesystem = lib.mkOption {

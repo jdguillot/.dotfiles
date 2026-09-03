@@ -21,7 +21,6 @@
     };
 
     packages = {
-      includeDev = true;
       extraPackages = with pkgs; [
         avahi
         geckodriver

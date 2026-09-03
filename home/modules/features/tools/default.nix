@@ -31,76 +31,86 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages =
-      with pkgs;
-      lib.optionals cfg.enableDefault [
-        # File management & navigation
-        eza
-        fd
-        zip
-        unzip
-        mc
-        duf
-        tree
-        dua
-        duf
-        bat
+      lib.optionals cfg.enableDefault (
+        (with pkgs; [
+          # File management & navigation
+          eza
+          fd
+          zip
+          unzip
+          mc
+          duf
+          tree
+          dua
+          bat
 
-        # Shell utilities
-        tldr
-        fzf
-        television
-        zoxide
-        cht-sh
-        pay-respects
-        lazyssh
+          # Shell utilities
+          tldr
+          fzf
+          television
+          zoxide
+          cht-sh
+          pay-respects
 
-        # Version control & development
-        gh
-        git-crypt
+          # Security & SSH
+          ssh-agents
+          gnupg
+          pinentry-curses
 
-        # Security & SSH
-        ssh-agents
-        gnupg
-        pinentry-curses
+          # Network tools
+          dig
 
-        # Network tools
-        dig
-        mdns-scanner
+          # Data & text processing
+          jq
+          yq
+          ripgrep
 
-        # Container & system tools
-        distrobox
-        lazydocker
-        lazysql
-        rainfrog
+          # Fun & entertainment
+          cmatrix
+          cowsay
+          lolcat
+          fortune
+          cbonsai
+          fireplace
+          asciiquarium
+          pipes
+        ])
+        # Dev-trait CLIs; the zsh nix-your-shell hook already guards on
+        # `command -v`, so dropping the binary is safe on non-dev homes.
+        ++ lib.optionals config.cyberfighter.traits.dev (
+          with pkgs;
+          [
+            # Version control & development
+            gh
+            git-crypt
+            lazyssh
 
-        # Data & text processing
-        jq
-        yq
-        fq
-        fx
-        ripgrep
-        csvlens
+            # Container & system tools
+            distrobox
+            lazydocker
+            lazysql
+            rainfrog
 
-        # Nix tools
-        nix-your-shell
+            # Network tools
+            mdns-scanner
 
-        # Fun & entertainment
-        cmatrix
-        cowsay
-        lolcat
-        fortune
-        cbonsai
-        fireplace
-        asciiquarium
-        pipes
+            # Data & text processing
+            fq
+            fx
+            csvlens
 
-        # Scripting & languages
-        powershell
-        tree-sitter
+            # Nix tools
+            nix-your-shell
 
-        # API & HTTP tools
-        posting
-      ]
+            # Scripting & languages
+            powershell
+            tree-sitter
+
+            # API & HTTP tools
+            posting
+          ]
+        )
+      )
       ++ cfg.extraPackages;
   };
 }
