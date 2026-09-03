@@ -37,7 +37,12 @@ jobs:
           name: jdguillot
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Perform Flake check
-        run: nix flake check
+        # --no-build: evaluate every check but build nothing. The deploy-rs
+        # checks otherwise pull each host's full toplevel into this one
+        # runner (including ollama-cuda compiled from source, since this job
+        # has no CUDA substituter) and exhaust its 14GB disk. The per-host
+        # build matrix below does the real builds with disk freed.
+        run: nix flake check --no-build
       - name: List hosts
         id: list-hosts
         # The build matrix comes straight from the flake, so a host added to
