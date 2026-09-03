@@ -145,6 +145,7 @@ All tool submodules live below `cyberfighter.features.tools.*`.
 | `mc` | `enable` | Midnight Commander wrapper; note the option name is `mc`, not `midnight-commander` |
 | `copilotMcp` | `enable`, `enableFilesystem`, `enableNix`, `enableGitHub`, `enableContext7`, `enableFetch` | writes `~/.copilot/mcp-config.json` for Copilot MCP servers |
 | `agentBrowser` | `enable`, `browserPackage` | agent-browser CLI (ref-based browser automation for AI agents); wrapped to drive nixpkgs chromium since the upstream Chrome download cannot run on NixOS |
+| `mcp` | `enable`, `enableFilesystem`, `enableNix`, `enableGitHub`, `enableContext7`, `enableFetch`, `enablePlaywright`, `githubTokenSecret`, `context7ApiKey` | single source of truth for MCP servers, merged into Claude Code, opencode, and Copilot configs; only broadly useful servers default on — domain-specific ones are scoped per-project (see `docs/RECOMMENDATIONS.md`) |
 | `skills` | `enable`, `enableWebappTesting`, `enableRustSkill`, `enableTauriSkill`, `enableGoSkills`, `enableNixSkill`, `enableGrillSkill` | shared agent skills for Claude Code and opencode; third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
 
 ## SSH and SOPS integration

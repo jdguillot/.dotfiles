@@ -65,6 +65,9 @@ let
     copilot-language-server
     deploy-rs
     npins
+    # Bare `mcp-nixos` must resolve for per-project MCP configs
+    # (.mcp.json / opencode.json) that scope it to nix-heavy repos.
+    mcp-nixos
     claude-code
     opencode
     nixd

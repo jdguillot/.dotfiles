@@ -30,16 +30,21 @@ in
       description = "Expose local directories through the filesystem MCP server.";
     };
 
+    # Domain-specific servers default off: schemas cost context in every
+    # session for clients that load them upfront (opencode, Copilot).
+    # Scope them to the repos that need them via project config instead
+    # (.mcp.json for Claude Code, opencode.json for opencode) -- the
+    # mcp-nixos binary ships in devPackages so bare commands resolve.
     enableNix = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Expose NixOS and Home Manager search tools through mcp-nixos.";
+      default = false;
+      description = "Expose NixOS and Home Manager search tools through mcp-nixos globally; prefer per-project config in nix-heavy repos.";
     };
 
     enableGitHub = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Expose GitHub's official MCP server (repos, PRs, issues, code search).";
+      default = false;
+      description = "Expose GitHub's official MCP server globally; the gh CLI covers the same ground from Bash at zero standing context cost.";
     };
 
     githubTokenSecret = lib.mkOption {
@@ -63,14 +68,14 @@ in
 
     enableFetch = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Expose the fetch MCP server for retrieving and converting web content.";
+      default = false;
+      description = "Expose the fetch MCP server globally; curl covers most retrieval from Bash.";
     };
 
     enablePlaywright = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Expose browser automation through the Playwright MCP server.";
+      default = false;
+      description = "Expose browser automation through the Playwright MCP server; superseded by the agent-browser CLI (tools.agentBrowser).";
     };
   };
 
