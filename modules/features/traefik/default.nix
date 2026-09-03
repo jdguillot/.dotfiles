@@ -45,6 +45,65 @@ let
     RATE_LIMIT_BURST = toString cfg.rateLimit.burst;
   };
 
+  # Everything below renders `routes` declarations into traefik's two route
+  # sources: docker labels (compose services) and file-provider fragments
+  # (native host services). The chain spelling -- `@file` from a label, bare
+  # from a fragment -- lives only here.
+  ruleOf = r: lib.concatMapStringsSep " || " (h: "Host(`${h}`)") ([ r.host ] ++ r.extraHosts);
+  chainOf = r: if r.auth == "basic" then "chain-basic-auth" else "chain-no-auth";
+
+  dockerRoutes = lib.filterAttrs (_: r: r.backend == "docker") cfg.routes;
+  hostRoutes = lib.filterAttrs (_: r: r.backend == "host") cfg.routes;
+
+  labelsOf = name: r: {
+    "traefik.enable" = "true";
+    # Explicit even with one network: a container on several networks makes
+    # traefik pick one arbitrarily otherwise.
+    "traefik.docker.network" = if r.network != null then r.network else cfg.network;
+    "traefik.http.routers.${name}.rule" = ruleOf r;
+    "traefik.http.routers.${name}.entrypoints" = "websecure";
+    "traefik.http.routers.${name}.tls" = "true";
+    "traefik.http.routers.${name}.tls.certresolver" = "lets-encrypt";
+    "traefik.http.routers.${name}.middlewares" = "${chainOf r}@file";
+    "traefik.http.routers.${name}.service" = "${name}-svc";
+    # Container port, not the host one: traefik connects on the network.
+    "traefik.http.services.${name}-svc.loadbalancer.server.port" = toString r.port;
+  };
+
+  # A compose override file adding only labels; compose merges it over the
+  # project's own file, and its env-file still interpolates ''${VAR} hosts.
+  labelFileOf =
+    name: r:
+    pkgs.writeText "traefik-route-${name}.yaml" (
+      lib.concatStringsSep "\n" (
+        [
+          "services:"
+          "  ${r.service}:"
+          "    labels:"
+        ]
+        ++ lib.mapAttrsToList (k: v: "      ${k}: ${builtins.toJSON v}") (labelsOf name r)
+      )
+      + "\n"
+    );
+
+  hostRouteFragment =
+    name: r:
+    pkgs.writeText "traefik-route-${name}.toml" ''
+      # Rendered from cyberfighter.features.traefik.routes.${name}.
+      [http.routers.${name}]
+        rule = "${ruleOf r}"
+        entrypoints = ["websecure"]
+        service = "srv-${name}"
+        middlewares = ["${chainOf r}"]
+        [http.routers.${name}.tls]
+          certResolver = "lets-encrypt"
+
+      [http.services.srv-${name}.loadBalancer]
+        passHostHeader = true
+        [[http.services.srv-${name}.loadBalancer.servers]]
+          url = "http://host.docker.internal:${toString r.port}"
+    '';
+
   # The dynamic mount must be ONE symlink to a directory of REAL files:
   # docker resolves only the top-level mount source, so per-file /etc
   # symlinks (via /etc/static) dangle inside the container -- the file
@@ -57,7 +116,64 @@ let
       lib.mapAttrsToList (name: path: "cp ${path} $out/${lib.escapeShellArg name}
 ") cfg.dynamicFiles
     )}
+    ${lib.concatStrings (
+      lib.mapAttrsToList (name: r: "cp ${hostRouteFragment name r} $out/route-${name}.toml
+") hostRoutes
+    )}
   '';
+
+  routeModule =
+    { name, ... }:
+    {
+      options = {
+        host = lib.mkOption {
+          type = lib.types.str;
+          example = "app.example.com";
+          description = "Hostname routed to this backend. DNS-01 issues its cert, but the DNS record pointing at this machine is still yours to create.";
+        };
+
+        extraHosts = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Additional Host() alternatives on the same router; each gets its own DNS-01 cert. Docker backends whose compose project has an envFile may use \${VAR} references here.";
+        };
+
+        port = lib.mkOption {
+          type = lib.types.port;
+          description = "Backend port: the container port for docker backends (traefik connects over the shared network, not the host publish), the host port for host backends.";
+        };
+
+        auth = lib.mkOption {
+          type = lib.types.enum [
+            "basic"
+            "none"
+          ];
+          default = "basic";
+          description = "basic = the shared htpasswd chain; none = rate-limit and headers only, for backends carrying their own login (basic auth would clobber their Authorization header).";
+        };
+
+        backend = lib.mkOption {
+          type = lib.types.enum [
+            "docker"
+            "host"
+          ];
+          default = "docker";
+          description = "docker renders labels for a compose service (consume via routeLabels or routeLabelFiles); host renders a file-provider fragment reaching the host over host.docker.internal.";
+        };
+
+        service = lib.mkOption {
+          type = lib.types.str;
+          default = name;
+          description = "Compose service name the labels attach to (docker backends only).";
+        };
+
+        network = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "traefik.docker.network override for containers on several networks; defaults to the module's network.";
+        };
+      };
+    };
 
   # Stages credentials at the paths the native files hardcode.
   prepare = pkgs.writeShellScript "traefik-prepare" ''
@@ -137,6 +253,39 @@ in
       '';
     };
 
+    routes = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule routeModule);
+      default = { };
+      example = lib.literalExpression ''
+        {
+          app = { host = "app.example.com"; port = 8080; };
+          search = { host = "search.example.com"; port = 8888; auth = "none"; backend = "host"; };
+        }
+      '';
+      description = ''
+        Routed services, declared once; the module renders each into docker
+        labels (`routeLabels`/`routeLabelFiles`) or a file-provider fragment
+        in ${dynamicDir}, spelling the entrypoint, TLS, cert-resolver, and
+        middleware-chain details itself.
+      '';
+    };
+
+    routeLabels = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+      readOnly = true;
+      default = lib.mapAttrs labelsOf dockerRoutes;
+      defaultText = lib.literalMD "derived from `routes`";
+      description = "Rendered label sets for docker-backend routes, for modules exposing a labels option.";
+    };
+
+    routeLabelFiles = lib.mkOption {
+      type = lib.types.attrsOf lib.types.path;
+      readOnly = true;
+      default = lib.mapAttrs labelFileOf dockerRoutes;
+      defaultText = lib.literalMD "derived from `routes`";
+      description = "Rendered compose override files (labels only) for docker-backend routes; append to a compose project's `files`.";
+    };
+
     dynamicFiles = lib.mkOption {
       type = lib.types.attrsOf lib.types.path;
       default = { };
@@ -144,10 +293,10 @@ in
       description = ''
         Host-specific file-provider fragments, deployed verbatim (no
         placeholder rendering) to ${dynamicDir}/<name> next to the shared
-        middlewares.toml. This is how backends that cannot carry docker
-        labels -- native systemd services, other hosts -- get routed. The
-        provider only loads `.toml`/`.yml`/`.yaml`; any other suffix deploys
-        but stays inert.
+        middlewares.toml. An escape hatch for routing `routes` cannot
+        express; a plain host-service route belongs in `routes` with
+        `backend = "host"` instead. The provider only loads
+        `.toml`/`.yml`/`.yaml`; any other suffix deploys but stays inert.
       '';
     };
 
@@ -190,6 +339,18 @@ in
       {
         assertion = builtins.all (n: builtins.match "[^/]+" n != null && n != "middlewares.toml") (builtins.attrNames cfg.dynamicFiles);
         message = "cyberfighter.features.traefik.dynamicFiles names must be bare file names, and not middlewares.toml (which the module ships)";
+      }
+      {
+        # Route names become router/service keys and file names.
+        assertion = builtins.all (n: builtins.match "[A-Za-z0-9-]+" n != null) (builtins.attrNames cfg.routes);
+        message = "cyberfighter.features.traefik.routes names must be letters, digits and '-'";
+      }
+      {
+        # Hosts are interpolated into label values and TOML strings.
+        assertion = lib.all (
+          r: lib.all (h: builtins.match "[A-Za-z0-9.\${}_-]+" h != null) ([ r.host ] ++ r.extraHosts)
+        ) (lib.attrValues cfg.routes);
+        message = "cyberfighter.features.traefik.routes hosts must be DNS names (or compose \${VAR} references)";
       }
     ];
 

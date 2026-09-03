@@ -35,19 +35,8 @@ services:
     volumes:
       - /etc/litellm/config.yaml:/app/config.yaml:ro
 
-    # chain-no-auth: the virtual keys are the auth; basic auth would clobber
-    # the Authorization header.
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=@NETWORK@
-      - traefik.http.routers.litellm.rule=Host(`@PUBLIC_HOST@`)
-      - traefik.http.routers.litellm.entrypoints=websecure
-      - traefik.http.routers.litellm.tls=true
-      - traefik.http.routers.litellm.tls.certresolver=lets-encrypt
-      - traefik.http.routers.litellm.middlewares=chain-no-auth@file
-      - traefik.http.routers.litellm.service=litellm-svc
-      - traefik.http.services.litellm-svc.loadbalancer.server.port=4000
-
+    # Routing labels come from the traefik module's rendered override file
+    # (cyberfighter.features.traefik.routes.litellm), merged by compose.
     logging:
       driver: json-file
       options:

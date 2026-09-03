@@ -274,25 +274,8 @@
         # Traefik reaches the container directly over this network.
         extraNetworks = [ "web" ];
 
-        labels = {
-          "traefik.enable" = "true";
-          # Two networks -- without this traefik could pick the wrong one.
-          "traefik.docker.network" = "web";
-
-          # The LAN URL (split-horizon) and the tunnel-forwarded team URL;
-          # each name gets its own DNS-01 cert.
-          "traefik.http.routers.odysseus.rule" =
-            "Host(`odysseus.cyberfighter.space`) || Host(`\${ODYSSEUS_TEAM_HOST}`)";
-          "traefik.http.routers.odysseus.entrypoints" = "websecure";
-          "traefik.http.routers.odysseus.tls" = "true";
-          "traefik.http.routers.odysseus.tls.certresolver" = "lets-encrypt";
-          # Odysseus has its own login; no second password prompt.
-          "traefik.http.routers.odysseus.middlewares" = "chain-no-auth@file";
-
-          "traefik.http.routers.odysseus.service" = "odysseus-svc";
-          # Container port, not the host one: traefik connects on the network.
-          "traefik.http.services.odysseus-svc.loadbalancer.server.port" = "7000";
-        };
+        # Rendered from the traefik.routes.odysseus declaration below.
+        labels = config.cyberfighter.features.traefik.routeLabels.odysseus;
 
         # ollamaBaseUrl derives from ai.ollama (exposeToContainers is on).
 
@@ -311,9 +294,32 @@
         email = "cyberfighter@gmail.com";
         tokenFile = config.sops.secrets."cloudflare-dns-token".path;
         basicAuthUsersFile = config.sops.secrets."traefik-basic-auth".path;
-        # SearXNG runs natively (no labels), so its route is a file-provider
-        # fragment.
-        dynamicFiles."searxng.toml" = ./traefik/searxng.toml;
+
+        routes = {
+          # SearXNG runs natively (no labels), so it routes as a file-provider
+          # fragment reaching the host. chain-no-auth: the instance is already
+          # LAN-open, and basic auth would break adding it as a browser search
+          # engine.
+          searxng = {
+            host = "search.cyberfighter.space";
+            port = config.cyberfighter.features.searxng.port;
+            auth = "none";
+            backend = "host";
+          };
+
+          # The LAN URL (split-horizon) and the tunnel-forwarded team URL;
+          # each name gets its own DNS-01 cert. chain-no-auth: Odysseus has
+          # its own login, no second password prompt. Rendered into the
+          # container's labels via ai.odysseus.labels above.
+          odysseus = {
+            host = "odysseus.cyberfighter.space";
+            extraHosts = [ "\${ODYSSEUS_TEAM_HOST}" ];
+            port = 7000;
+            auth = "none";
+            # On two networks -- pin the one traefik connects over.
+            network = "web";
+          };
+        };
 
         # No raw ollama route: it has no auth. Team access goes through the
         # litellm container's labels; tailscale serve is the personal path.

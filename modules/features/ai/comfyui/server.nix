@@ -23,7 +23,6 @@ let
     CLI_ARGS = cfg.cliArgs;
     DATA_DIR = cfg.dataDir;
     USER_DATA_DIR = cfg.userDataDir;
-    PUBLIC_HOST = cfg.publicHost;
     NETWORK = traefikCfg.network;
   };
 
@@ -151,10 +150,20 @@ in
 
     environment.etc."comfyui/compose.yaml".source = composeYaml;
 
+    # chain-basic-auth: traefik's htpasswd gate is the only login in front
+    # of arbitrary workflow execution.
+    cyberfighter.features.traefik.routes.comfyui = {
+      host = cfg.publicHost;
+      port = 8188;
+    };
+
     # Boot-start only. Everything else (logs, pull, exec) is `comfyui-compose`.
     cyberfighter.features.compose.projects.comfyui = {
       description = "ComfyUI (docker compose)";
-      files = [ "/etc/comfyui/compose.yaml" ];
+      files = [
+        "/etc/comfyui/compose.yaml"
+        "${traefikCfg.routeLabelFiles.comfyui}"
+      ];
       networks = [ traefikCfg.network ];
       # Pulling a multi-gigabyte CUDA image on a cold start takes a while.
       timeout = "30min";

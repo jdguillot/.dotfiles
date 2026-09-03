@@ -21,7 +21,6 @@ let
   usesHostOllama = ollamaCfg.enable && ollamaCfg.exposeToContainers;
 
   composeYaml = pkgs.replaceVars ./compose.yaml {
-    PUBLIC_HOST = cfg.publicHost;
     NETWORK = traefikCfg.network;
     BRIDGE = cfg.bridgeName;
     PORT = toString cfg.port;
@@ -216,9 +215,20 @@ in
           "litellm/config.yaml".source = cfg.configFile;
         };
 
+        # chain-no-auth: the virtual keys are the auth; basic auth would
+        # clobber the Authorization header.
+        cyberfighter.features.traefik.routes.litellm = {
+          host = cfg.publicHost;
+          port = 4000;
+          auth = "none";
+        };
+
         cyberfighter.features.compose.projects.litellm = {
           description = "LiteLLM team gateway (docker compose)";
-          files = [ "/etc/litellm/compose.yaml" ];
+          files = [
+            "/etc/litellm/compose.yaml"
+            "${traefikCfg.routeLabelFiles.litellm}"
+          ];
           envFile = runtimeEnv;
           networks = [ traefikCfg.network ];
           inherit prepare;

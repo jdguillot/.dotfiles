@@ -25,19 +25,8 @@ services:
     environment:
       CLI_ARGS: "@CLI_ARGS@"
 
-    # chain-basic-auth: traefik's htpasswd gate is the only login in front
-    # of arbitrary workflow execution.
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=@NETWORK@
-      - traefik.http.routers.comfyui.rule=Host(`@PUBLIC_HOST@`)
-      - traefik.http.routers.comfyui.entrypoints=websecure
-      - traefik.http.routers.comfyui.tls=true
-      - traefik.http.routers.comfyui.tls.certresolver=lets-encrypt
-      - traefik.http.routers.comfyui.middlewares=chain-basic-auth@file
-      - traefik.http.routers.comfyui.service=comfyui-svc
-      - traefik.http.services.comfyui-svc.loadbalancer.server.port=8188
-
+    # Routing labels come from the traefik module's rendered override file
+    # (cyberfighter.features.traefik.routes.comfyui), merged by compose.
     networks:
       - default
       - "@NETWORK@"
