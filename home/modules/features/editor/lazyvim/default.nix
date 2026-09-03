@@ -334,8 +334,8 @@ in
 
     # Every flake host, so nixd.lua can point the NixOS option provider at
     # whichever host's file is in the current buffer. Host attribute name,
-    # hostname and hosts/ directory are all the same string, so only the
-    # home-manager configuration name needs mapping.
+    # hostname and hosts/ directory are all the same string; the home
+    # target name comes from the metadata's homeConfigName.
     # Only nixd.lua reads this, and nixd only runs with the dev trait.
     home.file.".dotfiles/.nixd-hosts.json" = lib.mkIf cfg.dev {
       text =
@@ -344,9 +344,9 @@ in
         in
         builtins.toJSON {
           default = hostMeta.system.hostname;
-          hosts = lib.mapAttrs (name: meta: {
-            home = "${meta.system.username}@${name}";
-          }) hostConfigs;
+          hosts = lib.mapAttrs (_: meta: {
+            home = meta.homeConfigName;
+          }) (lib.filterAttrs (_: meta: meta.home != null) hostConfigs);
         };
     };
   };

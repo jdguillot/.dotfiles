@@ -79,19 +79,18 @@ flake and `.nixd-hosts.json` rely on that.
 
 1. Add a metadata entry to `hosts/default.nix` (profile, hostname,
    username, stateVersion — never change stateVersion on an existing
-   host).
+   host — plus `home`: the folder under `home/` or `null`, and
+   `deploy`: `null`, `"system"`, or `"system+home"`). `flake.nix` and
+   the CI build matrix derive everything from this entry; there is no
+   separate flake or workflow registration.
 2. Create `hosts/<hostname>/configuration.nix`, starting from a
    template in `hosts/templates/`. Add `hardware-configuration.nix` and
    (for disko/nixos-anywhere installs) `disk-config.nix` as needed.
    Host-local service config files (compose files, native configs) live
    in this folder too.
-3. Register the host in `flake.nix`: `nixosConfigurations`, a
-   `homeConfigurations` entry (home folders: `home/cyberfighter/`,
-   `home/jdguillot/`, or `home/minimal/`), and a `deploy.nodes` entry if
-   it will be deployed remotely.
-4. For a brand-new machine, provision with `nixos-anywhere`
+3. For a brand-new machine, provision with `nixos-anywhere`
    (`scripts/nixos-anywhere.sh`, `docs/DEPLOYMENT.md`).
-5. Update the host table in `README.md` and `docs/HOSTS.md`.
+4. Update the host table in `README.md` and `docs/HOSTS.md`.
 
 What a host is *for* is declared as `traits = [ "dev" ]` on its
 `hosts/default.nix` entry; `modules/core/traits` exposes each as

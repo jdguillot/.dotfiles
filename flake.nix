@@ -197,33 +197,17 @@
 
     in
     {
-      nixosConfigurations = {
-        razer-nixos = mkNixosSystem hostConfigs.razer-nixos;
-        work-nix-wsl = mkNixosSystem hostConfigs.work-nix-wsl;
-        sys-galp-nix = mkNixosSystem hostConfigs.sys-galp-nix;
-        thkpd-pve1 = mkNixosSystem hostConfigs.thkpd-pve1;
-        simple-vm = mkNixosSystem hostConfigs.simple-vm;
-        vm-gameserver-nix = mkNixosSystem hostConfigs.vm-gameserver-nix;
-        ryzn-server = mkNixosSystem hostConfigs.ryzn-server;
-      };
+      # All three outputs are derived from hosts/default.nix; the `home` and
+      # `deploy` metadata fields decide which hosts appear where.
+      nixosConfigurations = builtins.mapAttrs (_: mkNixosSystem) hostConfigs;
 
-      homeConfigurations = {
-        "cyberfighter@razer-nixos" = mkHomeConfig "cyberfighter" hostConfigs.razer-nixos;
-        "jdguillot@work-nix-wsl" = mkHomeConfig "jdguillot" hostConfigs.work-nix-wsl;
-        "cyberfighter@sys-galp-nix" = mkHomeConfig "cyberfighter" hostConfigs.sys-galp-nix;
-        "cyberfighter@thkpd-pve1" = mkHomeConfig "cyberfighter" hostConfigs.thkpd-pve1;
-        "cyberfighter@simple-vm" = mkHomeConfig "cyberfighter" hostConfigs.simple-vm;
-        "cyberfighter@vm-gameserver-nix" = mkHomeConfig "minimal" hostConfigs.vm-gameserver-nix;
-        "cyberfighter@ryzn-server" = mkHomeConfig "cyberfighter" hostConfigs.ryzn-server;
-      };
+      homeConfigurations = nixpkgs.lib.mapAttrs' (
+        _: meta: nixpkgs.lib.nameValuePair meta.homeConfigName (mkHomeConfig meta.home meta)
+      ) (nixpkgs.lib.filterAttrs (_: meta: meta.home != null) hostConfigs);
 
-      deploy.nodes = {
-        thkpd-pve1 = mkDeployNode "thkpd-pve1" hostConfigs.thkpd-pve1 true;
-        simple-vm = mkDeployNode "simple-vm" hostConfigs.simple-vm false;
-        vm-gameserver-nix = mkDeployNode "vm-gameserver-nix" hostConfigs.vm-gameserver-nix true;
-        sys-galp-nix = mkDeployNode "sys-galp-nix" hostConfigs.sys-galp-nix true;
-        ryzn-server = mkDeployNode "ryzn-server" hostConfigs.ryzn-server true;
-      };
+      deploy.nodes = builtins.mapAttrs (
+        name: meta: mkDeployNode name meta (meta.deploy == "system+home")
+      ) (nixpkgs.lib.filterAttrs (_: meta: meta.deploy != null) hostConfigs);
 
       # This is highly advised, and will prevent many possible mistakes
       checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;

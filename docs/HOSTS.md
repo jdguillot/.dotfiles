@@ -34,30 +34,14 @@ sudo nixos-rebuild switch --flake .#work-nix-wsl
 home-manager switch --flake .#jdguillot@work-nix-wsl
 ```
 
-## Home configurations
+## Home configurations and deploy nodes
 
-The flake currently exports these Home Manager targets:
-
-- `cyberfighter@razer-nixos`
-- `jdguillot@work-nix-wsl`
-- `cyberfighter@ryzn-nix-wsl`
-- `cyberfighter@sys-galp-nix`
-- `cyberfighter@thkpd-pve1`
-- `cyberfighter@simple-vm`
-- `cyberfighter@vm-gameserver-nix`
-
-`nixos-portable` does not currently export a Home Manager target from `flake.nix`.
-
-## Deploy nodes
-
-`deploy-rs` is configured for four hosts:
-
-| Deploy node | Profiles |
-| --- | --- |
-| `sys-galp-nix` | `system`, `home` |
-| `thkpd-pve1` | `system`, `home` |
-| `vm-gameserver-nix` | `system`, `home` |
-| `simple-vm` | `system` only |
+`flake.nix` derives `nixosConfigurations`, `homeConfigurations`, and
+`deploy.nodes` from `hosts/default.nix` — the metadata's `home` field
+names the folder under `home/` (or `null` for no home config; the
+target is always `<username>@<hostname>`), and `deploy` is `null`,
+`"system"`, or `"system+home"`. List the current outputs with
+`nix flake show` rather than trusting any table here.
 
 Examples:
 
@@ -82,15 +66,10 @@ Templates live in `hosts/templates/`.
 
 1. Pick the closest template in `hosts/templates/`.
 2. Create `hosts/<name>/configuration.nix` and adjust only the host-specific values first.
-3. Register the host in `hosts/default.nix` so `flake.nix` can reuse the shared host metadata.
-4. Add the host to `flake.nix` under `nixosConfigurations`.
-5. Add a Home Manager output if the machine should get one.
-6. Add a `deploy.nodes` entry if the machine will be updated remotely.
-7. If the host needs secrets or shared SSH aliases, run the `nixos-anywhere` helper with `--secrets`, `--ssh-host`, and one or more `--user` flags.
-8. **Add the host to the build matrix in `.github/workflows/cachix.yml`.** The matrix is a hand-maintained copy of `nixosConfigurations`, and nothing checks that the two agree. A host missing from it is silently never built by CI; a host left in it after being removed fails the job with a confusing eval error. Update the table at the top of this file at the same time.
-9. If the host needs a binary cache that CI does not already have (a CUDA-enabled package, say), add it to the `extra-conf` of the build job too. `modules/core/nix-settings` configures the nix daemon *on the built hosts* -- it has no effect on the runner performing the build.
-
-Steps 8 and 9 are the ones that rot quietly: everything still works locally, and only CI is wrong.
+3. Register the host in `hosts/default.nix` — including the `home` and `deploy` fields. That single entry drives `nixosConfigurations`, `homeConfigurations`, `deploy.nodes`, and the CI build matrix; there is nothing to add to `flake.nix` or the workflow.
+4. If the host needs secrets or shared SSH aliases, run the `nixos-anywhere` helper with `--secrets`, `--ssh-host`, and one or more `--user` flags.
+5. If the host needs a binary cache that CI does not already have (a CUDA-enabled package, say), add it to the `extra-conf` of the build job in `.github/workflows/cachix.yml`. `modules/core/nix-settings` configures the nix daemon *on the built hosts* -- it has no effect on the runner performing the build.
+6. Update the host table at the top of this file and in the README.
 
 ## Provisioning example
 

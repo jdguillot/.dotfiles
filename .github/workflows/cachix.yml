@@ -12,6 +12,8 @@ permissions:
 jobs:
   flake-check:
     runs-on: ubuntu-latest
+    outputs:
+      hosts: ${{ steps.list-hosts.outputs.hosts }}
     steps:
       - uses: actions/checkout@v7
       - name: Check Nix flake inputs
@@ -36,6 +38,12 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Perform Flake check
         run: nix flake check
+      - name: List hosts
+        id: list-hosts
+        # The build matrix comes straight from the flake, so a host added to
+        # hosts/default.nix is built by CI with no workflow edit.
+        run: |
+          echo "hosts=$(nix eval .#nixosConfigurations --apply builtins.attrNames --json)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: flake-check
@@ -43,19 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Must match flake.nix `nixosConfigurations` exactly. A name that no
-        # longer exists fails the whole job with a confusing eval error, and a
-        # host missing from this list is simply never built by CI.
-        host:
-          [
-            razer-nixos,
-            work-nix-wsl,
-            sys-galp-nix,
-            thkpd-pve1,
-            simple-vm,
-            vm-gameserver-nix,
-            ryzn-server,
-          ]
+        host: ${{ fromJSON(needs.flake-check.outputs.hosts) }}
       fail-fast: false # Continue other builds if one fails
     steps:
       - uses: actions/checkout@v7
