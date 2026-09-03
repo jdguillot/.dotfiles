@@ -36,7 +36,7 @@ in
 
     # Ensure systemd units are linked and reloaded before sops-nix tries to
     # restart sops-nix.service, otherwise the unit won't be found.
-    home.activation.reloadSystemdBeforeSops = lib.mkIf pkgs.stdenv.isLinux (
+    home.activation.reloadSystemdBeforeSops = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
       lib.hm.dag.entryBetween [ "sops-nix" ] [ "reloadSystemd" ] ''
         # no-op: forces sops-nix to run after linkGeneration and reloadSystemd
       ''
