@@ -110,7 +110,7 @@
         };
         # github-pat is only decryptable by the razer-nixos user key;
         # elsewhere the failed decrypt would take the whole user unit down.
-        mcp.enableGitHub = hostMeta.system.hostname == "razer-nixos";
+        mcp.use.github = hostMeta.system.hostname == "razer-nixos";
 
         # Same recipient constraint: the ollama/ryzn URLs and credentials
         # come from secrets/secrets.yaml.

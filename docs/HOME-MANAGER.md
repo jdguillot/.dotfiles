@@ -147,11 +147,10 @@ per-user lines.
 | `fastfetch` | `enable` | system info output |
 | `opencode` | `enable`, `theme` | opencode config |
 | `mc` | `enable` | Midnight Commander wrapper; note the option name is `mc`, not `midnight-commander` |
-| `copilotMcp` | `enable`, `enableFilesystem`, `enableNix`, `enableGitHub`, `enableContext7`, `enableFetch` | writes `~/.copilot/mcp-config.json` for Copilot MCP servers |
 | `lsp` | `enable` | one server table feeding LSP diagnostics to both Claude Code (generated plugin) and opencode (settings.lsp, auto-download disabled); commands resolve from PATH — config-language servers from devPackages, toolchain servers from project dev shells |
 | `agentBrowser` | `enable`, `browserPackage` | agent-browser CLI (ref-based browser automation for AI agents); wrapped to drive nixpkgs chromium since the upstream Chrome download cannot run on NixOS |
-| `mcp` | `enable`, `enableFilesystem`, `enableNix`, `enableGitHub`, `enableContext7`, `enableFetch`, `enablePlaywright`, `githubTokenSecret`, `context7ApiKey` | single source of truth for MCP servers, merged into Claude Code, opencode, and Copilot configs; only broadly useful servers default on — domain-specific ones are scoped per-project (see `docs/RECOMMENDATIONS.md`) |
-| `skills` | `enable`, `enableWebappTesting`, `enableRustSkill`, `enableTauriSkill`, `enableGoSkills`, `enableNixSkill`, `enableGrillSkill` | shared agent skills for Claude Code and opencode; third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
+| `mcp` | `enable`, `use`, `githubTokenSecret`, `context7ApiKey` | single source of truth for MCP servers, merged into Claude Code, opencode, and Copilot configs; the catalog lives in the module and `use.<name>` toggles entries per home (unknown names fail an assertion); only broadly useful servers default on — domain-specific ones are scoped per-project (see `docs/RECOMMENDATIONS.md`) |
+| `skills` | `enable`, `extraSkills` | shared agent skills for Claude Code and opencode; the vendored catalog is a data table in the module (one line per skill, `requires` pairs companions), third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
 
 ## SSH and SOPS integration
 
