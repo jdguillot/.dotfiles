@@ -87,6 +87,8 @@ in
         # Switch twice, or pass --option extra-substituters /
         # extra-trusted-public-keys by hand once (trusted-users only).
         substituters = [
+          # Self-hosted attic on thkpd-pve1; LAN-only name.
+          "https://attic.cyberfighter.space/main"
           "https://devenv.cachix.org"
           "https://jdguillot.cachix.org"
           "https://nix-community.cachix.org"
@@ -98,6 +100,7 @@ in
           "https://cache.nixos-cuda.org"
         ];
         trusted-public-keys = [
+          "main:eceWm12imPY7WLkZ7KiHutCAQ8iU3gPfITUoHzcsib0="
           "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
           "jdguillot.cachix.org-1:2blGoWA4jRj/xDiez3FqPE5S/RBNtD8uJUCz7weHNcs="
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
