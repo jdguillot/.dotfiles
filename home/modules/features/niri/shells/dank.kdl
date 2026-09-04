@@ -31,3 +31,22 @@ binds {
     XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
     XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
 }
+
+// DMS regenerates these from its Settings GUI; they are derived files, so
+// the repo tracks their source (settings.json, mirrored by dank-capture)
+// rather than the fragments themselves. Relative to ~/.config/niri because
+// niri resolves includes against the path a file was included by, and DMS
+// greps for exactly this form to decide whether a fragment is wired up.
+// This layer is included after the style, so DMS owns the knobs its GUI
+// exposes -- gaps, border and focus-ring width, corner radius -- while the
+// style keeps what DMS never writes (shadows, blur, springs, the gradient
+// focus ring, column presets).
+include "dms/layout.kdl" optional=true
+include "dms/colors.kdl" optional=true
+include "dms/input.kdl" optional=true
+include "dms/cursor.kdl" optional=true
+include "dms/windowrules.kdl" optional=true
+include "dms/alttab.kdl" optional=true
+include "dms/wpblur.kdl" optional=true
+include "dms/binds.kdl" optional=true
+include "dms/outputs.kdl" optional=true

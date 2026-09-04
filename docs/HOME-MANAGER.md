@@ -93,7 +93,7 @@ Notes:
 | `sops` | `enable` | enables the Home Manager `sops-nix` wrapper |
 | `tools` | `enable`, `enableDefault`, `extraPackages` | shared CLI/tool bundle |
 | `noctalia` | `enable` | Noctalia shell/home styling module |
-| `dank` | `enable`, `apps.{monitor,search,calendar}`, `extraQtPackages` | DankMaterialShell plus dgop/dsearch/dcal; `extraQtPackages` puts QML modules that DMS plugins need on the shell's import path — see [DESKTOP-STYLES.md](DESKTOP-STYLES.md) |
+| `dank` | `enable`, `apps.{monitor,search,calendar}`, `extraQtPackages`, `capture.{enable,repo,target,watch}` | DankMaterialShell plus dgop/dsearch/dcal; `extraQtPackages` puts QML modules that DMS plugins need on the shell's import path; `capture` mirrors DMS's settings.json back into the checkout when the GUI saves — see [DESKTOP-STYLES.md](DESKTOP-STYLES.md) |
 | `niri` | `enable`, `style`, `shells`, `shell` | niri config deploy; `style` sets the visual variant, `shells` installs the desktop shell layers (`noctalia`, `dank`), `shell` seeds which one a fresh home starts on. Switch at login via the `Niri (…)` greeter sessions or in place with `niri-shell <name>` — see [DESKTOP-STYLES.md](DESKTOP-STYLES.md) |
 
 ## Shell submodules

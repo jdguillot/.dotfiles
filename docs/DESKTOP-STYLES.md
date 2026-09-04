@@ -40,8 +40,13 @@ by side so you can move between them. `base.kdl` holds the shell-agnostic
 core (window motions, window rules); each shell's `spawn-at-startup` plus
 its panel/media/lock binds live in
 `home/modules/features/niri/shells/<shell>.kdl`, deployed to
-`~/.config/niri/shells/` and `include`d after `base.kdl` through the mutable
+`~/.config/niri/shells/` and `include`d through the mutable
 `~/.config/niri/shell-current.kdl` symlink — the same trick the styles use.
+
+The merge order in `config.kdl` is **base → style → shell**. The shell goes
+last so a shell that manages niri settings itself (dank does; see below) wins
+over the style's geometry. niri merges `binds` and `layout` later-wins, so
+each layer only has to state what it changes.
 
 | Shell      | What it is                                                         |
 | ---------- | ------------------------------------------------------------------ |
@@ -130,6 +135,54 @@ and `tuigreet` (text, no compositor).
 
 Either way the session list is the same one described above, so the greeter
 is where you pick noctalia or DMS for the session you are about to start.
+
+## Editing niri settings from the DMS GUI, without losing them
+
+DMS's Settings GUI can drive niri itself. It does that by regenerating KDL
+fragments into `~/.config/niri/dms/` (`layout`, `colors`, `input`, `cursor`,
+`windowrules`, `alttab`, `wpblur`, …) and expecting your niri config to
+include them. `shells/dank.kdl` does, as `include "dms/layout.kdl"` — the
+relative form matters twice over: niri resolves includes against the path a
+file was *included by* (never the symlink's store target, so `~/.config/niri`
+stays the base), and DMS greps for exactly that string to decide whether a
+fragment is wired up.
+
+Because the dank layer comes after the style, DMS owns the knobs its GUI
+exposes — gaps, border and focus-ring width, corner radius — and the style
+keeps everything DMS never writes: shadows, blur, springs, the gradient focus
+ring, column presets. Under `noctalia` the fragments are not included at all,
+so the style is unchallenged. (Verified by feeding niri a deliberately broken
+`dms/layout.kdl`: `dank` fails validation, `noctalia` doesn't.)
+
+### What actually gets tracked
+
+Those fragments are **derived files, not source**. DMS regenerates them from
+`~/.config/DankMaterialShell/settings.json` — that single file is what the
+GUI edits, and `colors.kdl` on top of it comes from matugen and changes with
+every wallpaper. Tracking the fragments would mean tracking build output.
+
+So the repo tracks `settings.json`, via
+`home/modules/features/dank/settings.json`:
+
+- `dank-capture` copies the live file into the checkout, `jq -S`-sorted so a
+  save doesn't reshuffle the diff. It writes the working tree and never
+  commits — changes surface in `git status` for you to review.
+- With `features.dank.capture.watch` (default on) a systemd user path unit
+  runs it whenever DMS saves, five seconds after the last write so a slider
+  drag produces one snapshot rather than a dozen.
+- On a fresh home, activation seeds `settings.json` from the tracked copy if
+  the file doesn't exist yet. It is never a store symlink — that would make
+  the file read-only and the Settings GUI could no longer save, the same trap
+  documented for noctalia below.
+
+`session.json` is deliberately **not** captured: it holds your weather
+location, launcher history and other local state that does not belong in a
+public repo. Review the diff before committing anyway — settings.json is
+whatever DMS decides to put there.
+
+One wrinkle to know about: the bar-xray toggle is the exception to
+"fragments are derived" — DMS reads it back out of `dms/layout.kdl` rather
+than storing it in settings.json, so that one setting is not captured.
 
 ## noctalia presets
 

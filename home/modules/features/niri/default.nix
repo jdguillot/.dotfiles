@@ -170,11 +170,13 @@ in
     xdg.configFile = {
       "niri/config.kdl".text = ''
         ${builtins.readFile ./base.kdl}
-        // Active desktop shell (spawn + panel/media binds), switched at
-        // runtime via `niri-shell <name>` or the greeter session entries.
-        include "~/.config/niri/shell-current.kdl" optional=true
         // Active visual style, switched at runtime via `niri-style <name>`.
         include "~/.config/niri/style-current.kdl" optional=true
+        // Active desktop shell (spawn + panel/media binds), switched at
+        // runtime via `niri-shell <name>` or the greeter session entries.
+        // Last, so a shell that manages niri settings itself (dank pulls in
+        // DMS's generated dms/*.kdl) wins over the style's geometry.
+        include "~/.config/niri/shell-current.kdl" optional=true
       '';
     }
     // builtins.listToAttrs (
