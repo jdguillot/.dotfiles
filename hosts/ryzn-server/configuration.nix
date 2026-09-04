@@ -111,10 +111,11 @@
         enable = true;
         url = "https://github.com/jdguillot/.dotfiles";
         count = 4;
-        # For the workflow's cache push steps.
+        # For the workflow's cache push steps; findutils for xargs.
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
+          pkgs.findutils
         ];
       };
 

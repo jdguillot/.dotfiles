@@ -1,7 +1,9 @@
 # .github/workflows/cachix.yml
 #
-# Runs on the self-hosted ryzn-server runner (cyberfighter.features.
-# github-runner); nix and substituters come from the host itself.
+# Runs on the self-hosted ryzn-server runners (cyberfighter.features.
+# github-runner); nix and substituters come from the host itself. All jobs
+# share the host's /nix/store, so build jobs hand their toplevel paths to
+# one final job that pushes the deduplicated union closure once per cache.
 name: Build and Cache
 on:
   push:
@@ -35,6 +37,13 @@ jobs:
         # hosts/default.nix is built by CI with no workflow edit.
         run: |
           echo "hosts=$(nix eval .#nixosConfigurations --apply builtins.attrNames --json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Hosts in this run"
+            nix eval .#nixosConfigurations \
+              --apply 'a: builtins.concatStringsSep "\n" (map (h: "- `" + h + "`") (builtins.attrNames a))' \
+              --raw
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build:
     needs: flake-check
@@ -48,15 +57,58 @@ jobs:
       - uses: actions/checkout@v7
       - name: Build system
         run: nix build --fallback .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
-      - name: Push to Attic
-        # LAN-only endpoint; the runner is on the LAN. ATTIC_TOKEN is a
-        # push/pull token scoped to the main cache.
+      - name: Record store path
+        run: |
+          mkdir -p path
+          readlink -f result > "path/${{ matrix.host }}"
+          read -r _ closure <<<"$(nix path-info -S "$(readlink -f result)" | tail -1)"
+          echo "\`${{ matrix.host }}\`: $(numfmt --to=iec "$closure")B closure" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: path-${{ matrix.host }}
+          path: path/${{ matrix.host }}
+          retention-days: 1
+
+  push:
+    needs: build
+    # Push whatever did build, even if some hosts failed.
+    if: ${{ !cancelled() }}
+    runs-on: [self-hosted, nixos]
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: path-*
+          path: paths
+          merge-multiple: true
+      - name: Push union closure once
         env:
           ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
-        run: |
-          attic login local https://attic.cyberfighter.space/ "$ATTIC_TOKEN"
-          attic push main ./result
-      - name: Push to Cachix
-        env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        run: nix path-info -r ./result | cachix push jdguillot
+        run: |
+          cat paths/* 2>/dev/null | sort -u > roots.txt || true
+          if ! [ -s roots.txt ]; then
+            echo "No successful builds to push." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          nix path-info -r $(< roots.txt) | sort -u > closure.txt
+          attic login local https://attic.cyberfighter.space/ "$ATTIC_TOKEN"
+          xargs attic push main < closure.txt
+          cachix push jdguillot < closure.txt
+      - name: Report
+        run: |
+          [ -s roots.txt ] || exit 0
+          {
+            echo "## Cache push"
+            echo "| Host | Closure | Toplevel |"
+            echo "|---|---|---|"
+            for f in paths/*; do
+              p=$(cat "$f")
+              read -r _ s <<<"$(nix path-info -S "$p" | tail -1)"
+              echo "| ${f##*/} | $(numfmt --to=iec "$s")B | \`${p##*/}\` |"
+            done
+            echo
+            echo "**Unique store paths in the union closure:** $(wc -l < closure.txt)"
+            echo
+            echo "Pushed once to \`attic:main\` and \`cachix:jdguillot\` (both skip already-cached paths)."
+          } >> "$GITHUB_STEP_SUMMARY"
