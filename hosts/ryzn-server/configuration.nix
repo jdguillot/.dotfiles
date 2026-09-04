@@ -110,8 +110,11 @@
       github-runner = {
         enable = true;
         url = "https://github.com/jdguillot/.dotfiles";
-        # For the workflow's cachix-push step.
-        extraPackages = [ pkgs.cachix ];
+        # For the workflow's cache push steps.
+        extraPackages = [
+          pkgs.cachix
+          pkgs.attic-client
+        ];
       };
 
       tailscale = {
