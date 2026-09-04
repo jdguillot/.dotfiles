@@ -23,10 +23,6 @@
         {
           "enabled": true,
           "id": "aiOverviewControl"
-        },
-        {
-          "enabled": true,
-          "id": "nixMonitor"
         }
       ],
       "clickThrough": false,
@@ -67,13 +63,40 @@
       "position": 0,
       "removeWidgetPadding": false,
       "rightWidgets": [
-        "systemTray",
+        {
+          "enabled": true,
+          "id": "systemTray",
+          "trayIconSpacing": 2,
+          "trayMaxVisibleItems": 0,
+          "trayUseInlineExpansion": false
+        },
         "clipboard",
         "cpuUsage",
         "memUsage",
         "notificationButton",
-        "battery",
-        "controlCenterButton"
+        {
+          "enabled": true,
+          "id": "battery",
+          "showBatteryPowerCharging": true,
+          "showBatteryPowerDischarging": true,
+          "showBatteryTime": true
+        },
+        {
+          "enabled": true,
+          "id": "controlCenterButton",
+          "showAudioPercent": true,
+          "showBatteryIcon": false,
+          "showBrightnessIcon": true,
+          "showBrightnessPercent": false,
+          "showIdleInhibitorIcon": false,
+          "showMicIcon": false,
+          "showMicPercent": false,
+          "showPrinterIcon": true
+        },
+        {
+          "enabled": true,
+          "id": "idleInhibitor"
+        }
       ],
       "screenPreferences": [
         "all"
