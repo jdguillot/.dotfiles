@@ -95,6 +95,7 @@ in
       # it also writes ~/.icons/default and exports XCURSOR_*, which is what
       # Wayland clients actually read.
       home.pointerCursor = {
+        enable = true;
         name = "catppuccin-frappe-blue-cursors";
         package = pkgs.catppuccin-cursors.frappeBlue;
         size = 24;
@@ -109,10 +110,18 @@ in
         color-scheme = "prefer-dark";
       };
 
-      # Home Manager refuses to clobber the unmanaged settings.ini files it
-      # is about to take over; move them aside instead of failing the switch.
+      # Home Manager refuses to clobber the unmanaged files it is about to
+      # take over; move them aside instead of failing the switch. Every file
+      # the gtk module and pointerCursor write, since this host has
+      # Plasma-era copies of most of them.
       home.activation.backupStaleGtkSettings = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
-        for f in "${config.xdg.configHome}/gtk-3.0/settings.ini" "${config.xdg.configHome}/gtk-4.0/settings.ini"; do
+        for f in \
+          "$HOME/.gtkrc-2.0" \
+          "${config.xdg.configHome}/gtk-3.0/settings.ini" \
+          "${config.xdg.configHome}/gtk-3.0/gtk.css" \
+          "${config.xdg.configHome}/gtk-4.0/settings.ini" \
+          "${config.xdg.configHome}/gtk-4.0/gtk.css" \
+          "$HOME/.icons/default/index.theme"; do
           if [ -f "$f" ] && [ ! -L "$f" ]; then
             run mv "$f" "$f.pre-hm-bak"
           fi
