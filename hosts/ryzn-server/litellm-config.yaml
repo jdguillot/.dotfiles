@@ -15,6 +15,9 @@ model_list:
     litellm_params:
       model: openai/qwen3.8:27b-q4_K_M
       api_base: http://host.docker.internal:11434/v1
+      # The openai/ route's SDK client refuses to start without a key;
+      # Ollama ignores it, any non-empty value passes.
+      api_key: ollama
       # Cloudflare kills proxied requests silent >125s; big-context prompt
       # eval exceeds that before Ollama's first token. `: ping` SSE comments
       # (sent even before the first upstream chunk) keep the edge open.
@@ -27,6 +30,7 @@ model_list:
     litellm_params:
       model: openai/team-small
       api_base: http://host.docker.internal:11434/v1
+      api_key: ollama
       keepalive_seconds: 30
 
 general_settings:
