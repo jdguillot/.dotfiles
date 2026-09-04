@@ -1,17 +1,8 @@
-# Attic -- self-hosted multi-tenant Nix binary cache server (atticd). Chunks
-# go to either a local directory -- typically an NFS mount from the NAS --
-# or an S3-compatible endpoint (`storage`). The upstream nixpkgs module
-# renders the server config; only a handful of settings are needed, so they
-# are set through `settings` rather than a native TOML file (the module also
-# injects the JWT secret from the environment file at start, which a static
-# file could not).
-#
-# Secrets: one sops env file (see `secrets.environment`) holding
-#   ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64  (openssl genrsa -traditional 4096 | base64 -w0)
-# and, for the s3 backend only,
-#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (the bucket's access key pair)
-# attic reads the AWS_* pair when storage.credentials is unset in the config,
-# which keeps the key pair out of the world-readable store path.
+# Attic -- self-hosted Nix binary cache server (atticd); chunks go to a
+# local dir (NFS mount) or an S3 endpoint. The sops env file holds
+# ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64 (openssl genrsa -traditional 4096
+# | base64 -w0) plus, for s3, AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY --
+# env credentials keep the key pair out of the world-readable store.
 {
   config,
   lib,
@@ -187,11 +178,9 @@ in
       };
     };
 
-    # Local backend: a stable uid across the NFS boundary. sec=sys NFS sends
-    # the numeric uid, and the unit's default DynamicUser allocates a
-    # different one every boot -- so pin atticd to 568/568, the TrueNAS
-    # `apps` user, and own the dataset apps:apps on the NAS side. systemd
-    # sees the static user and skips the dynamic allocation.
+    # sec=sys NFS sends the numeric uid, so pin atticd to 568/568 (TrueNAS
+    # `apps`) instead of the unit's per-boot DynamicUser; systemd uses the
+    # static user when it exists. Own the dataset apps:apps on the NAS.
     users.users.atticd = lib.mkIf (cfg.storage == "local") {
       isSystemUser = true;
       uid = 568;

@@ -102,12 +102,8 @@ in
     "L+ /bin/true - - - - ${pkgs.coreutils}/bin/true"
   ];
 
-  # Attic chunk store. The device path must match the TrueNAS export path
-  # of the dataset (Shares -> NFS); own the dataset apps:apps (568) with the
-  # export restricted to this host's IP. By IP, not
-  # truenas.cyberfighter.space: activation restarts networkd/resolvconf, and
-  # a mount racing that window died with "Failed to resolve server", failing
-  # the whole deploy.
+  # Attic chunk store (TrueNAS NFS export, dataset owned apps:apps 568).
+  # By IP: a hostname mount races the resolvconf restart during activation.
   fileSystems."/mnt/attic-storage" = {
     device = "192.168.101.41:/mnt/Main/Data/object-storage/attic";
     fsType = "nfs";
@@ -116,9 +112,8 @@ in
       "hard"
       "noatime"
       "_netdev"
-      # Activation/boot only starts the trigger unit; the NFS mount itself
-      # happens on first access (atticd start, via RequiresMountsFor), after
-      # the network is up. A dead NAS then fails atticd, not the switch.
+      # Mount on first access, not during the switch; a dead NAS then fails
+      # atticd, not the activation.
       "x-systemd.automount"
       "nofail"
     ];

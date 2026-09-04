@@ -1,13 +1,8 @@
-# Self-hosted GitHub Actions runner, native (services.github-runners). The
-# point over hosted runners: jobs share the host's /nix/store and nix-daemon
-# directly, so there is no per-job disk budget and anything the host ever
-# built substitutes for free -- no bind mounts, no cache actions.
-#
-# The repo this serves is public, so the defaults lean defensive: ephemeral
-# (fresh registration per job, state wiped) and a fine-grained PAT. Pair it
-# with repo Settings -> Actions -> "Require approval for all outside
-# collaborators" -- a fork PR can edit workflow files, and approval is the
-# only gate between that and code running here.
+# Self-hosted GitHub Actions runner (services.github-runners): jobs share
+# the host's /nix/store and nix-daemon, so no per-job disk budget. The repo
+# is public -- keep ephemeral on and require approval for outside
+# collaborators in the repo's Actions settings; that gate is all that stands
+# between a fork PR's workflow edit and code running here.
 {
   config,
   lib,
@@ -101,9 +96,8 @@ in
       # A stale registration under this name (crash, reinstall) would
       # otherwise block startup.
       replace = true;
-      # The runner's PATH is nearly empty; jobs at minimum eval the flake
-      # (nix, git) and use actions that shell out to tar. The system nix
-      # package, not pkgs.nix, so client and daemon agree.
+      # The job PATH is nearly empty. System nix package, not pkgs.nix, so
+      # client and daemon agree.
       extraPackages = [
         config.nix.package
         pkgs.git

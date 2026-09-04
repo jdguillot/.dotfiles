@@ -1,13 +1,7 @@
 # .github/workflows/cachix.yml
 #
 # Runs on the self-hosted ryzn-server runner (cyberfighter.features.
-# github-runner): jobs share the host's /nix/store and nix daemon, which
-# removed most of this workflow -- no nix installer, no cache save/restore,
-# no disk freeing, no per-runner extra-conf (substituters, the CUDA cache
-# included, come from the host's own nix.conf via modules/core/nix-settings).
-# The runner user cannot read the system access-tokens sops template (wheel-
-# only; nix skips the unreadable !include), so eval fetches authenticate
-# with the job-scoped token below instead of the personal PAT.
+# github-runner); nix and substituters come from the host itself.
 name: Build and Cache
 on:
   push:
@@ -17,6 +11,9 @@ on:
 permissions:
   contents: read
 
+# The runner user cannot read the wheel-only system access-tokens file
+# (nix skips the unreadable !include), so eval fetches authenticate with
+# the job-scoped token instead of the personal PAT.
 env:
   NIX_CONFIG: |
     access-tokens = github.com=${{ github.token }}
@@ -52,9 +49,7 @@ jobs:
       - name: Build system
         run: nix build --fallback .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
       - name: Push to Cachix
-        # cachix is on the runner PATH (github-runner.extraPackages). Runtime
-        # closures only; flake input sources stay warm in the persistent
-        # store, so they no longer need pushing to survive rate limits.
+        # cachix is on the runner PATH (github-runner.extraPackages).
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
         run: nix path-info -r ./result | cachix push jdguillot

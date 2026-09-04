@@ -105,16 +105,12 @@
       # declaring a name-style secret below depends on this.
       sops.enable = true;
 
-      # CI runner for the dotfiles repo: jobs build against this host's own
-      # /nix/store, sidestepping the hosted runners' ~14G disk. Needs the
-      # `github-runner-pat` sops secret (fine-grained PAT, Administration RW
-      # on the repo) and "Require approval for all outside collaborators" in
-      # the repo's Actions settings.
+      # CI for the dotfiles repo against this host's own /nix/store. Needs
+      # the github-runner-pat sops secret (fine-grained, Administration RW).
       github-runner = {
         enable = true;
         url = "https://github.com/jdguillot/.dotfiles";
-        # The workflow's cachix-push step; the action that used to install
-        # it is gone with the runner switch.
+        # For the workflow's cachix-push step.
         extraPackages = [ pkgs.cachix ];
       };
 
