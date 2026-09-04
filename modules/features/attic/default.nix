@@ -1,13 +1,15 @@
-# Attic -- self-hosted multi-tenant Nix binary cache server (atticd), with
-# object storage on an S3-compatible endpoint (TrueNAS MinIO) instead of
-# local disk. The upstream nixpkgs module renders the server config; only a
-# handful of settings are needed, so they are set through `settings` rather
-# than a native TOML file (the module also injects the JWT secret from the
-# environment file at start, which a static file could not).
+# Attic -- self-hosted multi-tenant Nix binary cache server (atticd). Chunks
+# go to either a local directory -- typically an NFS mount from the NAS --
+# or an S3-compatible endpoint (`storage`). The upstream nixpkgs module
+# renders the server config; only a handful of settings are needed, so they
+# are set through `settings` rather than a native TOML file (the module also
+# injects the JWT secret from the environment file at start, which a static
+# file could not).
 #
 # Secrets: one sops env file (see `secrets.environment`) holding
 #   ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64  (openssl genrsa -traditional 4096 | base64 -w0)
-#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (MinIO access key pair)
+# and, for the s3 backend only,
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY  (the bucket's access key pair)
 # attic reads the AWS_* pair when storage.credentials is unset in the config,
 # which keeps the key pair out of the world-readable store path.
 {
@@ -48,6 +50,31 @@ in
         rendered into `cache-config` responses, so it must be the public
         (traefik) address, not the bare port. Without it attic falls back to
         the client's Host header, which upstream calls insecure.
+      '';
+    };
+
+    storage = lib.mkOption {
+      type = lib.types.enum [
+        "local"
+        "s3"
+      ];
+      default = "local";
+      description = ''
+        Where chunks live: `local` writes to `localPath` (point it at an NFS
+        mount to keep the data on the NAS), `s3` uses the `s3.*` endpoint.
+        Existing chunks do not migrate on a switch; drain or re-push.
+      '';
+    };
+
+    localPath = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/atticd/storage";
+      example = "/mnt/attic-storage";
+      description = ''
+        Chunk directory for the `local` backend. A non-default path is
+        whitelisted in the unit's ReadWritePaths by the upstream module and
+        ordered after its mount here. atticd runs as uid/gid 568 (TrueNAS's
+        `apps` user) so ownership stays stable across an NFS boundary.
       '';
     };
 
@@ -137,20 +164,48 @@ in
       environmentFile = effectiveEnvFile;
 
       # Database (sqlite in /var/lib/atticd) and chunking keep the nixpkgs
-      # module defaults; only the metadata lives locally, the NARs are in S3.
+      # module defaults; the metadata always lives locally, only the chunks
+      # follow `storage`.
       settings = {
         listen = "[::]:${toString cfg.port}";
         api-endpoint = cfg.apiEndpoint;
 
-        storage = {
-          type = "s3";
-          inherit (cfg.s3) region bucket endpoint;
-        };
+        storage =
+          if cfg.storage == "local" then
+            {
+              type = "local";
+              path = cfg.localPath;
+            }
+          else
+            {
+              type = "s3";
+              inherit (cfg.s3) region bucket endpoint;
+            };
       }
       // lib.optionalAttrs (cfg.retentionPeriod != null) {
         garbage-collection.default-retention-period = cfg.retentionPeriod;
       };
     };
+
+    # Local backend: a stable uid across the NFS boundary. sec=sys NFS sends
+    # the numeric uid, and the unit's default DynamicUser allocates a
+    # different one every boot -- so pin atticd to 568/568, the TrueNAS
+    # `apps` user, and own the dataset apps:apps on the NAS side. systemd
+    # sees the static user and skips the dynamic allocation.
+    users.users.atticd = lib.mkIf (cfg.storage == "local") {
+      isSystemUser = true;
+      uid = 568;
+      group = "atticd";
+    };
+    users.groups.atticd = lib.mkIf (cfg.storage == "local") {
+      gid = 568;
+    };
+
+    # Don't let atticd start before (or outlive) the NFS mount; with the
+    # state-directory default this resolves to /var/lib and is inert.
+    systemd.services.atticd.unitConfig.RequiresMountsFor = lib.mkIf (cfg.storage == "local") [
+      cfg.localPath
+    ];
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 

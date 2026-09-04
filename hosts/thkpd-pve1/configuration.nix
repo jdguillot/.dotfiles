@@ -80,13 +80,14 @@ in
         };
       };
 
-      # Nix binary cache server; NARs live in the MinIO bucket on TrueNAS.
-      # Needs the `attic-env` sops secret (JWT + MinIO keys) and DNS for
+      # Nix binary cache server; chunks live on the TrueNAS NFS export
+      # mounted below. Needs the `attic-env` sops secret (JWT) and DNS for
       # attic.cyberfighter.space -> 192.168.101.39.
       attic = {
         enable = true;
         apiEndpoint = "https://attic.cyberfighter.space/";
-        s3.endpoint = "http://truenas.cyberfighter.space:9000";
+        storage = "local";
+        localPath = "/mnt/attic-storage";
       };
 
       sops = {
@@ -100,6 +101,23 @@ in
   systemd.tmpfiles.rules = [
     "L+ /bin/true - - - - ${pkgs.coreutils}/bin/true"
   ];
+
+  # Attic chunk store. The device path must match the TrueNAS export path
+  # of the dataset (Shares -> NFS); own the dataset apps:apps (568) with the
+  # export restricted to this host's IP.
+  fileSystems."/mnt/attic-storage" = {
+    device = "truenas.cyberfighter.space:/mnt/tank/attic";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.2"
+      "hard"
+      "noatime"
+      "_netdev"
+      # Boot proceeds without the NAS; atticd itself still waits via
+      # RequiresMountsFor.
+      "nofail"
+    ];
+  };
 
   services.proxmox-ve.bridges = [
     "vmbr0"
