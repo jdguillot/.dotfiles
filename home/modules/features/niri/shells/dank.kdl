@@ -35,10 +35,22 @@ binds {
     // annotation, and a scrolling stitched capture niri has no equivalent
     // for). Overrides base.kdl's niri built-ins, which stay in effect under
     // noctalia. Both save to ~/Pictures/Screenshots.
+    //
+    // S for snip is the everyday family; the Print row mirrors omarchy (and
+    // every other desktop) for muscle memory. Mod+Alt+S is deliberately not
+    // used: Mod is Super, so it would take over base.kdl's orca toggle.
+    Mod+S            hotkey-overlay-title="Screenshot: Region" { spawn "dms" "screenshot"; }
+    Mod+Shift+S      hotkey-overlay-title="Screenshot: Window" { spawn "dms" "screenshot" "window"; }
+    Mod+Ctrl+S       hotkey-overlay-title="Screenshot: Screen" { spawn "dms" "screenshot" "full"; }
+    Mod+Ctrl+Shift+S hotkey-overlay-title="Screenshot: Scrolling Region" { spawn "dms" "screenshot" "scroll"; }
+
     Print       hotkey-overlay-title="Screenshot: Region" { spawn "dms" "screenshot"; }
     Ctrl+Print  hotkey-overlay-title="Screenshot: Screen" { spawn "dms" "screenshot" "full"; }
     Alt+Print   hotkey-overlay-title="Screenshot: Window" { spawn "dms" "screenshot" "window"; }
     Shift+Print hotkey-overlay-title="Screenshot: Scrolling Region" { spawn "dms" "screenshot" "scroll"; }
+
+    // omarchy puts its colour picker on Super+Print; DMS has one too.
+    Mod+Print hotkey-overlay-title="Colour Picker" { spawn "dms" "ipc" "call" "color-picker" "toggle"; }
 }
 
 // DMS regenerates these from its Settings GUI; they are derived files, so

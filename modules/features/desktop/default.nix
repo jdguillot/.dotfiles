@@ -116,6 +116,14 @@ in
           kitty
           wofi
         ];
+
+        # Both are optional dependencies that desktop shells probe over
+        # D-Bus: accountsservice for the user avatar and account details,
+        # power-profiles-daemon for the performance/balanced/saver switch
+        # (DMS's power OSD is dead without it). mkDefault because
+        # power-profiles-daemon and TLP cannot both be enabled.
+        services.accounts-daemon.enable = lib.mkDefault true;
+        services.power-profiles-daemon.enable = lib.mkDefault true;
       }
 
       (lib.mkIf (cfg.displayManager == "sddm") {

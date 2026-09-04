@@ -167,12 +167,17 @@ so it stayed invisible.
 dank shell and niri's built-in under noctalia. Both write to
 `~/Pictures/Screenshots`, so the two agree on where captures land.
 
-| Key           | Action                                    |
-| ------------- | ----------------------------------------- |
-| `Print`       | region select                             |
-| `Ctrl+Print`  | focused output                            |
-| `Alt+Print`   | focused window                            |
-| `Shift+Print` | scrolling region, stitched into one image |
+| Key                | Also           | Action                                    |
+| ------------------ | -------------- | ----------------------------------------- |
+| `Mod+S`            | `Print`        | region select                             |
+| `Mod+Shift+S`      | `Alt+Print`    | focused window                            |
+| `Mod+Ctrl+S`       | `Ctrl+Print`   | focused output                            |
+| `Mod+Ctrl+Shift+S` | `Shift+Print`  | scrolling region, stitched into one image |
+| `Mod+Print`        |                | colour picker (DMS's, on omarchy's key)   |
+
+*S for snip* is the everyday family; the `Print` row mirrors omarchy and
+every other desktop for muscle memory. `Mod+Alt+S` is deliberately unused —
+`Mod` is Super, so it would take over `base.kdl`'s orca toggle.
 
 `dms screenshot --help` lists the rest — `--stdout` for piping into an
 editor, `last` to reuse the previous region, JPEG and quality flags.
