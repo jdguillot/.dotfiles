@@ -110,6 +110,7 @@
       github-runner = {
         enable = true;
         url = "https://github.com/jdguillot/.dotfiles";
+        count = 4;
         # For the workflow's cache push steps.
         extraPackages = [
           pkgs.cachix

@@ -33,6 +33,12 @@ in
       description = "Runner name on GitHub, and the `github-runner-<name>` unit suffix.";
     };
 
+    count = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 1;
+      description = "Concurrent runner instances; matrix jobs run in parallel up to this many.";
+    };
+
     ephemeral = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -85,13 +91,23 @@ in
     sops.secrets = lib.optionalAttrs usesSopsToken {
       ${cfg.secrets.token} = {
         mode = "0400";
-        restartUnits = [ "github-runner-${cfg.name}.service" ];
+        # count > 1 fans out into suffixed units.
+        restartUnits =
+          if cfg.count == 1 then
+            [ "github-runner-${cfg.name}.service" ]
+          else
+            map (n: "github-runner-${cfg.name}-${toString n}.service") (lib.range 1 cfg.count);
       };
     };
 
     services.github-runners.${cfg.name} = {
       enable = true;
-      inherit (cfg) url ephemeral extraLabels;
+      inherit (cfg)
+        url
+        ephemeral
+        extraLabels
+        count
+        ;
       tokenFile = effectiveTokenFile;
       # A stale registration under this name (crash, reinstall) would
       # otherwise block startup.
