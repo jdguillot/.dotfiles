@@ -67,6 +67,7 @@ let
     without an allowlist can request every model, eviction thrash included).
     update: change only the flags given; <key> is the sk-... key or its hash
     (the form rate-limit errors report). Other settings keep their values.
+    A limit flag value of `none` removes that limit from the key.
     block/unblock suspend a key keeping its config; delete is permanent.
     EOF
       exit 1
@@ -117,14 +118,16 @@ let
             *) usage ;;
           esac
         done
-        # /key/update only touches the fields present in the body.
+        # /key/update only touches the fields present in the body; an
+        # explicit null unsets that limit on the key.
         body=$(jq -n --arg key "$target" --arg models "$models" \
           --arg rpm "$rpm" --arg tpm "$tpm" --arg parallel "$parallel" '
+          def limit: if . == "none" then null else tonumber end;
           { key: $key }
           + (if $models != "" then { models: ($models | split(",")) } else {} end)
-          + (if $rpm != "" then { rpm_limit: ($rpm | tonumber) } else {} end)
-          + (if $tpm != "" then { tpm_limit: ($tpm | tonumber) } else {} end)
-          + (if $parallel != "" then { max_parallel_requests: ($parallel | tonumber) } else {} end)')
+          + (if $rpm != "" then { rpm_limit: ($rpm | limit) } else {} end)
+          + (if $tpm != "" then { tpm_limit: ($tpm | limit) } else {} end)
+          + (if $parallel != "" then { max_parallel_requests: ($parallel | limit) } else {} end)')
         req POST /key/update -d "$body" | jq .
         ;;
       list) req GET '/key/list?return_full_object=true' | jq . ;;
