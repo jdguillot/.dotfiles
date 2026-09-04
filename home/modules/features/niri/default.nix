@@ -127,8 +127,9 @@ in
         to ~/.config/niri/shells/<name>.kdl and can be selected at login
         (the "Niri (…)" greeter sessions) or swapped in place with
         `niri-shell <name>`. Trim the list on hosts that should not carry a
-        second Quickshell closure. "noctalia" additionally needs
-        cyberfighter.features.noctalia.enable, which owns that package.
+        second Quickshell closure. Each entry needs its own feature module
+        enabled — features.noctalia or features.dank — which is what owns
+        the packages; this option only deploys the niri-side layer.
       '';
     };
     shell = lib.mkOption {
@@ -147,23 +148,22 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # This module deploys the layers; the packages behind them belong to the
+    # shells' own feature modules.
     assertions = [
       {
         assertion = builtins.elem cfg.shell cfg.shells;
         message = "cyberfighter.features.niri.shell = \"${cfg.shell}\" is not in features.niri.shells.";
       }
+      {
+        assertion = builtins.elem "noctalia" cfg.shells -> config.cyberfighter.features.noctalia.enable;
+        message = "features.niri.shells includes \"noctalia\" but features.noctalia.enable is false.";
+      }
+      {
+        assertion = builtins.elem "dank" cfg.shells -> config.cyberfighter.features.dank.enable;
+        message = "features.niri.shells includes \"dank\" but features.dank.enable is false.";
+      }
     ];
-
-    # DankMaterialShell has no feature module of its own; the DMS home module
-    # (imported in flake.nix) installs dms + its Quickshell config. niri
-    # spawns it from shells/dank.kdl, so systemd startup stays off to avoid a
-    # double spawn.
-    programs.dank-material-shell = lib.mkIf (builtins.elem "dank" cfg.shells) {
-      enable = true;
-      systemd.enable = false;
-      enableSystemMonitoring = true; # dgop, for the Mod+M process list
-      enableDynamicTheming = true; # matugen wallpaper theming
-    };
 
     # niri the compositor is installed at the NixOS level (desktop.environment
     # = "niri"); this module just deploys the user config.

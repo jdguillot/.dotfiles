@@ -19,6 +19,11 @@ in
       fira-mono
       nerd-fonts.fira-code
       nerd-fonts.fira-mono
+      # The dank suite renders its icons as Material Symbols ligatures. DMS
+      # bundles the font for its own UI, but plugins and dms-greeter expect
+      # it system-wide.
+      material-symbols
+      inter
     ];
   };
 }

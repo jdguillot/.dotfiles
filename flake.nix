@@ -47,6 +47,24 @@
       url = "github:AvengeMedia/DankMaterialShell/stable";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Rest of the dank desktop suite. Versioned together with DMS upstream,
+    # but only DMS itself publishes a `stable` branch.
+    dank-greeter = {
+      url = "github:AvengeMedia/dank-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    dgop = {
+      url = "github:AvengeMedia/dgop";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    danksearch = {
+      url = "github:AvengeMedia/danksearch";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    dankcalendar = {
+      url = "github:AvengeMedia/dcal";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v1.1.0";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -73,6 +91,9 @@
       niri,
       noctalia,
       dms,
+      dank-greeter,
+      danksearch,
+      dankcalendar,
       lanzaboote,
       ...
     }@inputs:
@@ -126,6 +147,7 @@
             # mkIf, and options must exist even when the condition is false.
             lanzaboote.nixosModules.lanzaboote
             proxmox-nixos.nixosModules.proxmox-ve
+            dank-greeter.nixosModules.default
             {
               nixpkgs.overlays = [
                 niri.overlays.niri
@@ -151,6 +173,8 @@
             niri.homeModules.config
             noctalia.homeModules.default
             dms.homeModules.dank-material-shell
+            danksearch.homeModules.dsearch
+            dankcalendar.homeModules.dank-calendar
           ];
         };
 

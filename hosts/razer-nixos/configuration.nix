@@ -42,7 +42,6 @@
       desktop = {
         environment = "niri";
         displayManager = "greetd";
-        greeter = "regreet";
         firefox = true;
       };
 

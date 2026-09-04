@@ -56,6 +56,19 @@
       };
 
       noctalia.enable = true;
+
+      # DankMaterialShell and the rest of the dank suite (dgop, dsearch,
+      # dcal). Desktops only — it is a second Quickshell closure.
+      dank = {
+        enable = hostMeta.profile == "desktop";
+        # QML modules DMS plugins need on the shell's import path.
+        extraQtPackages = [ pkgs.kdePackages.qtwebsockets ];
+        apps = {
+          search = true;
+          calendar = true;
+        };
+      };
+
       niri = {
         enable = true;
         style = "rounded"; # "minimal" | "rounded" | "showcase"

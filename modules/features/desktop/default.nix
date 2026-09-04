@@ -8,6 +8,13 @@
 let
   cfg = config.cyberfighter.features.desktop;
 
+  # Compositors dms-greeter can run itself, intersected with what this
+  # module offers as `environment`.
+  dmsGreeterCompositors = [
+    "niri"
+    "hyprland"
+  ];
+
   # Desktop shells offered as separate niri sessions at the greeter. The
   # layers themselves are deployed by the Home Manager niri module
   # (cyberfighter.features.niri.shells) — these entries only pick one.
@@ -77,11 +84,18 @@ in
 
     greeter = lib.mkOption {
       type = lib.types.enum [
+        "dms"
         "tuigreet"
         "regreet"
       ];
-      default = "tuigreet";
-      description = "Greeter to use when displayManager = \"greetd\"";
+      default = "dms";
+      description = ''
+        Greeter to use when displayManager = "greetd".
+        - dms: the DankMaterialShell greeter, which mirrors the primary
+          user's live DMS theme, wallpaper and settings
+        - regreet: GTK greeter themed by hand (see regreet/)
+        - tuigreet: text greeter, no compositor needed
+      '';
     };
 
     firefox = lib.mkEnableOption "Firefox browser";
@@ -112,6 +126,28 @@ in
       (lib.mkIf (cfg.displayManager == "gdm") {
         services.displayManager.gdm.enable = true;
         # services.displayManager.gdm.wayland = true;
+      })
+
+      (lib.mkIf (cfg.displayManager == "greetd" && cfg.greeter == "dms") {
+        # dms-greeter runs its own compositor and pulls the look from the
+        # primary user's live DMS config, so it tracks the desktop instead of
+        # being themed separately. greetd itself is enabled by its module.
+        services.greetd.settings.default_session.user = "greeter";
+
+        assertions = [
+          {
+            assertion = builtins.elem cfg.environment dmsGreeterCompositors;
+            message = "features.desktop.greeter = \"dms\" needs environment to be one of ${lib.concatStringsSep ", " dmsGreeterCompositors}, not \"${cfg.environment}\".";
+          }
+        ];
+
+        programs.dms-greeter = {
+          enable = true;
+          # Falls back so the assertion above is what fails, not the enum.
+          compositor.name =
+            if builtins.elem cfg.environment dmsGreeterCompositors then cfg.environment else "niri";
+          configHome = "/home/${config.cyberfighter.system.username}";
+        };
       })
 
       (lib.mkIf (cfg.displayManager == "greetd" && cfg.greeter == "tuigreet") {

@@ -84,6 +84,53 @@ Module wiring, for reference:
 - `"noctalia"` still needs `cyberfighter.features.noctalia.enable`, which
   owns that package and its presets.
 
+## The dank suite: apps, plugins, greeter
+
+`cyberfighter.features.dank` (Home Manager) owns DankMaterialShell and the
+rest of the suite, the way `features.noctalia` owns Noctalia. It is enabled
+on desktop-profile hosts. `features.niri.shells` only deploys the niri-side
+layer; the packages come from here. Upstream versions the whole suite
+together — DMS, dgop, dsearch and dcal are all 1.6.0 — so each has its own
+flake input rather than coming from nixpkgs.
+
+| `apps.*`   | Binary    | What it is                                        |
+| ---------- | --------- | ------------------------------------------------- |
+| `monitor`  | `dgop`    | System monitor. **Not optional in practice**: the bar's cpuUsage/memUsage widgets and the `Mod+M` process list shell out to it, and the DMS module does not pull it in itself. On by default |
+| `search`   | `dsearch` | Indexed filesystem search; runs a user service that keeps the index warm |
+| `calendar` | `dcal`    | DankCalendar, with CalDAV sync and a reminder service |
+
+### Plugin dependencies (`extraQtPackages`)
+
+DMS bar plugins can need QML modules the shell wasn't built against — the
+Home Assistant monitor plugin needs `QtWebSockets`, for example. Installing
+the Qt package into the profile is not enough: Quickshell only sees modules
+on the import path the `dms` wrapper pins, so a missing one shows up as
+
+```
+Blackholed import URL QUrl("qs:@/QtWebSockets/qmldir")
+<Plugin>: Failed to load WebSocketClient. Dependency 'qt6-websockets' likely missing.
+```
+
+in `~/.cache/quickshell/`. Add the package to
+`features.dank.extraQtPackages` instead; it goes through upstream's
+`extraQtPackages` override, which folds it into both
+`NIXPKGS_QT6_QML_IMPORT_PATH` and `QT_PLUGIN_PATH` on the wrapper. The cost
+is that a non-empty list rebuilds `dms-shell` locally, which is why it
+defaults to empty.
+
+### Greeter
+
+`features.desktop.greeter = "dms"` (the default) runs **dms-greeter** from
+the `dank-greeter` flake input. It launches its own compositor —
+`compositor.name` follows `features.desktop.environment` — and reads the
+primary user's live DMS theme, wallpaper and settings through `configHome`,
+so the login screen tracks the desktop instead of being themed by hand. The
+other choices are `regreet` (GTK, themed in `modules/features/desktop/regreet/`)
+and `tuigreet` (text, no compositor).
+
+Either way the session list is the same one described above, so the greeter
+is where you pick noctalia or DMS for the session you are about to start.
+
 ## noctalia presets
 
 Noctalia's `settings.json` stays runtime-managed (declarative management
