@@ -154,9 +154,8 @@ in
       mode = "monolithic";
       environmentFile = effectiveEnvFile;
 
-      # Database (sqlite in /var/lib/atticd) and chunking keep the nixpkgs
-      # module defaults; the metadata always lives locally, only the chunks
-      # follow `storage`.
+      # Database (sqlite in /var/lib/atticd) keeps the nixpkgs default; the
+      # metadata always lives locally, only the chunks follow `storage`.
       settings = {
         listen = "[::]:${toString cfg.port}";
         api-endpoint = cfg.apiEndpoint;
@@ -172,6 +171,20 @@ in
               type = "s3";
               inherit (cfg.s3) region bucket endpoint;
             };
+
+        # Coarser than attic's 64KiB default: each chunk is a db transaction
+        # plus a storage write, and ~5MiB/s ingest on thkpd was chunk-bound.
+        # Costs some dedup granularity; fine for a single-user cache.
+        chunking = {
+          nar-size-threshold = 65536;
+          min-size = 262144;
+          avg-size = 1048576;
+          max-size = 4194304;
+        };
+        compression = {
+          type = "zstd";
+          level = 3;
+        };
       }
       // lib.optionalAttrs (cfg.retentionPeriod != null) {
         garbage-collection.default-retention-period = cfg.retentionPeriod;

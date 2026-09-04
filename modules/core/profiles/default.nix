@@ -116,6 +116,16 @@ in
         hybrid-sleep.enable = false;
       };
 
+      # With the targets masked, a default lid/key handler retries suspend
+      # in a hot loop (logind burned a full core on thkpd for weeks).
+      services.logind.settings.Login = {
+        HandleLidSwitch = "ignore";
+        HandleLidSwitchExternalPower = "ignore";
+        HandleLidSwitchDocked = "ignore";
+        HandleSuspendKey = "ignore";
+        HandleHibernateKey = "ignore";
+      };
+
     })
   ];
 }
