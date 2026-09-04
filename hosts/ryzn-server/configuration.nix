@@ -113,6 +113,9 @@
       github-runner = {
         enable = true;
         url = "https://github.com/jdguillot/.dotfiles";
+        # The workflow's cachix-push step; the action that used to install
+        # it is gone with the runner switch.
+        extraPackages = [ pkgs.cachix ];
       };
 
       tailscale = {

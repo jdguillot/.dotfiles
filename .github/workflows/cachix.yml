@@ -1,4 +1,13 @@
 # .github/workflows/cachix.yml
+#
+# Runs on the self-hosted ryzn-server runner (cyberfighter.features.
+# github-runner): jobs share the host's /nix/store and nix daemon, which
+# removed most of this workflow -- no nix installer, no cache save/restore,
+# no disk freeing, no per-runner extra-conf (substituters, the CUDA cache
+# included, come from the host's own nix.conf via modules/core/nix-settings).
+# The runner user cannot read the system access-tokens sops template (wheel-
+# only; nix skips the unreadable !include), so eval fetches authenticate
+# with the job-scoped token below instead of the personal PAT.
 name: Build and Cache
 on:
   push:
@@ -7,55 +16,22 @@ on:
 
 permissions:
   contents: read
-  actions: write
+
+env:
+  NIX_CONFIG: |
+    access-tokens = github.com=${{ github.token }}
 
 jobs:
   flake-check:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, nixos]
     outputs:
       hosts: ${{ steps.list-hosts.outputs.hosts }}
     steps:
       - uses: actions/checkout@v7
-      - name: Check Nix flake inputs
-        uses: DeterminateSystems/flake-checker-action@main
-      # Pinned to v3.22.2: the v3.22.3 eval-cache change (nix-src#619) makes
-      # `nix flake check --no-build` fail with "path '....drv' is not valid"
-      # on derivations shared across configurations. Bump only after a fix.
-      - uses: DeterminateSystems/determinate-nix-action@v3.22.2
-        with:
-          # PAT over the default github.token: its 5000/hr per-user quota is
-          # separate from GITHUB_TOKEN's 1000/hr pool shared by every job in
-          # the repo, which concurrent matrix runs can exhaust (HTTP 429).
-          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
-          extra-conf: |
-            connect-timeout = 30
-            fallback = true
-      - uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          gc-max-store-size-linux: 4G
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-
-          purge-last-accessed: P1DT12H
-          purge-primary-key: never
-      - uses: cachix/cachix-action@v17
-        with:
-          name: jdguillot
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: Push flake input sources to Cachix
-        # The build jobs push only runtime closures, so input sources
-        # (hermes-agent, catppuccin, ...) otherwise always come from GitHub
-        # and die with the check when api.github.com rate-limits. Cached
-        # sources are substituted by narHash instead of re-fetched.
-        run: nix flake archive --json | jq -r '.. | .path? // empty' | cachix push jdguillot
-      - name: Perform Flake check
-        # --no-build: evaluate every check but build nothing. The deploy-rs
-        # checks otherwise pull each host's full toplevel into this one
-        # runner (including ollama-cuda compiled from source, since this job
-        # has no CUDA substituter) and exhaust its 14GB disk. The per-host
-        # build matrix below does the real builds with disk freed.
-        run: nix flake check
+      - name: Flake check
+        # --no-build: evaluate every check but build nothing; the per-host
+        # matrix below does the real builds.
+        run: nix flake check --no-build
       - name: List hosts
         id: list-hosts
         # The build matrix comes straight from the flake, so a host added to
@@ -66,52 +42,19 @@ jobs:
   build:
     needs: flake-check
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, nixos]
     strategy:
       matrix:
         host: ${{ fromJSON(needs.flake-check.outputs.hosts) }}
       fail-fast: false # Continue other builds if one fails
     steps:
       - uses: actions/checkout@v7
-      - name: Free Disk Space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
-
-      - uses: DeterminateSystems/determinate-nix-action@v3.22.2
-        with:
-          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
-          # The CUDA cache has to be declared HERE, not just in
-          # modules/core/nix-settings. That module configures the nix daemon on
-          # the built hosts; it has no effect on this runner's nix, which is
-          # what actually performs the build. Without it, ryzn-server's
-          # ollama-cuda is compiled from source on a GitHub runner.
-          extra-conf: |
-            connect-timeout = 30
-            fallback = true
-            extra-substituters = https://cache.nixos-cuda.org
-            extra-trusted-public-keys = cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=
-      - uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ matrix.host }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-${{ matrix.host }}-
-          gc-max-store-size-linux: 4G
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-${{ matrix.host }}-
-          purge-last-accessed: P1DT12H
-          purge-primary-key: never
-      - uses: cachix/cachix-action@v17
-        with:
-          name: jdguillot
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: Build Systems
-        run: |
-          nix build --fallback .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+      - name: Build system
+        run: nix build --fallback .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
       - name: Push to Cachix
+        # cachix is on the runner PATH (github-runner.extraPackages). Runtime
+        # closures only; flake input sources stay warm in the persistent
+        # store, so they no longer need pushing to survive rate limits.
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
         run: nix path-info -r ./result | cachix push jdguillot
