@@ -18,7 +18,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: Check Nix flake inputs
         uses: DeterminateSystems/flake-checker-action@main
-      - uses: DeterminateSystems/determinate-nix-action@v3.22.3
+      # Pinned to v3.22.2: the v3.22.3 eval-cache change (nix-src#619) makes
+      # `nix flake check --no-build` fail with "path '....drv' is not valid"
+      # on derivations shared across configurations. Bump only after a fix.
+      - uses: DeterminateSystems/determinate-nix-action@v3.22.2
         with:
           # PAT over the default github.token: its 5000/hr per-user quota is
           # separate from GITHUB_TOKEN's 1000/hr pool shared by every job in
@@ -81,7 +84,7 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      - uses: DeterminateSystems/determinate-nix-action@v3.22.3
+      - uses: DeterminateSystems/determinate-nix-action@v3.22.2
         with:
           github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
           # The CUDA cache has to be declared HERE, not just in
