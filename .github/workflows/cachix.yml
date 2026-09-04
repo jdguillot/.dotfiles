@@ -45,10 +45,21 @@ jobs:
           echo "hosts=$(nix eval .#nixosConfigurations --apply builtins.attrNames --json)" >> "$GITHUB_OUTPUT"
           {
             echo "### Hosts in this run"
-            nix eval .#nixosConfigurations \
-              --apply 'a: builtins.concatStringsSep "\n" (map (h: "- `" + h + "`") (builtins.attrNames a))' \
-              --raw
-            echo
+            echo ""
+            echo "| Host | Profile | Traits | Home | Deploy |"
+            echo "|---|---|---|---|---|"
+            nix eval --file hosts/default.nix --raw --apply 'hosts:
+              builtins.concatStringsSep "\n" (map (n:
+                let
+                  h = hosts.${n};
+                  dash = v: if v == null then "&mdash;" else v;
+                  traits = h.traits or [ ];
+                in
+                "| `${n}` | ${h.profile} | ${
+                  if traits == [ ] then "&mdash;" else builtins.concatStringsSep ", " traits
+                } | ${dash h.home} | ${dash h.deploy} |"
+              ) (builtins.attrNames hosts))'
+            echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
   build:
@@ -66,9 +77,14 @@ jobs:
       - name: Record store path
         run: |
           mkdir -p path
-          readlink -f result > "path/${{ matrix.host }}"
-          read -r _ closure <<<"$(nix path-info -S "$(readlink -f result)" | tail -1)"
-          echo "\`${{ matrix.host }}\`: $(numfmt --to=iec "$closure")B closure" >> "$GITHUB_STEP_SUMMARY"
+          p=$(readlink -f result)
+          echo "$p" > "path/${{ matrix.host }}"
+          read -r _ closure <<<"$(nix path-info -S "$p" | tail -1)"
+          {
+            echo "| Host | Closure | Paths | Toplevel |"
+            echo "|---|---|---|---|"
+            echo "| \`${{ matrix.host }}\` | $(numfmt --to=iec "$closure")B | $(nix path-info -r "$p" | wc -l) | \`${p##*/}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           name: path-${{ matrix.host }}
@@ -104,17 +120,20 @@ jobs:
       - name: Report
         run: |
           [ -s roots.txt ] || exit 0
+          # True deduplicated size: sum of NAR sizes over the union closure.
+          union=0
+          while read -r _ s; do union=$((union + s)); done < <(xargs nix path-info -s < closure.txt)
           {
             echo "## Cache push"
-            echo "| Host | Closure | Toplevel |"
-            echo "|---|---|---|"
+            echo ""
+            echo "| Host | Closure | Paths | Toplevel |"
+            echo "|---|---|---|---|"
             for f in paths/*; do
               p=$(cat "$f")
               read -r _ s <<<"$(nix path-info -S "$p" | tail -1)"
-              echo "| ${f##*/} | $(numfmt --to=iec "$s")B | \`${p##*/}\` |"
+              echo "| \`${f##*/}\` | $(numfmt --to=iec "$s")B | $(nix path-info -r "$p" | wc -l) | \`${p##*/}\` |"
             done
-            echo
-            echo "**Unique store paths in the union closure:** $(wc -l < closure.txt)"
-            echo
-            echo "Pushed once to \`attic:main\` and \`cachix:jdguillot\` (both skip already-cached paths)."
+            echo "| **union (deduplicated)** | **$(numfmt --to=iec "$union")B** | **$(wc -l < closure.txt)** | pushed once |"
+            echo ""
+            echo "Targets: \`attic:main\`, \`cachix:jdguillot\` &mdash; already-cached paths skipped."
           } >> "$GITHUB_STEP_SUMMARY"
