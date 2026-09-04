@@ -106,7 +106,7 @@ in
   # of the dataset (Shares -> NFS); own the dataset apps:apps (568) with the
   # export restricted to this host's IP.
   fileSystems."/mnt/attic-storage" = {
-    device = "truenas.cyberfighter.space:/mnt/tank/attic";
+    device = "truenas.cyberfighter.space:/mnt/Main/Data/object-storage/attic";
     fsType = "nfs";
     options = [
       "nfsvers=4.2"
