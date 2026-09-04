@@ -93,6 +93,7 @@ Notes:
 | `sops` | `enable` | enables the Home Manager `sops-nix` wrapper |
 | `tools` | `enable`, `enableDefault`, `extraPackages` | shared CLI/tool bundle |
 | `noctalia` | `enable` | Noctalia shell/home styling module |
+| `niri` | `enable`, `style`, `shells`, `shell` | niri config deploy; `style` sets the visual variant, `shells` installs the desktop shell layers (`noctalia`, `dank`), `shell` seeds which one a fresh home starts on. Switch at login via the `Niri (…)` greeter sessions or in place with `niri-shell <name>` — see [DESKTOP-STYLES.md](DESKTOP-STYLES.md) |
 
 ## Shell submodules
 

@@ -7,6 +7,45 @@
 
 let
   cfg = config.cyberfighter.features.desktop;
+
+  # Desktop shells offered as separate niri sessions at the greeter. The
+  # layers themselves are deployed by the Home Manager niri module
+  # (cyberfighter.features.niri.shells) — these entries only pick one.
+  niriShells = {
+    noctalia = "Noctalia";
+    dank = "DankMaterialShell";
+  };
+
+  # Point shell-current.kdl at the requested layer, then hand off to the
+  # normal session. Leaves the symlink alone if the user's home doesn't ship
+  # that layer, so a trimmed features.niri.shells still logs in.
+  niriShellSession = pkgs.writeShellApplication {
+    name = "niri-shell-session";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      layer="$HOME/.config/niri/shells/''${1:?usage: niri-shell-session <shell>}.kdl"
+      if [ -e "$layer" ]; then
+        ln -sfn "$layer" "$HOME/.config/niri/shell-current.kdl"
+      fi
+      exec ${config.programs.niri.package}/bin/niri-session
+    '';
+  };
+
+  niriShellSessionEntry =
+    name: label:
+    pkgs.writeTextFile {
+      name = "niri-${name}-session";
+      destination = "/share/wayland-sessions/niri-${name}.desktop";
+      text = ''
+        [Desktop Entry]
+        Name=Niri (${label})
+        Comment=Scrollable-tiling Wayland compositor with the ${label} desktop shell
+        Exec=${niriShellSession}/bin/niri-shell-session ${name}
+        Type=Application
+        DesktopNames=niri
+      '';
+      passthru.providedSessions = [ "niri-${name}" ];
+    };
 in
 {
   options.cyberfighter.features.desktop = {
@@ -167,6 +206,11 @@ in
           nemo
           xwayland-satellite
         ];
+
+        # One greeter entry per desktop shell, on top of the plain "Niri"
+        # session that programs.niri registers (which keeps whatever shell
+        # was last selected).
+        services.displayManager.sessionPackages = lib.mapAttrsToList niriShellSessionEntry niriShells;
       })
 
       (lib.mkIf cfg.firefox {

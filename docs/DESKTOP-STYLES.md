@@ -33,6 +33,57 @@ behavior lives in `home/modules/features/niri/base.kdl`; styles live in
 `~/.config/niri/styles/`. All variants are validated against niri 26.04
 (`niri validate -c`).
 
+## Desktop shells on niri: noctalia or DankMaterialShell
+
+niri runs one Quickshell desktop on top of it, and both are installed side
+by side so you can move between them. `base.kdl` holds the shell-agnostic
+core (window motions, window rules); each shell's `spawn-at-startup` plus
+its panel/media/lock binds live in
+`home/modules/features/niri/shells/<shell>.kdl`, deployed to
+`~/.config/niri/shells/` and `include`d after `base.kdl` through the mutable
+`~/.config/niri/shell-current.kdl` symlink — the same trick the styles use.
+
+| Shell      | What it is                                                         |
+| ---------- | ------------------------------------------------------------------ |
+| `noctalia` | The Noctalia shell (the previous, unchanged setup)                 |
+| `dank`     | DankMaterialShell, from the `dms` flake input, on its stock keymap |
+
+Two ways to switch:
+
+- **At login**: the greeter lists `Niri (Noctalia)` and
+  `Niri (DankMaterialShell)` next to the plain `Niri` session (which keeps
+  whatever was last selected). The session entries are registered by the
+  NixOS desktop module when `features.desktop.environment = "niri"`; each
+  one points `shell-current.kdl` at its layer and then execs `niri-session`.
+- **In a running session**: `niri-shell dank` / `niri-shell noctalia` swaps
+  the symlink, reloads the config, stops the running shell, and starts the
+  other one. `niri-shell list` shows what's current. Both also have launcher
+  entries ("Niri Shell: …").
+
+Neither path needs a rebuild. The choice persists through the symlink, so
+the next login keeps it until a session entry or another `niri-shell` call
+overrides it.
+
+Because niri merges `binds` sections **later-wins** (a later section
+replaces conflicting binds rather than erroring), the dank layer
+deliberately takes over two `base.kdl` window motions to match DMS's
+defaults: `Mod+V` → clipboard (was toggle-floating) and `Mod+Comma` →
+settings (was consume-into-column). The vim-style workspace/column motions
+(`Mod+H/J/K/L`, `Mod+Ctrl+…`) live in `base.kdl` and are untouched by either
+shell.
+
+Module wiring, for reference:
+
+- `cyberfighter.features.niri.shells` — which layers get installed; both on
+  `desktop` hosts, noctalia only elsewhere, so minimal hosts don't carry a
+  second Quickshell closure. `"dank"` in this list is what enables
+  `programs.dank-material-shell` (systemd unit off — niri spawns it, so a
+  unit would double-spawn).
+- `cyberfighter.features.niri.shell` — the layer seeded on first activation,
+  before anything has picked one.
+- `"noctalia"` still needs `cyberfighter.features.noctalia.enable`, which
+  owns that package and its presets.
+
 ## noctalia presets
 
 Noctalia's `settings.json` stays runtime-managed (declarative management

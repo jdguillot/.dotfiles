@@ -226,7 +226,7 @@ Example:
 
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
-| `desktop` | `enable`, `environment`, `displayManager`, `firefox` | supports `plasma6`, `plasma5`, `gnome`, `hyprland`, `niri`, or `none`; current hosts use `plasma6` and `niri` | <https://mynixos.com/search?q=services.desktopManager> |
+| `desktop` | `enable`, `environment`, `displayManager`, `greeter`, `firefox` | supports `plasma6`, `plasma5`, `gnome`, `hyprland`, `niri`, or `none`; current hosts use `plasma6` and `niri`. The `niri` environment also registers a greeter session per desktop shell (`Niri (Noctalia)`, `Niri (DankMaterialShell)`) — see [DESKTOP-STYLES.md](DESKTOP-STYLES.md) | <https://mynixos.com/search?q=services.desktopManager> |
 | `graphics` | `enable`, `nvidia.enable`, `nvidia.prime.enable`, `nvidia.prime.intelBusId`, `nvidia.prime.nvidiaBusId`, `nvidia.powerManagement`, `nvidia.openDriver`, `amd.enable` | GPU acceleration and vendor-specific tuning | <https://mynixos.com/search?q=hardware.nvidia> |
 | `sound` | `enable` | PipeWire-based sound stack | <https://mynixos.com/search?q=services.pipewire.enable> |
 | `fonts` | `enable` | common programming and desktop font packages | <https://mynixos.com/search?q=fonts.packages> |

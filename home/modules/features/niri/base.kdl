@@ -53,7 +53,6 @@ overview {
     }
 }
 
-spawn-at-startup "noctalia-shell"
 spawn-sh-at-startup "1password --silent"
 
 hotkey-overlay {
@@ -61,13 +60,6 @@ hotkey-overlay {
 }
 
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
-
-// Show the wallpaper (noctalia's layer surface) inside the overview backdrop
-// and during workspace switches.
-layer-rule {
-    match namespace="^noctalia-wallpaper"
-    place-within-backdrop true
-}
 
 // Work around WezTerm's initial configure bug.
 window-rule {
@@ -125,37 +117,16 @@ workspace "b" {
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
-    // Apps and shell panels (noctalia IPC replaces rofi/swaylock).
+    // Apps and window-manager panels. Shell-specific binds (launcher,
+    // clipboard, notifications, lock, media/volume/brightness OSD) live in
+    // the active shell layer — shells/{noctalia,dank}.kdl — included after
+    // this file. See cyberfighter.features.niri.shell.
     Mod+Return hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
     Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
-    Mod+Space hotkey-overlay-title="App Launcher" { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
     Mod+Shift+Space hotkey-overlay-title="App Launcher: rofi (A/B test)" { spawn-sh "rofi -modes 'drun,window' -show drun"; }
     Mod+Ctrl+Space hotkey-overlay-title="Style Menu (rofi dmenu)" { spawn "style-menu"; }
-    Mod+Ctrl+V hotkey-overlay-title="Clipboard History" { spawn "noctalia-shell" "ipc" "call" "launcher" "clipboard"; }
-    Mod+Ctrl+E hotkey-overlay-title="Emoji Picker" { spawn "noctalia-shell" "ipc" "call" "launcher" "emoji"; }
-    Mod+Shift+C hotkey-overlay-title="Control Center" { spawn "noctalia-shell" "ipc" "call" "controlCenter" "toggle"; }
-    Mod+Shift+S hotkey-overlay-title="Noctalia Settings" { spawn "noctalia-shell" "ipc" "call" "settings" "toggle"; }
-    Mod+N hotkey-overlay-title="Notification History" { spawn "noctalia-shell" "ipc" "call" "notifications" "toggleHistory"; }
-    Mod+Shift+N hotkey-overlay-title="Do Not Disturb" { spawn "noctalia-shell" "ipc" "call" "notifications" "toggleDND"; }
-    Mod+Shift+W hotkey-overlay-title="Random Wallpaper" { spawn "noctalia-shell" "ipc" "call" "wallpaper" "random"; }
-    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "noctalia-shell" "ipc" "call" "lockScreen" "lock"; }
-    Mod+Escape hotkey-overlay-title="Session Menu" { spawn "noctalia-shell" "ipc" "call" "sessionMenu" "toggle"; }
 
     Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
-
-    // Volume and brightness through noctalia so its OSD shows.
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "increase"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "decrease"; }
-    XF86AudioMute        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "muteInput"; }
-
-    XF86AudioPlay        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "media" "playPause"; }
-    XF86AudioStop        allow-when-locked=true { spawn-sh "playerctl stop"; }
-    XF86AudioPrev        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "media" "previous"; }
-    XF86AudioNext        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "media" "next"; }
-
-    XF86MonBrightnessUp   allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "brightness" "increase"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "brightness" "decrease"; }
 
     Mod+O repeat=false { toggle-overview; }
     Mod+Tab repeat=false { focus-workspace-previous; }

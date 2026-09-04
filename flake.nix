@@ -43,6 +43,10 @@
       url = "github:noctalia-dev/noctalia/legacy-v4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    dms = {
+      url = "github:AvengeMedia/DankMaterialShell/stable";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v1.1.0";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -68,6 +72,7 @@
       deploy-rs,
       niri,
       noctalia,
+      dms,
       lanzaboote,
       ...
     }@inputs:
@@ -145,6 +150,7 @@
             sops-nix.homeManagerModules.sops
             niri.homeModules.config
             noctalia.homeModules.default
+            dms.homeModules.dank-material-shell
           ];
         };
 

@@ -1,0 +1,40 @@
+// Shell layer for niri: noctalia (cyberfighter.features.niri.shell = "noctalia").
+// Included after base.kdl, so these binds add to the shell-agnostic core.
+// Kept byte-for-byte from the pre-split base.kdl so noctalia behaviour is
+// unchanged.
+
+spawn-at-startup "noctalia-shell"
+
+// Show the wallpaper (noctalia's layer surface) inside the overview backdrop
+// and during workspace switches.
+layer-rule {
+    match namespace="^noctalia-wallpaper"
+    place-within-backdrop true
+}
+
+binds {
+    Mod+Space hotkey-overlay-title="App Launcher" { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
+    Mod+Ctrl+V hotkey-overlay-title="Clipboard History" { spawn "noctalia-shell" "ipc" "call" "launcher" "clipboard"; }
+    Mod+Ctrl+E hotkey-overlay-title="Emoji Picker" { spawn "noctalia-shell" "ipc" "call" "launcher" "emoji"; }
+    Mod+Shift+C hotkey-overlay-title="Control Center" { spawn "noctalia-shell" "ipc" "call" "controlCenter" "toggle"; }
+    Mod+Shift+S hotkey-overlay-title="Noctalia Settings" { spawn "noctalia-shell" "ipc" "call" "settings" "toggle"; }
+    Mod+N hotkey-overlay-title="Notification History" { spawn "noctalia-shell" "ipc" "call" "notifications" "toggleHistory"; }
+    Mod+Shift+N hotkey-overlay-title="Do Not Disturb" { spawn "noctalia-shell" "ipc" "call" "notifications" "toggleDND"; }
+    Mod+Shift+W hotkey-overlay-title="Random Wallpaper" { spawn "noctalia-shell" "ipc" "call" "wallpaper" "random"; }
+    Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "noctalia-shell" "ipc" "call" "lockScreen" "lock"; }
+    Mod+Escape hotkey-overlay-title="Session Menu" { spawn "noctalia-shell" "ipc" "call" "sessionMenu" "toggle"; }
+
+    // Volume and brightness through noctalia so its OSD shows.
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "increase"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "decrease"; }
+    XF86AudioMute        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "volume" "muteInput"; }
+
+    XF86AudioPlay        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "media" "playPause"; }
+    XF86AudioStop        allow-when-locked=true { spawn-sh "playerctl stop"; }
+    XF86AudioPrev        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "media" "previous"; }
+    XF86AudioNext        allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "media" "next"; }
+
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "brightness" "increase"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "noctalia-shell" "ipc" "call" "brightness" "decrease"; }
+}

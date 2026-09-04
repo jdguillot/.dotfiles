@@ -8,7 +8,7 @@ modules handle the underlying NixOS or Home Manager settings.
 The flake follows `nixos-unstable`, keeps `nixos-25.11` available for
 selected packages, and wires in shared tooling such as `sops-nix`,
 `disko`, `deploy-rs`, `nixos-wsl`, `vscode-server`, `niri`,
-`proxmox-nixos`, `noctalia`, and `deptui`.
+`proxmox-nixos`, `noctalia`, `dms` (DankMaterialShell), and `deptui`.
 
 ## Documentation
 

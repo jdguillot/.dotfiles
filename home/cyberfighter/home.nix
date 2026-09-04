@@ -59,6 +59,17 @@
       niri = {
         enable = true;
         style = "rounded"; # "minimal" | "rounded" | "showcase"
+        # Both shells on desktops, so the greeter offers both and
+        # `niri-shell <name>` can swap live; minimal hosts skip the second
+        # Quickshell closure.
+        shells =
+          if hostMeta.profile == "desktop" then
+            [
+              "noctalia"
+              "dank"
+            ]
+          else
+            [ "noctalia" ];
       };
 
       shell = {
