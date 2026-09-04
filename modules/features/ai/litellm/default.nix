@@ -56,6 +56,7 @@ let
     usage() {
       cat >&2 <<'EOF'
     usage: litellm-keys generate <alias> --models m1,m2 [--rpm N] [--tpm N] [--parallel N]
+           litellm-keys update <key> [--models m1,m2] [--rpm N] [--tpm N] [--parallel N]
            litellm-keys list
            litellm-keys info <key>
            litellm-keys block <key>
@@ -64,6 +65,8 @@ let
 
     generate: mint a per-user key. --models is required on purpose (a key
     without an allowlist can request every model, eviction thrash included).
+    update: change only the flags given; <key> is the sk-... key or its hash
+    (the form rate-limit errors report). Other settings keep their values.
     block/unblock suspend a key keeping its config; delete is permanent.
     EOF
       exit 1
@@ -100,6 +103,29 @@ let
           + (if $tpm != "" then { tpm_limit: ($tpm | tonumber) } else {} end)
           + (if $parallel != "" then { max_parallel_requests: ($parallel | tonumber) } else {} end)')
         req POST /key/generate -d "$body" | jq .
+        ;;
+      update)
+        [ $# -ge 2 ] || usage
+        target=$1; shift
+        models="" rpm="" tpm="" parallel=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --models) models=$2; shift 2 ;;
+            --rpm) rpm=$2; shift 2 ;;
+            --tpm) tpm=$2; shift 2 ;;
+            --parallel) parallel=$2; shift 2 ;;
+            *) usage ;;
+          esac
+        done
+        # /key/update only touches the fields present in the body.
+        body=$(jq -n --arg key "$target" --arg models "$models" \
+          --arg rpm "$rpm" --arg tpm "$tpm" --arg parallel "$parallel" '
+          { key: $key }
+          + (if $models != "" then { models: ($models | split(",")) } else {} end)
+          + (if $rpm != "" then { rpm_limit: ($rpm | tonumber) } else {} end)
+          + (if $tpm != "" then { tpm_limit: ($tpm | tonumber) } else {} end)
+          + (if $parallel != "" then { max_parallel_requests: ($parallel | tonumber) } else {} end)')
+        req POST /key/update -d "$body" | jq .
         ;;
       list) req GET '/key/list?return_full_object=true' | jq . ;;
       info) [ $# -eq 1 ] || usage; req GET "/key/info?key=$1" | jq . ;;
