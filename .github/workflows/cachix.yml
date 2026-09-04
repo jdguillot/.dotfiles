@@ -103,7 +103,16 @@ jobs:
           pattern: path-*
           path: paths
           merge-multiple: true
-      - name: Push union closure once
+      # Paths recorded here were fully pushed by an earlier run; the diff
+      # below skips even the per-path existence queries for them. Cache keys
+      # are immutable, so save under the run id and restore the newest.
+      - uses: actions/cache@v6
+        with:
+          path: pushed-paths.txt
+          key: pushed-paths-${{ github.run_id }}
+          restore-keys: |
+            pushed-paths-
+      - name: Push new paths once
         env:
           ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -114,9 +123,17 @@ jobs:
             exit 0
           fi
           nix path-info -r $(< roots.txt) | sort -u > closure.txt
-          attic login local https://attic.cyberfighter.space/ "$ATTIC_TOKEN"
-          xargs attic push main < closure.txt
-          cachix push jdguillot < closure.txt
+          touch pushed-paths.txt
+          sort -u pushed-paths.txt > prev.txt
+          comm -13 prev.txt closure.txt > new.txt
+          if [ -s new.txt ]; then
+            attic login local https://attic.cyberfighter.space/ "$ATTIC_TOKEN"
+            xargs attic push main < new.txt
+            cachix push jdguillot < new.txt
+          fi
+          # Only reached after successful pushes; a failed run keeps the old
+          # record so nothing is skipped by mistake next time.
+          sort -u prev.txt closure.txt > pushed-paths.txt
       - name: Report
         run: |
           [ -s roots.txt ] || exit 0
@@ -135,5 +152,5 @@ jobs:
             done
             echo "| **union (deduplicated)** | **$(numfmt --to=iec "$union")B** | **$(wc -l < closure.txt)** | pushed once |"
             echo ""
-            echo "Targets: \`attic:main\`, \`cachix:jdguillot\` &mdash; already-cached paths skipped."
+            echo "**New paths pushed this run:** $(wc -l < new.txt) of $(wc -l < closure.txt) &mdash; the rest were already recorded as pushed. Targets: \`attic:main\`, \`cachix:jdguillot\`."
           } >> "$GITHUB_STEP_SUMMARY"
