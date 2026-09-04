@@ -6,12 +6,15 @@
 # so a swap never touches teammate configs.
 
 model_list:
-  # ollama_chat/ (the /api/chat route) is upstream's recommendation for
-  # chat models and passes image input through.
+  # openai/ (Ollama's /v1 endpoint), NOT upstream-recommended ollama_chat/:
+  # that translator ends streamed tool calls with finish_reason "stop"
+  # (BerriAI/litellm#35663, fixes unmerged as of v1.99.1), which kills the
+  # agent loop in clients that trust it (crush stops after every tool call).
+  # The passthrough route streams Ollama's correct "tool_calls" reason.
   - model_name: team-coder
     litellm_params:
-      model: ollama_chat/qwen3.8:27b-q4_K_M
-      api_base: http://host.docker.internal:11434
+      model: openai/qwen3.8:27b-q4_K_M
+      api_base: http://host.docker.internal:11434/v1
       # Cloudflare kills proxied requests silent >125s; big-context prompt
       # eval exceeds that before Ollama's first token. `: ping` SSE comments
       # (sent even before the first upstream chunk) keep the edge open.
@@ -22,8 +25,8 @@ model_list:
   # uncapped 4B at the 256K server window evicts the primary.
   - model_name: team-small
     litellm_params:
-      model: ollama_chat/team-small
-      api_base: http://host.docker.internal:11434
+      model: openai/team-small
+      api_base: http://host.docker.internal:11434/v1
       keepalive_seconds: 30
 
 general_settings:
