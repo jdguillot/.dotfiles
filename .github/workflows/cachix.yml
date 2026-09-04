@@ -9,6 +9,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Weekly reconcile: the pushed-paths record is ignored for this run, so
+    # everything is re-offered and anything GC'd or evicted comes back.
+    - cron: "0 10 * * 0"
 
 permissions:
   contents: read
@@ -125,6 +129,11 @@ jobs:
           nix path-info -r $(< roots.txt) | sort -u > closure.txt
           touch pushed-paths.txt
           sort -u pushed-paths.txt > prev.txt
+          # Scheduled runs re-offer everything; this also resets the record
+          # to the live closure, shedding stale entries.
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            : > prev.txt
+          fi
           comm -13 prev.txt closure.txt > new.txt
           if [ -s new.txt ]; then
             attic login local https://attic.cyberfighter.space/ "$ATTIC_TOKEN"
