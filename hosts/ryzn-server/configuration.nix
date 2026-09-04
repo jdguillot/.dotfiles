@@ -105,6 +105,16 @@
       # declaring a name-style secret below depends on this.
       sops.enable = true;
 
+      # CI runner for the dotfiles repo: jobs build against this host's own
+      # /nix/store, sidestepping the hosted runners' ~14G disk. Needs the
+      # `github-runner-pat` sops secret (fine-grained PAT, Administration RW
+      # on the repo) and "Require approval for all outside collaborators" in
+      # the repo's Actions settings.
+      github-runner = {
+        enable = true;
+        url = "https://github.com/jdguillot/.dotfiles";
+      };
+
       tailscale = {
         enable = true;
         secrets.authKey = "tailscale-authkey";

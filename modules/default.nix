@@ -23,6 +23,7 @@
     ./features/sops/default.nix
     ./features/graphics/default.nix
     ./features/docker/default.nix
+    ./features/github-runner/default.nix
     ./features/tailscale/default.nix
     ./features/traefik/default.nix
     ./features/searxng/default.nix
