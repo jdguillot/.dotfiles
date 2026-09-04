@@ -66,6 +66,8 @@
         # ryzn-remote credentials (Cloudflare Access token + LiteLLM key)
         # from secrets/secrets.yaml -- this user key is a recipient.
         opencode.remoteProvider.enable = true;
+        crush.remoteProvider.enable = true;
+        tmuxai.remoteProvider.enable = true;
       };
     };
   };

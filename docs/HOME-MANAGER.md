@@ -128,9 +128,9 @@ The base `editor` module also supports simple `vim`, `neovim`, and `vscode` togg
 
 All tool submodules live below `cyberfighter.features.tools.*`. The
 agent-tooling modules (`mcp`, `skills`, `lsp`, `agentBrowser`,
-`opencode`) and the dev half of the shared CLI list default to
-`cyberfighter.traits.dev`, so non-dev hosts get none of them without
-per-user lines.
+`opencode`, `crush`, `tmuxai`) and the dev half of the shared CLI list
+default to `cyberfighter.traits.dev`, so non-dev hosts get none of them
+without per-user lines.
 
 | Submodule | Main options | Notes |
 | --- | --- | --- |
@@ -146,11 +146,13 @@ per-user lines.
 | `sesh` | `enable` | session helper |
 | `fastfetch` | `enable` | system info output |
 | `opencode` | `enable`, `theme` | opencode config |
+| `crush` | `enable`, `remoteProvider.enable` | Crush (Charm's terminal agent); providers mirror opencode's (`ollama` + `ryzn-remote` incl. CF Access headers), fed from sops via `$(cat …)` substitutions crush expands at startup; installs the binary itself (not in devPackages) |
+| `tmuxai` | `enable`, `remoteProvider.enable`, `models.coder`, `models.small`, `contextSize` | TmuxAI in-tmux assistant (no upstream HM module — native `config.yaml`); direct-Ollama provider only since tmuxai has no custom-header support for the CF tunnel; the sops URL is exported by a wrapper around the binary |
 | `mc` | `enable` | Midnight Commander wrapper; note the option name is `mc`, not `midnight-commander` |
 | `lsp` | `enable` | one server table feeding LSP diagnostics to both Claude Code (generated plugin) and opencode (settings.lsp, auto-download disabled); commands resolve from PATH — config-language servers from devPackages, toolchain servers from project dev shells |
 | `agentBrowser` | `enable`, `browserPackage` | agent-browser CLI (ref-based browser automation for AI agents); wrapped to drive nixpkgs chromium since the upstream Chrome download cannot run on NixOS |
-| `mcp` | `enable`, `use`, `githubTokenSecret`, `context7ApiKey` | single source of truth for MCP servers, merged into Claude Code, opencode, and Copilot configs; the catalog lives in the module and `use.<name>` toggles entries per home (unknown names fail an assertion); only broadly useful servers default on — domain-specific ones are scoped per-project (see `docs/RECOMMENDATIONS.md`) |
-| `skills` | `enable`, `extraSkills` | shared agent skills for Claude Code and opencode; the vendored catalog is a data table in the module (one line per skill, `requires` pairs companions), third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
+| `mcp` | `enable`, `use`, `githubTokenSecret`, `context7ApiKey` | single source of truth for MCP servers, merged into Claude Code, opencode, Copilot, and Crush configs plus tmuxai's `mcp.json`; the catalog lives in the module and `use.<name>` toggles entries per home (unknown names fail an assertion); only broadly useful servers default on — domain-specific ones are scoped per-project (see `docs/RECOMMENDATIONS.md`) |
+| `skills` | `enable`, `extraSkills` | shared agent skills for Claude Code, opencode, Crush, and TmuxAI; the vendored catalog is a data table in the module (one line per skill, `requires` pairs companions), third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
 
 ## SSH and SOPS integration
 

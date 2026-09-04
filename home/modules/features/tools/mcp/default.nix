@@ -151,6 +151,26 @@ in
     # OpenCode: servers are merged into ~/.config/opencode/opencode.json.
     programs.opencode.enableMcpIntegration = true;
 
+    # Crush: servers are merged into ~/.config/crush/crush.json; env file
+    # refs become $(cat ...) substitutions crush expands at startup.
+    programs.crush.enableMcpIntegration = true;
+
+    # TmuxAI has no home-manager module; render its mcp.json (same
+    # mcpServers shape as Claude's) from programs.mcp. File-ref env values
+    # get a launcher-script wrapper -- tmuxai only expands env vars.
+    xdg.configFile."tmuxai/mcp.json" = lib.mkIf config.cyberfighter.features.tools.tmuxai.enable {
+      source = (pkgs.formats.json { }).generate "tmuxai-mcp.json" {
+        mcpServers = lib.mapAttrs (
+          name: server:
+          lib.hm.mcp.transformMcpServer {
+            inherit server;
+            exclude = [ "enabled" ];
+            extraTransforms = [ (lib.hm.mcp.wrapEnvFilesCommand { inherit pkgs name; }) ];
+          }
+        ) config.programs.mcp.servers;
+      };
+    };
+
     # Claude Code only reads user-scope servers from mutable ~/.claude.json;
     # merge at activation (declared servers win, manual ones preserved).
     home.activation.claudeMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

@@ -137,7 +137,7 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`
 - Tool submodules: `tmux`, `zellij`, `yazi`, `btop`, `lazygit`,
   `jujutsu`, `carapace`, `direnv`, `rofi`, `sesh`, `fastfetch`,
-  `opencode`, `mc`, `mcp`, `skills`, `lsp`
+  `opencode`, `crush`, `tmuxai`, `mc`, `mcp`, `skills`, `lsp`
 
 Common home shape:
 

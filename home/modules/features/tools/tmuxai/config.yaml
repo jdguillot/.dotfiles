@@ -1,0 +1,34 @@
+# TmuxAI configuration; upstream reference:
+# https://github.com/alvinunreal/tmuxai#configuration
+#
+# ${OLLAMA_BASE_URL} is expanded by tmuxai from the environment; the module
+# wraps the binary to export it from sops at startup. TmuxAI has no custom
+# HTTP header support, so the CF-Access-gated ryzn-remote provider the other
+# agents carry cannot be configured here -- direct Ollama only.
+
+default_model: coder
+
+models:
+  # `openrouter` is tmuxai's generic OpenAI-compatible chat-completions
+  # client; base_url repoints it at the Ollama server. Ollama ignores auth,
+  # the api_key field just has to be non-empty.
+  coder:
+    provider: openrouter
+    model: "@CODER_MODEL@"
+    api_key: ollama
+    base_url: "${OLLAMA_BASE_URL}"
+  small:
+    provider: openrouter
+    model: "@SMALL_MODEL@"
+    api_key: ollama
+    base_url: "${OLLAMA_BASE_URL}"
+
+# Squash threshold; must not exceed the serving window on the Ollama server
+# (cyberfighter.features.ai.ollama.contextLength on that host). Quoted only
+# because YAML reserves a leading @; viper coerces the string to int.
+max_context_size: "@CONTEXT_SIZE@"
+
+# Shared agent skills, shipped into ~/.config/tmuxai/skills by tools.skills.
+knowledge_base:
+  skills:
+    enabled: true

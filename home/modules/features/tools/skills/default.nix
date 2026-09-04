@@ -80,5 +80,16 @@ in
     programs.opencode = {
       inherit skills;
     };
+
+    # Crush's own module places these under ~/.config/crush/skills.
+    programs.crush = {
+      inherit skills;
+    };
+
+    # TmuxAI has no home-manager module; it reads the same SKILL.md format
+    # from ~/.config/tmuxai/skills/<name>/ (enabled in its config.yaml).
+    xdg.configFile = lib.mkIf config.cyberfighter.features.tools.tmuxai.enable (
+      lib.mapAttrs' (name: src: lib.nameValuePair "tmuxai/skills/${name}" { source = src; }) skills
+    );
   };
 }

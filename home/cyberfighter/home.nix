@@ -107,6 +107,8 @@
         # Same recipient constraint: the ollama/ryzn URLs and credentials
         # come from secrets/secrets.yaml.
         opencode.remoteProvider.enable = hostMeta.system.hostname == "razer-nixos";
+        crush.remoteProvider.enable = hostMeta.system.hostname == "razer-nixos";
+        tmuxai.remoteProvider.enable = hostMeta.system.hostname == "razer-nixos";
       };
     };
   };

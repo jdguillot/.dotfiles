@@ -1,0 +1,76 @@
+{
+  "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "ollama": {
+      "name": "Ollama (matt-daemon)",
+      "type": "openai-compat",
+      "base_url": "$OLLAMA_BASE_URL",
+      "models": [
+        {
+          "id": "qwen3.8:27b-q4_K_M",
+          "name": "Qwen3.8 27B",
+          "context_window": 262144,
+          "default_max_tokens": 32768,
+          "can_reason": true,
+          "supports_attachments": true,
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0
+        },
+        {
+          "id": "qwen3.5:4b-q4_K_M",
+          "name": "Qwen3.5 4B",
+          "context_window": 262144,
+          "default_max_tokens": 32768,
+          "can_reason": true,
+          "supports_attachments": true,
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0
+        }
+      ]
+    },
+    "ryzn-remote": {
+      "name": "Ryzn (team remote)",
+      "type": "openai-compat",
+      "base_url": "$RYZN_LLM_BASE_URL",
+      "api_key": "$RYZN_LLM_KEY",
+      "extra_headers": {
+        "CF-Access-Client-Id": "$RYZN_CF_ID",
+        "CF-Access-Client-Secret": "$RYZN_CF_SECRET"
+      },
+      "models": [
+        {
+          "id": "team-coder",
+          "name": "Qwen3.8 27B (team)",
+          "context_window": 262144,
+          "default_max_tokens": 32768,
+          "can_reason": true,
+          "supports_attachments": true,
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0
+        },
+        {
+          "id": "team-small",
+          "name": "Qwen3.5 4B (team)",
+          "context_window": 16384,
+          "default_max_tokens": 8192,
+          "can_reason": true,
+          "supports_attachments": true,
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0
+        }
+      ]
+    }
+  },
+  "models": {
+    "large": { "provider": "ollama", "model": "qwen3.8:27b-q4_K_M" },
+    "small": { "provider": "ollama", "model": "qwen3.5:4b-q4_K_M" }
+  }
+}

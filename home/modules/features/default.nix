@@ -18,6 +18,8 @@
     ./tools/lazygit/default.nix
     ./tools/midnight-commander/default.nix
     ./tools/opencode/default.nix
+    ./tools/crush/default.nix
+    ./tools/tmuxai/default.nix
     ./tools/rofi/default.nix
     ./tools/sesh/default.nix
     ./tools/jujutsu/default.nix
