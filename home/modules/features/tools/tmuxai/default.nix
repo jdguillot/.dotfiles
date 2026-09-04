@@ -27,6 +27,23 @@ let
     fi
     exec ${lib.getExe pkgs.tmuxai} "$@"
   '';
+
+  # cobra's generator; upstream ships no completion files. Generated from the
+  # unwrapped package so the wrapper never runs at build time.
+  completions =
+    pkgs.runCommand "tmuxai-completions"
+      {
+        nativeBuildInputs = [ pkgs.tmuxai ];
+      }
+      ''
+        export HOME=$TMPDIR
+        mkdir -p $out/share/bash-completion/completions \
+                 $out/share/zsh/site-functions \
+                 $out/share/fish/vendor_completions.d
+        tmuxai completion bash > $out/share/bash-completion/completions/tmuxai
+        tmuxai completion zsh > $out/share/zsh/site-functions/_tmuxai
+        tmuxai completion fish > $out/share/fish/vendor_completions.d/tmuxai.fish
+      '';
 in
 {
   options.cyberfighter.features.tools.tmuxai = {
@@ -43,9 +60,12 @@ in
         default = false;
         description = ''
           Export OLLAMA_BASE_URL from the opencode-ollama-base-url sops
-          secret via a wrapper around the tmuxai binary. Without it the
-          variable must come from the environment. Only usable where the
-          user age key is a recipient of secrets/secrets.yaml.
+          secret (the direct-Tailscale ollama URL, shared with opencode
+          and crush -- tmuxai cannot send CF Access headers, so a tunneled
+          endpoint would never work here) via a wrapper around the binary.
+          Without it the variable must come from the environment. Only
+          usable where the user age key is a recipient of
+          secrets/secrets.yaml.
         '';
       };
     };
@@ -76,7 +96,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ (if remoteReady then tmuxaiWrapped else pkgs.tmuxai) ];
+    home.packages = [
+      (if remoteReady then tmuxaiWrapped else pkgs.tmuxai)
+      completions
+    ];
 
     # Native upstream format; @VARS@ are the only Nix-filled values.
     xdg.configFile."tmuxai/config.yaml".source = pkgs.replaceVars ./config.yaml {
