@@ -13,6 +13,9 @@ binds {
     Mod+Comma hotkey-overlay-title="DMS Settings" { spawn "dms" "ipc" "settings" "toggle"; }
     Mod+P     hotkey-overlay-title="Notepad" { spawn "dms" "ipc" "notepad" "toggle"; }
     Mod+X     hotkey-overlay-title="Power Menu" { spawn "dms" "ipc" "powermenu" "toggle"; }
+    // Same key as noctalia's session menu, so the two shells agree; Mod+X
+    // stays as DMS's stock preset key.
+    Mod+Escape hotkey-overlay-title="Power Menu" { spawn "dms" "ipc" "powermenu" "toggle"; }
     Mod+V     hotkey-overlay-title="Clipboard Manager" { spawn "dms" "ipc" "clipboard" "toggle"; }
     Mod+M     hotkey-overlay-title="Process List" { spawn "dms" "ipc" "processlist" "toggle"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "dms" "ipc" "lock" "lock"; }
