@@ -63,7 +63,7 @@ jobs:
           readlink -f result > "path/${{ matrix.host }}"
           read -r _ closure <<<"$(nix path-info -S "$(readlink -f result)" | tail -1)"
           echo "\`${{ matrix.host }}\`: $(numfmt --to=iec "$closure")B closure" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: path-${{ matrix.host }}
           path: path/${{ matrix.host }}
@@ -75,7 +75,7 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: [self-hosted, nixos]
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           pattern: path-*
