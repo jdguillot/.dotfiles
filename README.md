@@ -85,7 +85,8 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
   `bluetooth`, `printing`
 - Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
-- Services and infrastructure: `docker`, `attic`, `security`, `sops`, `proxmox`
+- Services and infrastructure: `docker`, `attic`, `github-runner`,
+  `security`, `sops`, `proxmox`
 - Gaming and hosting: `gaming`, `gameserver`,
   `gameserver.astroneer`, `gameserver.playit`
 - AI agents: `ai.hermes`
