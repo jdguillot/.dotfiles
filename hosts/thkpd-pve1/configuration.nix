@@ -86,6 +86,8 @@ in
       attic = {
         enable = true;
         apiEndpoint = "https://attic.cyberfighter.space/";
+        # 8085 is published by a hand-run docker container on this host.
+        port = 8095;
         storage = "local";
         localPath = "/mnt/attic-storage";
       };
