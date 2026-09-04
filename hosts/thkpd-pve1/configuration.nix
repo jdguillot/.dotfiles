@@ -109,7 +109,7 @@ in
   # Attic chunk store (TrueNAS NFS export, dataset owned apps:apps 568).
   # By IP: a hostname mount races the resolvconf restart during activation.
   fileSystems."/mnt/attic-storage" = {
-    device = "192.168.101.41:/mnt/Main/Data/object-storage";
+    device = "192.168.101.41:/mnt/Main/Data/object-storage/attic";
     fsType = "nfs";
     options = [
       # The NAS serves NFSv3 only (NFSv4 off in TrueNAS's NFS service).
