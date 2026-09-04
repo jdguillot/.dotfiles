@@ -87,8 +87,9 @@ in
         # Switch twice, or pass --option extra-substituters /
         # extra-trusted-public-keys by hand once (trusted-users only).
         substituters = [
-          # Self-hosted attic on thkpd-pve1; LAN-only name.
-          "https://attic.cyberfighter.space/main"
+          # Self-hosted attic on thkpd-pve1; LAN-only name. priority=30 ranks
+          # it above cache.nixos.org (40) and the cachix caches (41).
+          "https://attic.cyberfighter.space/main?priority=30"
           "https://devenv.cachix.org"
           "https://jdguillot.cachix.org"
           "https://nix-community.cachix.org"

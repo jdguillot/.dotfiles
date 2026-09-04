@@ -22,6 +22,9 @@
 
   [entryPoints.websecure]
     address = ":443"
+    # v3 defaults readTimeout to 60s, which 504s large uploads (attic push).
+    [entryPoints.websecure.transport.respondingTimeouts]
+      readTimeout = "30m"
     [entryPoints.websecure.http]
       aliasHeadersStrategy = "delete"
       [entryPoints.websecure.http.tls]
