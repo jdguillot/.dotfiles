@@ -30,6 +30,15 @@ binds {
     XF86AudioStop allow-when-locked=true { spawn-sh "playerctl stop"; }
     XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
     XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
+
+    // DMS 1.6 ships its own capture tool (region select with confirm,
+    // annotation, and a scrolling stitched capture niri has no equivalent
+    // for). Overrides base.kdl's niri built-ins, which stay in effect under
+    // noctalia. Both save to ~/Pictures/Screenshots.
+    Print       hotkey-overlay-title="Screenshot: Region" { spawn "dms" "screenshot"; }
+    Ctrl+Print  hotkey-overlay-title="Screenshot: Screen" { spawn "dms" "screenshot" "full"; }
+    Alt+Print   hotkey-overlay-title="Screenshot: Window" { spawn "dms" "screenshot" "window"; }
+    Shift+Print hotkey-overlay-title="Screenshot: Scrolling Region" { spawn "dms" "screenshot" "scroll"; }
 }
 
 // DMS regenerates these from its Settings GUI; they are derived files, so

@@ -154,6 +154,32 @@ ring, column presets. Under `noctalia` the fragments are not included at all,
 so the style is unchallenged. (Verified by feeding niri a deliberately broken
 `dms/layout.kdl`: `dank` fails validation, `noctalia` doesn't.)
 
+### Screenshots
+
+DMS 1.6 has its own capture tool built into the `dms` binary — region select
+with confirmation, window and output modes, and a scrolling capture that
+stitches a tall image, which niri has no equivalent for. It is not wired to
+anything by default (upstream's keymap leaves screenshots to the
+compositor), and `base.kdl` binds `Print` to niri's built-in `screenshot`,
+so it stayed invisible.
+
+`shells/dank.kdl` now overrides those keys, which means DMS's tool under the
+dank shell and niri's built-in under noctalia. Both write to
+`~/Pictures/Screenshots`, so the two agree on where captures land.
+
+| Key           | Action                                    |
+| ------------- | ----------------------------------------- |
+| `Print`       | region select                             |
+| `Ctrl+Print`  | focused output                            |
+| `Alt+Print`   | focused window                            |
+| `Shift+Print` | scrolling region, stitched into one image |
+
+`dms screenshot --help` lists the rest — `--stdout` for piping into an
+editor, `last` to reuse the previous region, JPEG and quality flags.
+
+`dms doctor` is the fastest way to find gaps like this one: it reports
+missing optional dependencies, config files, fonts and services.
+
 ### What actually gets tracked
 
 Those fragments are **derived files, not source**. DMS regenerates them from

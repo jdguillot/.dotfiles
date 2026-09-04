@@ -97,7 +97,7 @@
       "widgetOutlineOpacity": 0.26,
       "widgetOutlineThickness": 2,
       "widgetPadding": 8,
-      "widgetTransparency": 1
+      "widgetTransparency": 0.68
     }
   ],
   "builtInPluginSettings": {
@@ -114,6 +114,7 @@
       "trigger": "?"
     }
   },
+  "centeringMode": "geometric",
   "configVersion": 17,
   "controlCenterShowMicPercent": true,
   "cornerRadius": 12,
