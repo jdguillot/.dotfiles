@@ -90,6 +90,8 @@ in
         port = 8095;
         storage = "local";
         localPath = "/mnt/attic-storage";
+        # LRU per cache; anything still being pulled stays.
+        retentionPeriod = "6 months";
       };
 
       sops = {
