@@ -1,0 +1,171 @@
+{
+  "appIdSubstitutions": [],
+  "barConfigs": [
+    {
+      "attachToScreenEdge": true,
+      "autoHide": false,
+      "autoHideDelay": 250,
+      "autoHideStrict": false,
+      "barInsetPadding": 4,
+      "borderColor": "surfaceText",
+      "borderEnabled": false,
+      "borderOpacity": 1,
+      "borderThickness": 1,
+      "bottomGap": 0,
+      "centerWidgets": [
+        "music",
+        "clock",
+        "weather",
+        {
+          "enabled": true,
+          "id": "homeAssistantMonitor"
+        },
+        {
+          "enabled": true,
+          "id": "aiOverviewControl"
+        },
+        {
+          "enabled": true,
+          "id": "nixMonitor"
+        }
+      ],
+      "clickThrough": false,
+      "enabled": true,
+      "fontScale": 0.81,
+      "gothCornerRadiusOverride": false,
+      "gothCornerRadiusValue": 12,
+      "gothCornersEnabled": false,
+      "hoverPopoutDelay": 85,
+      "hoverPopouts": true,
+      "iconScale": 0.87,
+      "id": "default",
+      "innerPadding": 0,
+      "leftWidgets": [
+        {
+          "enabled": true,
+          "id": "launcherButton"
+        },
+        {
+          "enabled": true,
+          "id": "workspaceSwitcher"
+        },
+        {
+          "enabled": true,
+          "focusedWindowCompactMode": true,
+          "focusedWindowSize": 0,
+          "id": "focusedWindow"
+        }
+      ],
+      "maximizeDetection": true,
+      "maximizeWidgetIcons": false,
+      "maximizeWidgetText": false,
+      "name": "Main Bar",
+      "noBackground": false,
+      "openOnOverview": true,
+      "popupGapsAuto": true,
+      "popupGapsManual": 4,
+      "position": 0,
+      "removeWidgetPadding": false,
+      "rightWidgets": [
+        "systemTray",
+        "clipboard",
+        "cpuUsage",
+        "memUsage",
+        "notificationButton",
+        "battery",
+        "controlCenterButton"
+      ],
+      "screenPreferences": [
+        "all"
+      ],
+      "scrollEnabled": true,
+      "scrollXBehavior": "column",
+      "scrollYBehavior": "workspace",
+      "shadowColorMode": "default",
+      "shadowCustomColor": "#000000",
+      "shadowIntensity": 0,
+      "shadowOpacity": 60,
+      "showOnLastDisplay": true,
+      "showOnWindowsOpen": false,
+      "spacing": 2,
+      "squareCorners": false,
+      "transparency": 0.53,
+      "useOverlayLayer": false,
+      "visible": true,
+      "widgetOutlineColor": "primary",
+      "widgetOutlineEnabled": true,
+      "widgetOutlineOpacity": 0.26,
+      "widgetOutlineThickness": 2,
+      "widgetPadding": 8,
+      "widgetTransparency": 1
+    }
+  ],
+  "builtInPluginSettings": {
+    "dms_clipboard_search": {
+      "trigger": "cb"
+    },
+    "dms_power": {
+      "trigger": "pw"
+    },
+    "dms_qr_generator": {
+      "trigger": "qrg"
+    },
+    "dms_settings_search": {
+      "trigger": "?"
+    }
+  },
+  "configVersion": 17,
+  "controlCenterShowMicPercent": true,
+  "cornerRadius": 12,
+  "currentThemeName": "blue",
+  "cursorSettings": {
+    "hyprland": {
+      "hideOnKeyPress": false,
+      "hideOnTouch": false,
+      "inactiveTimeout": 0
+    },
+    "mango": {
+      "cursorHideTimeout": 0
+    },
+    "niri": {
+      "hideAfterInactiveMs": 0,
+      "hideWhenTyping": false
+    },
+    "size": 24,
+    "theme": "System Default"
+  },
+  "desktopClockCustomColor": {
+    "a": 1,
+    "b": 1,
+    "g": 1,
+    "hslHue": -1,
+    "hslLightness": 1,
+    "hslSaturation": 0,
+    "hsvHue": -1,
+    "hsvSaturation": 0,
+    "hsvValue": 1,
+    "r": 1,
+    "valid": true
+  },
+  "dockOpenOnOverview": true,
+  "osdPowerProfileEnabled": true,
+  "showOccupiedWorkspacesOnly": true,
+  "showWeekNumber": true,
+  "showWorkspaceApps": true,
+  "showWorkspaceIndex": true,
+  "systemMonitorCustomColor": {
+    "a": 1,
+    "b": 1,
+    "g": 1,
+    "hslHue": -1,
+    "hslLightness": 1,
+    "hslSaturation": 0,
+    "hsvHue": -1,
+    "hsvSaturation": 0,
+    "hsvValue": 1,
+    "r": 1,
+    "valid": true
+  },
+  "useAutoLocation": true,
+  "useFahrenheit": true
+}
