@@ -29,6 +29,41 @@ let
     };
   };
 
+  # Electron builds its tray once, early, and silently gives up if no
+  # StatusNotifier host has registered yet -- it never retries. base.kdl used
+  # to spawn the shell on the line above 1Password, so the shell always won
+  # that race; splitting the shell into its own layer (included after
+  # base.kdl) flipped the order and cost 1Password its tray icon. Wait for a
+  # host rather than depending on spawn order again.
+  spawnAfterTray = pkgs.writeShellApplication {
+    name = "spawn-after-tray";
+    runtimeInputs = [
+      pkgs.glib
+      pkgs.coreutils
+    ];
+    text = ''
+      gdbus wait --session --timeout 30 org.kde.StatusNotifierWatcher || true
+
+      # The watcher can exist before any host has registered, which is the
+      # state Electron gives up on, so wait for the host too.
+      tries=0
+      while [ "$tries" -lt 100 ]; do
+        registered=$(gdbus call --session \
+          --dest org.kde.StatusNotifierWatcher \
+          --object-path /StatusNotifierWatcher \
+          --method org.freedesktop.DBus.Properties.Get \
+          org.kde.StatusNotifierWatcher IsStatusNotifierHostRegistered 2>/dev/null || true)
+        if [ "$registered" = "(<true>,)" ]; then
+          break
+        fi
+        tries=$((tries + 1))
+        sleep 0.1
+      done
+
+      exec "$@"
+    '';
+  };
+
   # Swap the style-current.kdl symlink and reload niri — no rebuild needed.
   styleScript = pkgs.writeShellApplication {
     name = "niri-style";
@@ -195,6 +230,7 @@ in
     home.packages = [
       styleScript
       shellScript
+      spawnAfterTray
     ];
 
     # Seed both symlinks on first activation; runtime choice wins after.

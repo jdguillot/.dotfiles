@@ -53,7 +53,10 @@ overview {
     }
 }
 
-spawn-sh-at-startup "1password --silent"
+// Via spawn-after-tray: 1Password's Electron tray is created once at
+// startup and is lost if no StatusNotifier host has registered yet, which
+// the shell layer provides only after this file is read.
+spawn-at-startup "spawn-after-tray" "1password" "--silent"
 
 hotkey-overlay {
     skip-at-startup
