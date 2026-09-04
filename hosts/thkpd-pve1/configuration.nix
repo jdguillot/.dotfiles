@@ -1,5 +1,6 @@
 # Template for a minimal server
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -68,6 +69,24 @@ in
         email = "cyberfighter@gmail.com";
         # DNS-01 token and dashboard htpasswd come from the default secret
         # names, shared with ryzn-server.
+
+        # auth = none: nix substituter requests carry attic's own bearer
+        # tokens; basic auth would clobber the Authorization header.
+        routes.attic = {
+          host = "attic.cyberfighter.space";
+          port = config.cyberfighter.features.attic.port;
+          auth = "none";
+          backend = "host";
+        };
+      };
+
+      # Nix binary cache server; NARs live in the MinIO bucket on TrueNAS.
+      # Needs the `attic-env` sops secret (JWT + MinIO keys) and DNS for
+      # attic.cyberfighter.space -> 192.168.101.39.
+      attic = {
+        enable = true;
+        apiEndpoint = "https://attic.cyberfighter.space/";
+        s3.endpoint = "http://truenas.cyberfighter.space:9000";
       };
 
       sops = {

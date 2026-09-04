@@ -11,6 +11,7 @@
     ./core/nix-settings/default.nix
 
     ./features/ai/default.nix
+    ./features/attic/default.nix
     ./features/cloudflared/default.nix
     ./features/compose/default.nix
     ./features/desktop/default.nix
