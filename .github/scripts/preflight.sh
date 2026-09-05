@@ -9,17 +9,35 @@
 # `jq: command not found` on some line deep in another script, and nothing
 # anywhere connects that to a pending nixos-rebuild.
 #
-# Usage: preflight.sh gh jq curl
+# Tools after a lone `--` are optional: their absence is reported and the job
+# carries on. That is for things a step is better with but can run without --
+# an MCP server the fix agent consults, say. A missing optional tool must not
+# be the reason a week's bump does not happen.
+#
+# Usage: preflight.sh gh jq curl -- mcp-nixos
 set -euo pipefail
 
 missing=()
+absent_optional=()
+optional=false
 for t in "$@"; do
+  if [ "$t" = "--" ]; then
+    optional=true
+    continue
+  fi
   if command -v "$t" >/dev/null 2>&1; then
     printf '  %-10s %s\n' "$t" "$(command -v "$t")"
+  elif [ "$optional" = true ]; then
+    printf '  %-10s (optional, absent)\n' "$t"
+    absent_optional+=("$t")
   else
     missing+=("$t")
   fi
 done
+
+if [ ${#absent_optional[@]} -gt 0 ]; then
+  echo "::warning::runner is missing optional ${absent_optional[*]} -- continuing without"
+fi
 
 if [ ${#missing[@]} -gt 0 ]; then
   {

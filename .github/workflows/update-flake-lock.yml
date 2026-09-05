@@ -125,7 +125,7 @@ jobs:
         # opencode included: it is only reached on the failure path, but
         # finding out it is absent there means finding out after a build has
         # already failed, with the fix step silently skipped.
-        run: .github/scripts/preflight.sh jq nix npins git opencode mcp-nixos
+        run: .github/scripts/preflight.sh jq nix npins git opencode -- mcp-nixos
 
       - name: Keep the run's scratch files out of the commit
         # The commit below has to stage whatever the fix agent touched, so it
@@ -189,6 +189,15 @@ jobs:
           # HOME here is a scratch dir with no home configuration behind it.
           ln -sfn "$(nix build --no-link --print-out-paths .#ci-agent-skills)" \
             "$HOME/.config/opencode/skills"
+          # The MCP server is a help, not a dependency: ryzn-server may not
+          # have been rebuilt since mcp-nixos was added to its runner PATH.
+          # Drop the declaration rather than hand opencode a command that is
+          # not there.
+          if ! command -v mcp-nixos >/dev/null 2>&1; then
+            jq 'del(.mcp)' "$OPENCODE_CONFIG" > "$HOME/opencode.json"
+            export OPENCODE_CONFIG="$HOME/opencode.json"
+            echo "::warning::mcp-nixos absent; running the agent without the nixos MCP"
+          fi
           echo "attempted=true" >> "$GITHUB_OUTPUT"
           # The agent reads this; the head of a Nix trace is the useful part,
           # but the error itself is at the tail, so keep both ends.
