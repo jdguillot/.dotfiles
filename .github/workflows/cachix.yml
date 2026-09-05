@@ -38,9 +38,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Flake check
-        # --no-build: evaluate every check but build nothing; the per-host
-        # matrix below does the real builds.
-        run: nix flake check --no-build
+        # No --no-build: `checks` is deploy-rs's schema and activation
+        # checks, and evaluating those only proves they assemble. Building
+        # them is seconds on this runner. It does not build the hosts --
+        # flake check never does, it forces their derivations and stops --
+        # so the matrix below is still what proves the systems.
+        run: nix flake check
       - name: List hosts
         id: list-hosts
         # The build matrix comes straight from the flake, so a host added to

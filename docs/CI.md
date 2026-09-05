@@ -26,15 +26,32 @@ Triggered by pushes to `main`, by pull requests, and weekly on Sundays.
 flake-check ──> build (matrix, one job per host) ──> push
 ```
 
-- **flake-check** runs `nix flake check --no-build` and emits the host list,
-  read straight out of the flake. A host added to `hosts/default.nix` joins
-  the build matrix with no workflow edit.
+- **flake-check** runs `nix flake check` and emits the host list, read
+  straight out of the flake. A host added to `hosts/default.nix` joins the
+  build matrix with no workflow edit.
 - **build** builds each host's `system.build.toplevel`. `fail-fast: false`,
   so one broken host does not cancel the others, and each successful build
   uploads its toplevel store path as a `path-<host>` artifact.
 - **push** calls the reusable `push-cache.yml` with whatever artifacts exist.
   Hosts that failed simply have no artifact, so a partial run pushes the
   hosts that worked and names the ones it skipped in the job summary.
+
+`--no-build` is deliberately absent. It is worth being precise about what
+that buys, because it is less than it sounds: `nix flake check` **never**
+builds `nixosConfigurations`. It forces their derivations and stops, so the
+per-host matrix is what actually proves the systems, with or without the
+flag. What dropping it adds is the flake's only buildable outputs,
+`checks.x86_64-linux.{deploy-schema,deploy-activate}` — deploy-rs validating
+`deploy.nodes` against its JSON schema and assembling each node's activation
+script. Those are seconds on this runner, and without the flag gone they are
+only evaluated, so a schema violation that surfaces at build time passes CI.
+
+It also does nothing for the intermittent `error: path '...-source' is not
+valid`. That is an *evaluation*-time failure: `nix-gc` deletes a flake input's
+source while the fetcher cache (`~/.cache/nix/fetcher-cache-v*.sqlite`) still
+records it as present, so the next eval is handed a dead store path and the
+one after it re-fetches. `--no-build` never touched that; re-running is the
+fix.
 
 Two gates are worth understanding:
 
@@ -100,8 +117,8 @@ with an explicit name list, so a hold is a real hold — that input keeps its
 revision while everything around it moves. Inputs that `follows` nixpkgs
 still move with nixpkgs; holding those back would mean holding nixpkgs.
 
-`.github/scripts/check-and-build.sh` then runs `nix flake check --no-build`
-and builds every host, sequentially rather than as a matrix: the fix step
+`.github/scripts/check-and-build.sh` then runs `nix flake check` and builds
+every host, sequentially rather than as a matrix: the fix step
 below needs the failing tree and the failing log in one workspace, and a
 matrix job cannot hand its working tree to the next job. It builds every host
 even after one fails, so a single run surfaces every breakage the bump

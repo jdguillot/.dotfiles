@@ -15,8 +15,12 @@ set -euo pipefail
 : > build-failure.log
 mkdir -p path
 
+# No --no-build: this also builds deploy-rs's schema and activation checks,
+# which a bump can break without breaking any host. It still does not build
+# the hosts -- flake check only forces their derivations -- so the loop below
+# is what proves them.
 echo "::group::nix flake check"
-nix flake check --no-build 2>&1 | tee -a build-failure.log
+nix flake check 2>&1 | tee -a build-failure.log
 echo "::endgroup::"
 
 nix eval .#nixosConfigurations --apply builtins.attrNames --json > build-hosts.json
