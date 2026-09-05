@@ -237,6 +237,19 @@
       "url": "https://github.com/nhooey/nix-skills/archive/c6a94418cb5993ffd15cc8658be02fbdecd49b22.tar.gz",
       "hash": "sha256-Io9t/Y54y96rwYyc9EqcX1w4z4d0sqgkm97MpMAeFpU="
     },
+    "nixos-management-skill": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "michalzubkowicz",
+        "repo": "nixos-management-skill"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "aa1e3a3cec56308cd55e8de897eb728c5051b26d",
+      "url": "https://github.com/michalzubkowicz/nixos-management-skill/archive/aa1e3a3cec56308cd55e8de897eb728c5051b26d.tar.gz",
+      "hash": "sha256-PUFWSO5+dNjmgK49xUbbgNtVqxjDsfexeMm4m/FfHkg="
+    },
     "odysseus": {
       "type": "Git",
       "repository": {

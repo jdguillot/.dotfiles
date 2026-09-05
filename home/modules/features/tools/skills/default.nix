@@ -18,6 +18,7 @@ let
   cceSkills = "${sources.claude-code-extensions}/.claude/skills";
   mattpocockSkills = "${sources.mattpocock-skills}/skills";
   hyperSkills = "${sources.hyperskills}/skills";
+  nixosManaging = "${sources.nixos-management-skill}/nixos-managing";
 
   # One catalog drives everything: adding a vendored skill is one line here.
   # `requires` names catalog entries that must ship alongside this one.
@@ -41,6 +42,10 @@ let
     improve-codebase-architecture = "${mattpocockSkills}/engineering/improve-codebase-architecture";
     codebase-design = "${mattpocockSkills}/engineering/codebase-design";
     tui-design = "${hyperSkills}/tui-design";
+    # NixOS-side reference for this repo's own subject matter: flakes,
+    # modules, secrets and the anti-patterns page. Its LUKS/impermanence
+    # pages are dead weight here, but they only load on demand.
+    nixos-managing = nixosManaging;
   };
 
   # Normalize plain-path entries, then close over `requires` so a shipped
