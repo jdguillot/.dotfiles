@@ -6,6 +6,16 @@
 
 prefer-no-csd
 
+// niri's children inherit this, which is how it reaches Quickshell and the
+// DMS plugins it spawns -- hm-session-vars.sh is not sourced on the greetd
+// path. AiOverviewControl reads OLLAMA_HOST verbatim and appends /api/tags,
+// so it has to be a full URL. Bare `ryzn-server` only resolves once MagicDNS
+// is enabled tailnet-wide; the tailnet FQDN would work today but names
+// private infrastructure, which does not belong in this repo.
+environment {
+    OLLAMA_HOST "http://ryzn-server:11434"
+}
+
 input {
     keyboard {
         xkb {
