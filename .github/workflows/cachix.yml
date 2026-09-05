@@ -35,6 +35,7 @@ jobs:
     runs-on: [self-hosted, nixos]
     outputs:
       hosts: ${{ steps.list-hosts.outputs.hosts }}
+      homes: ${{ steps.list-hosts.outputs.homes }}
     steps:
       - uses: actions/checkout@v7
       - name: Flake check
@@ -51,6 +52,7 @@ jobs:
         # hosts/default.nix is built by CI with no workflow edit.
         run: |
           echo "hosts=$(nix eval .#nixosConfigurations --apply builtins.attrNames --json)" >> "$GITHUB_OUTPUT"
+          echo "homes=$(nix eval .#homeConfigurations --apply builtins.attrNames --json)" >> "$GITHUB_OUTPUT"
           {
             echo "### Hosts in this run"
             echo ""
@@ -99,6 +101,43 @@ jobs:
           path: path/${{ matrix.host }}
           retention-days: 1
 
+  # The standalone `home-manager switch` targets. Nothing else in CI touches
+  # these: the host matrix builds nixosConfigurations, and the flake check
+  # only evaluates them. Building them here parallelises the one part of the
+  # check that was not already redundant, and puts the closures in the cache
+  # so `hs` on the other machines pulls instead of building.
+  home:
+    needs: flake-check
+    if: github.event.pull_request.draft == false
+    runs-on: [self-hosted, nixos]
+    strategy:
+      matrix:
+        home: ${{ fromJSON(needs.flake-check.outputs.homes) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build home configuration
+        env:
+          HOME_CFG: ${{ matrix.home }}
+        run: |
+          mkdir -p path
+          # The attribute name carries a `@`, so the attrpath needs quoting
+          # inside the flake reference.
+          p=$(nix build --fallback --no-link --print-out-paths \
+                ".#homeConfigurations.\"$HOME_CFG\".activationPackage")
+          echo "$p" > "path/home-$HOME_CFG"
+          read -r _ closure <<<"$(nix path-info -S "$p" | tail -1)"
+          {
+            echo "| Home | Closure | Paths | Activation |"
+            echo "|---|---|---|---|"
+            echo "| \`$HOME_CFG\` | $(numfmt --to=iec "$closure")B | $(nix path-info -r "$p" | wc -l) | \`${p##*/}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: path-home-${{ matrix.home }}
+          path: path/home-${{ matrix.home }}
+          retention-days: 1
+
   deploy-checks:
     needs: [flake-check, build]
     # After the matrix, not as part of the gate: by now every toplevel these
@@ -119,7 +158,7 @@ jobs:
             .#checks.x86_64-linux.deploy-activate
 
   push:
-    needs: [flake-check, build]
+    needs: [flake-check, build, home]
     # Push whatever did build, even if some hosts failed -- but never on a
     # failed flake check. A skipped `needs` still satisfies `!cancelled()`,
     # so the flake-check result has to be asserted explicitly or an eval

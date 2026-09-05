@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# The gate: flake check, then build every host, appending everything to
-# build-failure.log so the fix agent has one file to read. Writes the host
-# list to build-hosts.json and each host's toplevel to path/<host>.
+# The gate: flake check, then build every host and every standalone home
+# configuration, appending everything to build-failure.log so the fix agent
+# has one file to read. Writes the lists to build-hosts.json and
+# build-homes.json, and each result to path/<host> or path/home-<name>.
 #
 # Sequential rather than a job matrix, because the agent step that runs on
 # failure needs the failing tree and the failing log in the same workspace,
@@ -24,6 +25,7 @@ nix flake check --no-build 2>&1 | tee -a build-failure.log
 echo "::endgroup::"
 
 nix eval .#nixosConfigurations --apply builtins.attrNames --json > build-hosts.json
+nix eval .#homeConfigurations --apply builtins.attrNames --json > build-homes.json
 
 failed=()
 while read -r h; do
@@ -43,7 +45,25 @@ while read -r h; do
   echo "::endgroup::"
 done < <(tr -d '[]" ' < build-hosts.json | tr ',' '\n' | grep .)
 
-# Every host, not just the first: one run should surface every breakage the
+# The standalone `home-manager switch` targets. The host builds cover home
+# only where it is a NixOS module; these are the ones a bump can break with
+# nothing else noticing, and their closures are worth caching too.
+while read -r hc; do
+  echo "::group::build home $hc"
+  # The attribute name carries a `@`, so the attrpath needs quoting.
+  if nix build --fallback --no-link --print-out-paths \
+       ".#homeConfigurations.\"$hc\".activationPackage" \
+       > "path/home-$hc" 2>> build-failure.log; then
+    echo "built home $hc -> $(cat "path/home-$hc")"
+  else
+    rm -f "path/home-$hc"
+    failed+=("home:$hc")
+    echo "::error::home $hc failed to build"
+  fi
+  echo "::endgroup::"
+done < <(tr -d '[]" ' < build-homes.json | tr ',' '\n' | grep .)
+
+# Every target, not just the first: one run should surface every breakage the
 # bump caused, so the agent can fix them together.
 if [ ${#failed[@]} -gt 0 ]; then
   echo "failed to build: ${failed[*]}" | tee -a build-failure.log

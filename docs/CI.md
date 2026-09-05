@@ -23,7 +23,9 @@ that is `cachix`, `attic-client`, `findutils`, `gh`, `jq`, `npins`,
 Triggered by pushes to `main`, by pull requests, and weekly on Sundays.
 
 ```
-flake-check ──> build (matrix, one job per host) ──> push
+                ┌─> build (matrix, one per host) ─┬─> deploy-checks
+flake-check ────┤                                 │
+                └─> home  (matrix, one per home) ─┴─> push
 ```
 
 - **flake-check** runs `nix flake check --no-build` and emits the host list,
@@ -32,6 +34,14 @@ flake-check ──> build (matrix, one job per host) ──> push
 - **build** builds each host's `system.build.toplevel`. `fail-fast: false`,
   so one broken host does not cancel the others, and each successful build
   uploads its toplevel store path as a `path-<host>` artifact.
+- **home** builds each `homeConfigurations.<user>@<host>.activationPackage`,
+  the standalone `home-manager switch` targets. Nothing else in CI touches
+  them — the host matrix builds `nixosConfigurations`, and the flake check
+  only evaluates them — so this is the one part of the check that was not
+  already redundant, and it runs in parallel instead of serially inside the
+  gate. Their closures reach the caches too, so `hs` on the other machines
+  pulls instead of building. The attribute name carries an `@`, so the
+  attrpath needs quoting inside the flake reference.
 - **deploy-checks** builds `checks.x86_64-linux.{deploy-schema,deploy-activate}`
   once the matrix has the toplevels those depend on. It runs only when every
   host built; a missing toplevel would fail the activation check for a reason
@@ -135,7 +145,8 @@ revision while everything around it moves. Inputs that `follows` nixpkgs
 still move with nixpkgs; holding those back would mean holding nixpkgs.
 
 `.github/scripts/check-and-build.sh` then runs `nix flake check --no-build`
-and builds every host, sequentially rather than as a matrix: the fix step
+and builds every host and every standalone home configuration, sequentially
+rather than as a matrix: the fix step
 below needs the failing tree and the failing log in one workspace, and a
 matrix job cannot hand its working tree to the next job. It builds every host
 even after one fails, so a single run surfaces every breakage the bump

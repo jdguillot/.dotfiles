@@ -123,6 +123,7 @@ jobs:
           /upstream-signal/
           /path/
           /build-hosts.json
+          /build-homes.json
           /build-failure.log
           /fix-notes.md
           EOF
