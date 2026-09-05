@@ -19,6 +19,10 @@
         {
           "enabled": true,
           "id": "homeAssistantMonitor"
+        },
+        {
+          "enabled": true,
+          "id": "dankKDEConnect"
         }
       ],
       "clickThrough": false,
@@ -180,6 +184,11 @@
     "valid": true
   },
   "dockOpenOnOverview": true,
+  "launcherPluginVisibility": {
+    "dankVault": {
+      "allowWithoutTrigger": false
+    }
+  },
   "osdPowerProfileEnabled": true,
   "screenPreferences": {
     "wallpaper": [
