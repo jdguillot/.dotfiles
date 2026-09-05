@@ -103,9 +103,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "9acf0ae748b1fd4686b763a85b5b65b5d0931c08",
-      "url": "https://github.com/xxyangyoulin/dms-plugin-hass/archive/9acf0ae748b1fd4686b763a85b5b65b5d0931c08.tar.gz",
-      "hash": "sha256-eZYYAFDdtLD80NV6FVuFsrystpksXP24KfjOebEVjFk="
+      "revision": "a2370721cdcb96dc37aaae21e32e84cbb4c7c1fa",
+      "url": "https://github.com/xxyangyoulin/dms-plugin-hass/archive/a2370721cdcb96dc37aaae21e32e84cbb4c7c1fa.tar.gz",
+      "hash": "sha256-oNvHNXEIq4YJ19ILzCrOcceEdGneTC8jvr+GLE7u3nw="
     },
     "dms-plugin-nix-monitor": {
       "type": "Git",
@@ -207,9 +207,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "63dc003083b8dfcda80f0d520f3565c06db12208",
-      "url": "https://github.com/hyperb1iss/hyperskills/archive/63dc003083b8dfcda80f0d520f3565c06db12208.tar.gz",
-      "hash": "sha256-1DY94LNrYmCC/3MxW5bhyVcrr/xzttrcYLURNPW9YRM="
+      "revision": "5c2f96185a7ea1f9a3e9e397b1687f674c4c8c36",
+      "url": "https://github.com/hyperb1iss/hyperskills/archive/5c2f96185a7ea1f9a3e9e397b1687f674c4c8c36.tar.gz",
+      "hash": "sha256-ofTSnaiWoK21EjZUvbc7n4XeFZZYvfmNIw6CJ/Mna1Q="
     },
     "mattpocock-skills": {
       "type": "Git",
