@@ -217,6 +217,13 @@ secret is added, not after.
 
 ### How the bump has to be applied
 
+`nix flake check` runs with `--show-trace`; the per-host `nix build` calls do
+not. A failing build already names the offending file and line, and the trace
+only adds nixpkgs-internal frames that crowd the log's trim window. The check
+is the opposite case: it truncates its own trace by default and tells you to
+pass the flag, and its errors reach you through a module chain that the
+untraced output never names.
+
 `.github/scripts/boot-requirement.sh` records `kernel`, `initrd` and the
 modules tree for every host before the bump and again after it, and names the
 hosts a plain `switch` cannot fully apply. It is pure evaluation — no

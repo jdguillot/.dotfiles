@@ -20,8 +20,13 @@ mkdir -p path
 # node's profile path, so realising the checks here would build all the
 # toplevels before the first host is even named. They are built at the end
 # instead, once the loop below has them.
+# --show-trace only here. A failing `nix build` already names the offending
+# file and line, and the trace adds ~800 lines of nixpkgs-internal frames that
+# would crowd the log's trim window. `nix flake check` is the opposite: it
+# truncates by default and says so, and its errors surface through a module
+# chain the untraced output never names.
 echo "::group::nix flake check"
-nix flake check --no-build 2>&1 | tee -a build-failure.log
+nix flake check --no-build --show-trace 2>&1 | tee -a build-failure.log
 echo "::endgroup::"
 
 nix eval .#nixosConfigurations --apply builtins.attrNames --json > build-hosts.json
