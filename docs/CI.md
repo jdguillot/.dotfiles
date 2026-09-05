@@ -226,6 +226,15 @@ secret is added, not after.
 
 ### How the bump has to be applied
 
+`apply-updates.sh` updates pins one at a time rather than handing `npins` the
+whole list. The vendored pins are a dozen strangers' repositories, and any one
+of them being unreachable would otherwise abandon the bump *after* flake.lock
+had already moved, leaving the tree half-updated. An unreachable pin keeps its
+current revision -- the same outcome as being held back -- and is named in the
+job summary. `GIT_HTTP_LOW_SPEED_*` is set so a stalled remote gives up in
+about thirty seconds instead of git's five-minute default; a slow but
+progressing fetch is left alone.
+
 `nix flake check` runs **last**, after every host and home has been built,
 not first. Evaluating a flake output can need a store path realised --
 hermes-agent is uv2nix, which is import-from-derivation throughout -- and
