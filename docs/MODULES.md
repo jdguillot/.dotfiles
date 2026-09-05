@@ -42,6 +42,7 @@ modules/
     ├── gameserver/
     ├── gaming/
     ├── graphics/
+    ├── kdeconnect/
     ├── networking/
     ├── packages/
     ├── printing/
@@ -241,6 +242,7 @@ Example:
 | `ssh` | `enable`, `ports`, `passwordAuth`, `permitRootLogin`, `authorizedKeys` | OpenSSH server settings | <https://mynixos.com/search?q=services.openssh.enable> |
 | `tailscale` | `enable`, `useRoutingFeatures`, `acceptRoutes`, `extraUpFlags` | client and routing flags | <https://mynixos.com/search?q=services.tailscale.enable> |
 | `vpn.pia` | `enable`, `autoStart`, `server`, `port`, `credentialsFile` | PIA/OpenVPN workflow; expects SOPS when credentials are secret-backed | <https://mynixos.com/search?q=services.openvpn.servers> |
+| `kdeconnect` | `enable` | opens TCP+UDP 1714-1764 for KDE Connect. The daemon itself is a per-user thing and comes from the matching Home Manager module — see [HOME-MANAGER.md](HOME-MANAGER.md) | <https://mynixos.com/search?q=programs.kdeconnect.enable> |
 
 ### Packaging and applications
 

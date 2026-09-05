@@ -86,7 +86,8 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
 
 - Desktop and hardware: `desktop`, `graphics`, `sound`, `fonts`,
   `bluetooth`, `printing`
-- Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`
+- Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`,
+  `kdeconnect`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
 - Services and infrastructure: `docker`, `attic`, `github-runner`,
   `security`, `sops`, `proxmox`
@@ -135,7 +136,8 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 ### Main feature groups
 
 - `cyberfighter.features.git`, `shell`, `terminal`, `editor`,
-  `desktop`, `ssh`, `sops`, `tools`, `noctalia`
+  `desktop`, `ssh`, `sops`, `tools`, `noctalia`, `dank`, `niri`,
+  `kdeconnect`
 - Shell toggles: `bash`, `fish`, `zsh`, `starship`
 - Terminal submodules: `terminal.alacritty`, `terminal.ghostty`
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`

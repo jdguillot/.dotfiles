@@ -53,6 +53,9 @@
 
       bluetooth.enable = true;
 
+      # Opens 1714-1764 for the daemon that the cyberfighter home runs.
+      kdeconnect.enable = true;
+
       gaming.enable = true;
 
       flatpak.extraPackages = [

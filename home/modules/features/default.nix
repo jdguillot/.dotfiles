@@ -9,6 +9,7 @@
     ./editor/default.nix
     ./terminal/default.nix
     ./desktop/default.nix
+    ./kdeconnect/default.nix
     ./ssh/default.nix
     ./tools/default.nix
     ./tools/btop/default.nix

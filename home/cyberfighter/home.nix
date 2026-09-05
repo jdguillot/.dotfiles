@@ -57,6 +57,11 @@
 
       noctalia.enable = true;
 
+      # Phone pairing: notification mirroring, clipboard sync, file
+      # transfer. Desktops only, and each host has to open 1714-1764
+      # itself (cyberfighter.features.kdeconnect on the system side).
+      kdeconnect.enable = hostMeta.profile == "desktop";
+
       # DankMaterialShell and the rest of the dank suite (dgop, dsearch,
       # dcal). Desktops only — it is a second Quickshell closure.
       dank = {
