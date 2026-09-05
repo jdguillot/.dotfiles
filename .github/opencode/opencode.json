@@ -1,0 +1,24 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "share": "disabled",
+  "model": "ollama/qwen3.8:27b-q4_K_M",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (ryzn-server, loopback)",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
+      "models": {
+        "qwen3.8:27b-q4_K_M": {
+          "name": "Qwen3.8 27B",
+          "limit": {
+            "context": 262144,
+            "output": 32768
+          }
+        }
+      }
+    }
+  }
+}

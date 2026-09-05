@@ -1,53 +1,300 @@
 # .github/workflows/update-flake-lock.yml
 #
-# Opens a weekly PR bumping every flake input. Dependabot cannot do this --
-# `.github/dependabot.yml` only understands `github-actions`, so without this
-# workflow flake.lock (nixpkgs, hermes-agent, deptui, niri, ...) only ever moves
-# when someone runs `nix flake update` by hand.
+# The weekly dependency bump, end to end: look before updating, update, prove
+# it builds, warm the caches, then open the PR.
 #
-# Fast-moving inputs are the reason: hermes-agent ships several times a week, so
-# a lock left alone for a month is a month of missed releases in a package that
-# has no other update path.
+# Dependabot cannot do any of this -- `.github/dependabot.yml` only
+# understands `github-actions`, so without this workflow flake.lock and
+# npins/sources.json only move when someone runs the update by hand.
+# Fast-moving inputs are the reason: hermes-agent ships several times a week,
+# so a lock left alone for a month is a month of missed releases.
+#
+# Runs on the self-hosted ryzn-server runners, not ubuntu-latest, for three
+# reasons: the builds land in the store the other machines pull from, the
+# closure is pushed to the caches from the host that just built it, and the
+# triage model is on this host's loopback.
+#
+# The shape:
+#   scan    gather upstream evidence, ask the local model what to hold back
+#   update  apply the bump minus the holds, flake check, build every host,
+#           let an agent try to adapt the repo on failure, push the branch
+#   cache   push what built, so the closure is hot before anyone switches
+#   pr      open the PR -- only reached when every host is green
 name: Update flake.lock
 
 on:
   schedule:
-    # Mondays 05:00 UTC -- lands before the week starts, and after most
-    # upstreams have cut their weekend releases.
-    - cron: "0 5 * * 1"
-  workflow_dispatch: # manual runs, for when an input needs bumping now
+    # Tuesday 05:00 UTC -- lands before the week starts, and after most
+    # upstreams have cut their weekend releases. Giving an extra day for fixes.
+    - cron: "0 5 * * 2"
+  workflow_dispatch:
+    inputs:
+      skip-scan:
+        description: Bump everything, without the upstream-issue triage pass.
+        type: boolean
+        default: false
 
 permissions:
   contents: write
   pull-requests: write
 
+# One bump at a time. A second run would race the first on the branch and on
+# the GPU the triage model sits on.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  NIX_CONFIG: |
+    access-tokens = github.com=${{ github.token }}
+  UPDATE_BRANCH: automated/update-flake-lock
+
 jobs:
-  update:
-    runs-on: ubuntu-latest
+  scan:
+    runs-on: [self-hosted, nixos]
     steps:
       - uses: actions/checkout@v7
 
-      - uses: DeterminateSystems/determinate-nix-action@main
-        with:
-          extra-conf: |
-            connect-timeout = 30
-            fallback = true
+      - name: Collect upstream signal
+        if: ${{ !inputs.skip-scan }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/collect-upstream-signal.sh
 
-      - uses: DeterminateSystems/update-flake-lock@main
+      - name: Ask the model what to hold back
+        run: |
+          mkdir -p upstream-signal
+          if [ "${{ inputs.skip-scan }}" = "true" ]; then
+            echo '{"holds":[],"summary":"Triage skipped by manual dispatch.","degraded":true}' \
+              > upstream-signal/verdict.json
+          else
+            .github/scripts/scan-verdict.sh
+          fi
+
+      - name: Summarise
+        run: |
+          {
+            echo "## Pre-update triage"
+            echo ""
+            jq -r .summary upstream-signal/verdict.json
+            echo ""
+            if [ "$(jq '.holds | length' upstream-signal/verdict.json)" -gt 0 ]; then
+              echo "| Held back | Reason | Evidence |"
+              echo "|---|---|---|"
+              jq -r '.holds[] | "| `\(.name)` | \(.reason) | \(.evidence) |"' upstream-signal/verdict.json
+            else
+              echo "Nothing held back."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
         with:
+          name: upstream-signal
+          path: upstream-signal/
+          retention-days: 14
+
+  update:
+    needs: scan
+    runs-on: [self-hosted, nixos]
+    outputs:
+      # 'true' only when the flake checked and every host built -- after the
+      # agent's fix, if it took one. Everything downstream keys off this.
+      green: ${{ steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true' }}
+      hosts: ${{ steps.verify.outputs.hosts || steps.reverify.outputs.hosts }}
+      changed: ${{ steps.apply.outputs.changed }}
+      agent-fixed: ${{ steps.fix.outputs.attempted }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The branch is force-pushed from here, so the job needs push
+          # credentials on the checkout it already has.
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: upstream-signal
+          path: upstream-signal
+
+      - name: Keep the run's scratch files out of the commit
+        # The commit below has to stage whatever the fix agent touched, so it
+        # cannot enumerate paths and uses `git add -A`. These exclusions are
+        # local to this checkout and are themselves never committed.
+        run: |
+          cat >> .git/info/exclude <<'EOF'
+          /upstream-signal/
+          /path/
+          /build-hosts.json
+          /build-failure.log
+          /fix-notes.md
+          EOF
+
+      - name: Apply the bump
+        id: apply
+        run: |
+          .github/scripts/apply-updates.sh
+          if git diff --quiet -- flake.lock npins/sources.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Every input was already current, or every one was held back." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check and build every host
+        id: verify
+        if: steps.apply.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          .github/scripts/check-and-build.sh
+          # Reached only when nothing above failed.
+          echo "hosts=$(cat build-hosts.json)" >> "$GITHUB_OUTPUT"
+          echo "green=true" >> "$GITHUB_OUTPUT"
+
+      - name: Let the agent try to adapt the repo
+        id: fix
+        if: steps.apply.outputs.changed == 'true' && steps.verify.outcome == 'failure'
+        continue-on-error: true
+        env:
+          # opencode keeps its session database and its provider packages
+          # under HOME; the ephemeral runner's own is not a good home for
+          # them, and this one is thrown away with the job.
+          HOME: ${{ runner.temp }}/agent-home
+          OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
+        run: |
+          mkdir -p "$HOME"
+          echo "attempted=true" >> "$GITHUB_OUTPUT"
+          # The agent reads this; the head of a Nix trace is the useful part,
+          # but the error itself is at the tail, so keep both ends.
+          if [ "$(wc -c < build-failure.log)" -gt 120000 ]; then
+            { head -c 40000 build-failure.log
+              printf '\n\n[... trimmed ...]\n\n'
+              tail -c 80000 build-failure.log; } > trimmed.log
+            mv trimmed.log build-failure.log
+          fi
+          # --auto: nobody is here to approve each edit. The blast radius is
+          # one ephemeral checkout, discarded unless it goes green, and the
+          # prompt forbids touching the lock files.
+          opencode run --pure --auto --agent build \
+            "$(cat .github/opencode/fix-prompt.md)"
+
+      - name: Re-check after the fix
+        id: reverify
+        if: steps.fix.outputs.attempted == 'true'
+        continue-on-error: true
+        run: |
+          {
+            echo "### What the agent changed"
+            echo '```'
+            git --no-pager diff --stat
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          .github/scripts/check-and-build.sh
+          echo "hosts=$(cat build-hosts.json)" >> "$GITHUB_OUTPUT"
+          echo "green=true" >> "$GITHUB_OUTPUT"
+
+      # Push the branch from here, not from the pr job: the agent's fix lives
+      # in this working tree, and only this job has it. A branch push is not
+      # a pull request, and it only happens when the tree is green.
+      - name: Push the branch
+        if: steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$UPDATE_BRANCH"
+          git add -A
+          git commit -m "chore(flake): update flake.lock and npins"
+          git push --force origin "$UPDATE_BRANCH"
+
+      # Named path-* so push-cache.yml's download pattern picks it up; the
+      # directory is stripped on upload, so each host lands as paths/<host>.
+      - uses: actions/upload-artifact@v7
+        if: steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true'
+        with:
+          name: path-bundle
+          path: path/
+          retention-days: 1
+
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.apply.outputs.changed == 'true'
+        with:
+          name: update-report
+          path: |
+            build-failure.log
+            fix-notes.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cache:
+    needs: update
+    if: needs.update.outputs.green == 'true'
+    uses: ./.github/workflows/push-cache.yml
+    with:
+      all-hosts: ${{ needs.update.outputs.hosts }}
+    secrets: inherit
+
+  pr:
+    needs: [update, cache]
+    # A cache hiccup should not cost the week its pull request, so this waits
+    # for the push but does not require it to have succeeded.
+    if: ${{ !cancelled() && needs.update.outputs.green == 'true' }}
+    runs-on: [self-hosted, nixos]
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: upstream-signal
+          path: upstream-signal
+      - uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: update-report
+          path: update-report
+
+      - name: Open or update the pull request
+        env:
           # A PR opened with the default GITHUB_TOKEN does NOT trigger other
-          # workflows -- GitHub suppresses that to avoid recursive runs. So
-          # cachix.yml would never validate the bump, which is the entire point
-          # of opening a PR instead of pushing to main.
-          #
-          # Set a FLAKE_UPDATE_TOKEN repo secret (a fine-grained PAT with
-          # contents:write + pull-requests:write) to get CI on these PRs.
-          # Without it this still works, but you must close and reopen the PR
-          # by hand to make the build run.
-          token: ${{ secrets.FLAKE_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
-          pr-title: "chore(flake): update flake.lock"
-          pr-labels: |
-            dependencies
-            automated
-          # Squash into one commit so the PR diff is just the lock file.
-          commit-msg: "chore(flake): update flake.lock"
+          # workflows -- GitHub suppresses that to avoid recursive runs -- so
+          # cachix.yml would never post a status on it. The builds in the
+          # update job already proved the tree; this is so the PR shows it.
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
+          HOSTS: ${{ needs.update.outputs.hosts }}
+          CACHED: ${{ needs.cache.result }}
+        run: |
+          n=$(tr -d '[]" ' <<<"$HOSTS" | tr ',' '\n' | grep -c .)
+          body=pr-body.md
+          {
+            echo "Automated weekly bump of \`flake.lock\` and \`npins/sources.json\`."
+            echo ""
+            echo "\`nix flake check\` passed and all $n hosts built on \`ryzn-server\`."
+            if [ "$CACHED" = "success" ]; then
+              echo "The closure is already in \`attic:main\` and \`cachix:jdguillot\`, so switching pulls rather than builds."
+            else
+              echo "> The cache push did not succeed ($CACHED) &mdash; switching will build locally."
+            fi
+            echo ""
+            echo "## Pre-update triage"
+            echo ""
+            jq -r .summary upstream-signal/verdict.json
+            echo ""
+            if [ "$(jq '.holds | length' upstream-signal/verdict.json)" -gt 0 ]; then
+              echo "### Held at their current revision"
+              echo ""
+              echo "| Input | Reason | Evidence |"
+              echo "|---|---|---|"
+              jq -r '.holds[] | "| `\(.name)` | \(.reason) | \(.evidence) |"' upstream-signal/verdict.json
+              echo ""
+            fi
+            if [ -s update-report/fix-notes.md ]; then
+              echo "## The bump needed a code change"
+              echo ""
+              cat update-report/fix-notes.md
+              echo ""
+              echo "> Written by the agent that made the change. Read the diff outside the lock files carefully."
+              echo ""
+            fi
+            echo "<sub>Opened by \`.github/workflows/update-flake-lock.yml\`, run [\`${{ github.run_id }}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).</sub>"
+          } > "$body"
+
+          gh pr create --repo "$GITHUB_REPOSITORY" \
+            --head "$UPDATE_BRANCH" --base main \
+            --title "chore(flake): update flake.lock and npins" \
+            --body-file "$body" \
+            --label dependencies --label automated \
+          || gh pr edit "$UPDATE_BRANCH" --repo "$GITHUB_REPOSITORY" --body-file "$body"

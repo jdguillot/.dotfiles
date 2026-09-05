@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# The gate: flake check, then build every host, appending everything to
+# build-failure.log so the fix agent has one file to read. Writes the host
+# list to build-hosts.json and each host's toplevel to path/<host>.
+#
+# Sequential rather than a job matrix, because the agent step that runs on
+# failure needs the failing tree and the failing log in the same workspace,
+# and a matrix job cannot hand its working tree to the next job.
+#
+# The host list is derived here, after the check, rather than passed in: when
+# the bump breaks evaluation there is no list to pass, and this script is the
+# thing that has to report that.
+set -euo pipefail
+
+: > build-failure.log
+mkdir -p path
+
+echo "::group::nix flake check"
+nix flake check --no-build 2>&1 | tee -a build-failure.log
+echo "::endgroup::"
+
+nix eval .#nixosConfigurations --apply builtins.attrNames --json > build-hosts.json
+
+failed=()
+while read -r h; do
+  echo "::group::build $h"
+  # --no-link: the toplevel is kept alive by the printed path being pushed
+  # to the caches in the next job, not by a result symlink in a workspace
+  # that is deleted when the ephemeral runner is torn down.
+  if nix build --fallback --no-link --print-out-paths \
+       ".#nixosConfigurations.$h.config.system.build.toplevel" \
+       > "path/$h" 2>> build-failure.log; then
+    echo "built $h -> $(cat "path/$h")"
+  else
+    rm -f "path/$h"
+    failed+=("$h")
+    echo "::error::$h failed to build"
+  fi
+  echo "::endgroup::"
+done < <(tr -d '[]" ' < build-hosts.json | tr ',' '\n' | grep .)
+
+# Every host, not just the first: one run should surface every breakage the
+# bump caused, so the agent can fix them together.
+if [ ${#failed[@]} -gt 0 ]; then
+  echo "failed to build: ${failed[*]}" | tee -a build-failure.log
+  exit 1
+fi

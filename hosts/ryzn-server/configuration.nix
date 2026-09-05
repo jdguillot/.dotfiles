@@ -111,11 +111,20 @@
         enable = true;
         url = "https://github.com/jdguillot/.dotfiles";
         count = 4;
-        # For the workflow's cache push steps; findutils for xargs.
+        # cachix/attic push the closure, findutils supplies xargs. The rest
+        # is the weekly update workflow: gh reads upstream issue trackers,
+        # npins bumps the vendored sources, and opencode is the agent that
+        # tries to adapt the repo when a bump breaks it (against this host's
+        # own loopback Ollama -- see .github/opencode/opencode.json).
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
           pkgs.findutils
+          pkgs.gh
+          pkgs.jq
+          pkgs.npins
+          pkgs.opencode
+          pkgs.curl
         ];
       };
 
