@@ -55,6 +55,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Preflight
+        run: .github/scripts/preflight.sh gh jq curl nix
+
       - name: Collect upstream signal
         if: ${{ !inputs.skip-scan }}
         env:
@@ -113,6 +116,12 @@ jobs:
         with:
           name: upstream-signal
           path: upstream-signal
+
+      - name: Preflight
+        # opencode included: it is only reached on the failure path, but
+        # finding out it is absent there means finding out after a build has
+        # already failed, with the fix step silently skipped.
+        run: .github/scripts/preflight.sh jq nix npins git opencode
 
       - name: Keep the run's scratch files out of the commit
         # The commit below has to stage whatever the fix agent touched, so it

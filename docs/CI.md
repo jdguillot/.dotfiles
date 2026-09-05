@@ -18,6 +18,17 @@ has to be listed in `github-runner.extraPackages` on `ryzn-server`. Today
 that is `cachix`, `attic-client`, `findutils`, `gh`, `jq`, `npins`,
 `opencode` and `curl`.
 
+Adding a tool there does nothing until `ryzn-server` is rebuilt, and the
+failure that follows is opaque — `jq: command not found` partway through
+some script, with nothing connecting it to a pending `nixos-rebuild`. The
+bump workflow's jobs therefore open with
+`.github/scripts/preflight.sh <tools…>`, which names what is missing and
+what to run:
+
+```bash
+deploy .#ryzn-server.system --remote-build
+```
+
 ## `cachix.yml` — build and cache
 
 Triggered by pushes to `main`, by pull requests, and weekly on Sundays.
