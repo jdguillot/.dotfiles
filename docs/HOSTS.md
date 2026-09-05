@@ -68,7 +68,7 @@ Templates live in `hosts/templates/`.
 2. Create `hosts/<name>/configuration.nix` and adjust only the host-specific values first.
 3. Register the host in `hosts/default.nix` — including the `home` and `deploy` fields. That single entry drives `nixosConfigurations`, `homeConfigurations`, `deploy.nodes`, and the CI build matrix; there is nothing to add to `flake.nix` or the workflow.
 4. If the host needs secrets or shared SSH aliases, run the `nixos-anywhere` helper with `--secrets`, `--ssh-host`, and one or more `--user` flags.
-5. If the host needs a binary cache that CI does not already have (a CUDA-enabled package, say), add it to the `extra-conf` of the build job in `.github/workflows/cachix.yml`. `modules/core/nix-settings` configures the nix daemon *on the built hosts* -- it has no effect on the runner performing the build.
+5. If the host needs a binary cache that CI does not already have (a CUDA-enabled package, say), add it to the nix configuration of the `ryzn-server` runner host itself. CI runs on that host's nix-daemon, so `modules/core/nix-settings` applies to the *built* hosts and has no effect on the build. See [`CI.md`](CI.md).
 6. Update the host table at the top of this file and in the README.
 
 ## Provisioning example

@@ -17,6 +17,7 @@ instead of guessing, and keep them current (see "Documentation"):
 - `docs/HOME-MANAGER.md` — Home Manager modules in `home/modules/`
 - `docs/DEPLOYMENT.md` — local rebuilds, `deploy-rs`, `nixos-anywhere`
 - `docs/SOPS.md` — secrets workflows
+- `docs/CI.md` — the self-hosted Actions workflows and the weekly bump
 - `docs/RECOMMENDATIONS.md` — repo conventions and their rationale
 
 ## Build, test, deploy

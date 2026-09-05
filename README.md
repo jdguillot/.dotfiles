@@ -24,6 +24,8 @@ Use the README for the quick map, then jump into the focused docs:
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) - local rebuilds,
   `deploy-rs`, and `nixos-anywhere`
 - [`docs/SOPS.md`](docs/SOPS.md) - system, home, and SSH-host secret workflows
+- [`docs/CI.md`](docs/CI.md) - the self-hosted GitHub Actions workflows:
+  build and cache, and the weekly dependency bump
 - [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) - repo
   recommendations and why they are worth following
 - [`AGENTS.md`](AGENTS.md) - working conventions for coding agents
