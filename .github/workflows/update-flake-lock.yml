@@ -33,6 +33,10 @@ on:
         description: Bump everything, without the upstream-issue triage pass.
         type: boolean
         default: false
+      fix-timeout-minutes:
+        description: Wall-clock budget for the fix agent before it is stopped.
+        type: number
+        default: 30
 
 permissions:
   contents: write
@@ -177,6 +181,8 @@ jobs:
           # them, and this one is thrown away with the job.
           HOME: ${{ runner.temp }}/agent-home
           OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
+          # Empty on a scheduled run, where `inputs` carries nothing.
+          BUDGET_MINUTES: ${{ inputs.fix-timeout-minutes || 30 }}
         run: |
           mkdir -p "$HOME/.config/opencode"
           # opencode reads skills from $XDG_CONFIG_HOME/opencode/skills, and
@@ -195,8 +201,31 @@ jobs:
           # --auto: nobody is here to approve each edit. The blast radius is
           # one ephemeral checkout, discarded unless it goes green, and the
           # prompt forbids touching the lock files.
-          opencode run --pure --auto --agent build \
-            "$(cat .github/opencode/fix-prompt.md)"
+          #
+          # Bounded, because the failure mode is not a wrong edit but no edit:
+          # the agent chases a wrong hypothesis and the run holds the
+          # concurrency group and the GPU for as long as it likes. The budget
+          # goes into the prompt too, so it can wind down and write its notes
+          # instead of only being killed. SIGTERM first, SIGKILL if it does
+          # not take the hint.
+          set +e
+          timeout --signal=TERM --kill-after=60s "${BUDGET_MINUTES}m" \
+            opencode run --pure --auto --agent build \
+            "$(sed "s/@BUDGET_MINUTES@/$BUDGET_MINUTES/g" .github/opencode/fix-prompt.md)"
+          rc=$?
+          set -e
+
+          if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then
+            echo "::warning::fix agent hit its ${BUDGET_MINUTES}m budget and was stopped"
+            {
+              echo
+              echo "## Stopped at the ${BUDGET_MINUTES} minute budget"
+              echo
+              echo "The agent did not reach a green tree in the time it was given."
+              echo "Anything above this line is its own account, written before it"
+              echo "was stopped; anything it was still verifying is unverified."
+            } >> fix-notes.md
+          fi
 
       - name: Re-check after the fix
         id: reverify

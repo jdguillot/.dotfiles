@@ -40,3 +40,13 @@ someone who has not seen the failure.
 If you cannot get both commands to pass, leave the tree as it is and say so
 in `fix-notes.md`. A pull request only opens when the build is green, so an
 honest failure is more useful than a change that hides one.
+
+You have @BUDGET_MINUTES@ minutes of wall clock for this whole attempt, every
+build you run included. A NixOS toplevel build on this host takes minutes, so
+budget for two or three verification passes, not twenty. Write `fix-notes.md`
+before you run out rather than being cut off mid-edit.
+
+One more thing, because it is the way this goes wrong: never conclude from a
+command whose stderr you discarded. If you redirect to `/dev/null` and read a
+count of zero, you have measured your own redirect. Re-run it showing stderr
+before you believe the number.

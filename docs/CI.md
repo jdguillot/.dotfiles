@@ -169,6 +169,15 @@ upstream renamed. It is told not to touch the lock files — reverting the bump
 is not a fix — and to write what it did to `fix-notes.md`, which becomes part
 of the pull request body. Then the check and build run again.
 
+The attempt is bounded: `fix-timeout-minutes` (default 30, raisable on a
+manual dispatch) is both a `timeout` around the run and a line in the prompt,
+so the agent can wind down and write its notes rather than only being killed.
+The failure mode being guarded against is not a wrong edit -- a wrong edit
+fails the re-check and no pull request opens -- but *no* edit: an agent
+chasing a bad hypothesis holds the concurrency group and the GPU indefinitely.
+On a timeout the step appends a note saying so, so the agent's own account and
+the fact it was cut off both reach the pull request body.
+
 It gets three skills, built as `.#ci-agent-skills` and linked into its
 opencode config: `nixos-managing` and `nix-flakes` for the repo's own subject
 matter, and `diagnosing-bugs` for the discipline a small local model most
