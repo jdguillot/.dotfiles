@@ -41,6 +41,7 @@ modules/
     ├── fonts/
     ├── gameserver/
     ├── gaming/
+    ├── gaze/
     ├── graphics/
     ├── kdeconnect/
     ├── networking/
@@ -145,6 +146,15 @@ Key options:
 - `cyberfighter.nix.trustedUsers`
 - `cyberfighter.nix.keepOutputs`
 - `cyberfighter.nix.keepDerivations`
+- `cyberfighter.nix.maxJobs` — cap concurrent derivations on low-RAM hosts;
+  the daemon's idle CPU/IO scheduling can't stop parallel builds from paging
+  the desktop out
+- `cyberfighter.nix.daemonMemoryHigh` — `MemoryHigh` for nix-daemon so the
+  kernel reclaims build memory before the user session's
+- `cyberfighter.nix.remoteBuilders` — `nix.buildMachines` entries; also flips
+  on `distributedBuilds` and `builders-use-substitutes`. Builders are
+  preferred, not required: unreachable ones fall back to local builds. See
+  [DEPLOYMENT.md](DEPLOYMENT.md) for the razer-nixos → ryzn-server setup
 - `cyberfighter.nix.extraOptions`
 - `cyberfighter.nix.garbageCollect`
 - `cyberfighter.nix.optimize`
@@ -231,6 +241,7 @@ Example:
 | `graphics` | `enable`, `nvidia.enable`, `nvidia.prime.enable`, `nvidia.prime.intelBusId`, `nvidia.prime.nvidiaBusId`, `nvidia.powerManagement`, `nvidia.openDriver`, `amd.enable` | GPU acceleration and vendor-specific tuning | <https://mynixos.com/search?q=hardware.nvidia> |
 | `sound` | `enable` | PipeWire-based sound stack | <https://mynixos.com/search?q=services.pipewire.enable> |
 | `fonts` | `enable` | common programming and desktop font packages | <https://mynixos.com/search?q=fonts.packages> |
+| `gaze` | `enable`, `gui`, `irCamera`, `dmsLockScreen` | face authentication via the `gaze` flake input's upstream module (`gazed` daemon, PAM modules). Face-auths `sudo` and `polkit-1` by default with password fallback; `irCamera` (`usb:VID:PID`) enables hybrid RGB+IR capture; `dmsLockScreen` provides `/etc/pam.d/dankshell` for the DMS lock screen. Further tuning through `services.gaze.settings`; other PAM services opt in via `security.pam.services.<name>.gaze.enable`. Enroll with `gaze add-face`, check with `gaze doctor` | <https://gaze.gundulabs.com/guide/nixos.html> |
 | `bluetooth` | `enable`, `powerOnBoot`, `extraPackages` | Bluetooth stack and helper tools | <https://mynixos.com/search?q=hardware.bluetooth.enable> |
 | `printing` | `enable` | CUPS printing | <https://mynixos.com/search?q=services.printing.enable> |
 

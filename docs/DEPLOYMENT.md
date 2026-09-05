@@ -56,6 +56,27 @@ Useful aliases defined by the Home Manager shell module:
 - `nu` - `nix flake update`
 - `nb` - build without switching
 
+### Distributed builds (razer-nixos → ryzn-server)
+
+razer-nixos offloads derivations to ryzn-server via
+`cyberfighter.nix.remoteBuilders` (which feeds `nix.buildMachines`).
+Authentication is Tailscale SSH — port 22 on the tailnet address is
+intercepted by tailscaled, tailnet ACLs authorize the connection, and no key
+material exists on either side. The Tailscale per-node host key is pinned in
+`programs.ssh.knownHosts` in the razer host config because the nix-daemon's
+SSH runs in batch mode.
+
+Behavior to know:
+
+- The builder is preferred, never required. When ryzn-server is off or
+  unreachable, each derivation logs a `cannot build on ssh://…` warning,
+  waits out one SSH timeout, and builds locally. `--builders ""` forces
+  local for a single invocation when working offline.
+- `builders-use-substitutes` is on: ryzn-server pulls dependencies from the
+  binary caches itself rather than over the SSH pipe from the laptop.
+- `sshUser` is `cyberfighter`, which is in `trusted-users` on ryzn-server —
+  required so locally-built (unsigned) inputs can be uploaded.
+
 ## `deploy-rs`
 
 This repo currently exports these deploy nodes:

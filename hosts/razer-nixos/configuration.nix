@@ -30,6 +30,28 @@
         "root"
         "cyberfighter"
       ];
+      # 8 cores / 15G RAM: parallel Rust derivations at `auto` page the
+      # desktop out (idle sched only protects CPU/IO, not memory).
+      maxJobs = 2;
+      daemonMemoryHigh = "10G";
+
+      # Offload heavy builds to ryzn-server (30G RAM) over Tailscale SSH --
+      # tailnet ACLs are the auth, no key material; cyberfighter is already
+      # in trusted-users there. Falls back to local when unreachable.
+      remoteBuilders = [
+        {
+          hostName = "ryzn-server";
+          sshUser = "cyberfighter";
+          systems = [ "x86_64-linux" ];
+          maxJobs = 2;
+          speedFactor = 2;
+          supportedFeatures = [
+            "big-parallel"
+            "kvm"
+            "nixos-test"
+          ];
+        }
+      ];
     };
 
     packages = {
@@ -67,6 +89,13 @@
       wine.enable = true;
 
       gaming.enable = true;
+
+      # IR camera is the greyscale node of the integrated 13d3:56d5 camera.
+      gaze = {
+        enable = true;
+        gui = true;
+        irCamera = "usb:13d3:56d5";
+      };
 
       flatpak = {
         browsers = true;
@@ -112,6 +141,17 @@
       };
     };
   };
+
+  # Compressed-RAM swap; outranks the disk partition (prio 5 vs -2), which
+  # stays as overflow. Paging survives builds without going through the SSD.
+  zramSwap.enable = true;
+
+  # Tailscale SSH's per-node host key (port 22 on the tailnet address is
+  # intercepted by tailscaled, not the real sshd). Pinned so the nix-daemon's
+  # batch-mode SSH to the remote builder gets a known host; if it ever
+  # rotates, builds fall back to local with a verification warning.
+  programs.ssh.knownHosts."ryzn-server".publicKey =
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILJF1qfm012fP6lTXrEA54zyK1+iYVEirdySFIe6L99l";
 
   programs.fish.enable = true;
   boot = {

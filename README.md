@@ -85,7 +85,7 @@ System modules live in `modules/`.
 Feature modules live under `cyberfighter.features.*` and currently cover:
 
 - Desktop and hardware: `desktop`, `graphics`, `sound`, `fonts`,
-  `bluetooth`, `printing`
+  `bluetooth`, `printing`, `gaze`
 - Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`,
   `kdeconnect`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
