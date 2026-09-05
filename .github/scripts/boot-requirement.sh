@@ -28,6 +28,16 @@ record() {
   while read -r host; do
     echo "::group::boot inputs for $host" >&2
     local k i m
+    # WSL hosts boot the Windows kernel: boot.kernel.enable is false, so
+    # system.build.kernel and initialRamdisk are never defined and evaluating
+    # them is a hard error. No bump can require a reboot there, so record them
+    # as unchanging and let compare() list them as switch-only.
+    if [ "$(nix eval --json ".#nixosConfigurations.$host.config.boot.kernel.enable")" != "true" ]; then
+      jq --arg h "$host" '.[$h] = {kernel: null, initrd: null, modules: null}' "$out" > "$out.tmp"
+      mv "$out.tmp" "$out"
+      echo "::endgroup::" >&2
+      continue
+    fi
     k=$(nix eval --raw ".#nixosConfigurations.$host.config.system.build.kernel")
     i=$(nix eval --raw ".#nixosConfigurations.$host.config.system.build.initialRamdisk")
     m=$(nix eval --raw ".#nixosConfigurations.$host.config.system.modulesTree")

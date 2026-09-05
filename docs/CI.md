@@ -195,6 +195,11 @@ the still-loaded old module, so
 traefik, litellm, comfyui and odysseus with it. deploy-rs then rolls the
 whole thing back. Use `deploy .#<host> --boot` and reboot for those hosts.
 
+WSL hosts are skipped: they boot the Windows kernel, `boot.kernel.enable` is
+false, and `system.build.kernel` / `initialRamdisk` are never defined there —
+evaluating them is a hard error, not an empty result. They are recorded as
+unchanging and always listed as switch-only.
+
 ### cache and pr
 
 The cache push is the same reusable workflow `cachix.yml` uses, so the
