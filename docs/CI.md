@@ -169,6 +169,13 @@ upstream renamed. It is told not to touch the lock files — reverting the bump
 is not a fix — and to write what it did to `fix-notes.md`, which becomes part
 of the pull request body. Then the check and build run again.
 
+It gets three skills, built as `.#ci-agent-skills` and linked into its
+opencode config: `nixos-managing` and `nix-flakes` for the repo's own subject
+matter, and `diagnosing-bugs` for the discipline a small local model most
+lacks -- form a hypothesis, test it, and never conclude from a command whose
+stderr was discarded. They share the description clamp in
+`lib/clamp-skill-description.nix` with the home catalog.
+
 It gets one MCP server, `nixos` (`mcp-nixos`, on the runner's PATH from the
 host's `github-runner.extraPackages`). A bump almost always breaks on an
 option or attribute that upstream renamed, and that is a question about what

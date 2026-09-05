@@ -178,7 +178,11 @@ jobs:
           HOME: ${{ runner.temp }}/agent-home
           OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
         run: |
-          mkdir -p "$HOME"
+          mkdir -p "$HOME/.config/opencode"
+          # opencode reads skills from $XDG_CONFIG_HOME/opencode/skills, and
+          # HOME here is a scratch dir with no home configuration behind it.
+          ln -sfn "$(nix build --no-link --print-out-paths .#ci-agent-skills)" \
+            "$HOME/.config/opencode/skills"
           echo "attempted=true" >> "$GITHUB_OUTPUT"
           # The agent reads this; the head of a Nix trace is the useful part,
           # but the error itself is at the tail, so keep both ends.

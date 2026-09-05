@@ -241,6 +241,10 @@
       # This is highly advised, and will prevent many possible mistakes
       checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
+      # Built by the update workflow and linked into the fix agent's opencode
+      # config; not part of any host's closure.
+      packages.${system}.ci-agent-skills = import ./ci/agent-skills.nix { inherit pkgs; };
+
     };
 
 }
