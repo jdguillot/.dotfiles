@@ -34,14 +34,14 @@ deploy .#ryzn-server.system --remote-build
 Triggered by pushes to `main`, by pull requests, and weekly on Sundays.
 
 ```
-                ┌─> build (matrix, one per host) ─┬─> deploy-checks
-flake-check ────┤                                 │
-                └─> home  (matrix, one per home) ─┴─> push
+               ┌─> build (matrix, one per host) ─┬─> deploy-checks
+list-hosts ────┤                                 ├─> flake-check
+               └─> home  (matrix, one per home) ─┴─> push
 ```
 
-- **flake-check** runs `nix flake check --no-build` and emits the host list,
-  read straight out of the flake. A host added to `hosts/default.nix` joins
-  the build matrix with no workflow edit.
+- **list-hosts** emits the host and home lists, read straight out of the
+  flake. A host added to `hosts/default.nix` joins the build matrix with no
+  workflow edit. Evaluation only, deliberately: see **flake-check** below.
 - **build** builds each host's `system.build.toplevel`. `fail-fast: false`,
   so one broken host does not cancel the others, and each successful build
   uploads its toplevel store path as a `path-<host>` artifact.
@@ -53,6 +53,13 @@ flake-check ────┤                                 │
   gate. Their closures reach the caches too, so `hs` on the other machines
   pulls instead of building. The attribute name carries an `@`, so the
   attrpath needs quoting inside the flake reference.
+- **flake-check** runs `nix flake check --no-build --show-trace`, *after* the
+  matrix rather than ahead of it. Evaluating a flake output can need a store
+  path realised — hermes-agent is uv2nix, import-from-derivation throughout —
+  and `--no-build` refuses to realise it, so a check run first fails on a cold
+  store with `path '...' is not valid`, naming something unrelated to the
+  change. By the time the matrix is done the store holds everything. Same
+  reasoning, and the same fix, as `check-and-build.sh`.
 - **deploy-checks** builds `checks.x86_64-linux.{deploy-schema,deploy-activate}`
   once the matrix has the toplevels those depend on. It runs only when every
   host built; a missing toplevel would fail the activation check for a reason
@@ -93,9 +100,12 @@ been seen on both the laptop and the runner. Re-running is the fix.
 
 Two gates are worth understanding:
 
-- The push job requires `needs.flake-check.result == 'success'`. A skipped
+- The push job requires `needs.list-hosts.result == 'success'`. A skipped
   `needs` still satisfies `!cancelled()`, so without that explicit assertion
-  a failed evaluation would fall straight through to a push.
+  a failed evaluation would fall straight through to a push. It gates on the
+  eval, not on **flake-check**: a tree that does not evaluate must not be
+  pushed, but flake-check is skipped whenever a single host fails to build,
+  and pushing what *did* build is the whole point of this job.
 - The weekly run passes `reset-record: true`, which ignores the pushed-paths
   record and re-offers the whole closure, so anything garbage-collected or
   evicted upstream comes back.
@@ -155,13 +165,13 @@ with an explicit name list, so a hold is a real hold — that input keeps its
 revision while everything around it moves. Inputs that `follows` nixpkgs
 still move with nixpkgs; holding those back would mean holding nixpkgs.
 
-`.github/scripts/check-and-build.sh` then runs `nix flake check --no-build`
-and builds every host and every standalone home configuration, sequentially
-rather than as a matrix: the fix step
-below needs the failing tree and the failing log in one workspace, and a
-matrix job cannot hand its working tree to the next job. It builds every host
-even after one fails, so a single run surfaces every breakage the bump
-caused.
+`.github/scripts/check-and-build.sh` then builds every host and every
+standalone home configuration, and runs `nix flake check --no-build`
+afterwards (see below). The builds are sequential rather than a matrix: the
+fix step below needs the failing tree and the failing log in one workspace,
+and a matrix job cannot hand its working tree to the next job. It builds
+every host even after one fails, so a single run surfaces every breakage the
+bump caused.
 
 If that fails, `opencode run --auto` gets the failure log and
 `.github/opencode/fix-prompt.md`, and tries to adapt the repo to whatever

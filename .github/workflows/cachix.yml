@@ -31,21 +31,20 @@ env:
     access-tokens = github.com=${{ github.token }}
 
 jobs:
-  flake-check:
+  # Evaluation only, and deliberately not `nix flake check`. Evaluating a
+  # flake output can need a store path realised -- hermes-agent is uv2nix,
+  # import-from-derivation throughout -- and `--no-build` refuses to realise
+  # it, so a check run ahead of the matrix fails with `path '...' is not
+  # valid` on a cold store. The check moved below the matrix; this eval stays
+  # here because the matrix cannot be built without it, and it is still the
+  # gate that catches a flake that does not evaluate at all.
+  list-hosts:
     runs-on: [self-hosted, nixos]
     outputs:
       hosts: ${{ steps.list-hosts.outputs.hosts }}
       homes: ${{ steps.list-hosts.outputs.homes }}
     steps:
       - uses: actions/checkout@v7
-      - name: Flake check
-        # --no-build, and it has to stay: `checks` is deploy-rs's schema and
-        # activation checks, and the activation check depends on each node's
-        # profile path. Realising it therefore realises the host toplevels,
-        # which drags the entire build into this one serial job ahead of the
-        # matrix -- measured at 54s to 7m22s. The checks are built in their
-        # own job below instead, once the matrix has the toplevels.
-        run: nix flake check --no-build
       - name: List hosts
         id: list-hosts
         # The build matrix comes straight from the flake, so a host added to
@@ -73,12 +72,12 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   build:
-    needs: flake-check
+    needs: list-hosts
     if: github.event.pull_request.draft == false
     runs-on: [self-hosted, nixos]
     strategy:
       matrix:
-        host: ${{ fromJSON(needs.flake-check.outputs.hosts) }}
+        host: ${{ fromJSON(needs.list-hosts.outputs.hosts) }}
       fail-fast: false # Continue other builds if one fails
     steps:
       - uses: actions/checkout@v7
@@ -107,12 +106,12 @@ jobs:
   # check that was not already redundant, and puts the closures in the cache
   # so `hs` on the other machines pulls instead of building.
   home:
-    needs: flake-check
+    needs: list-hosts
     if: github.event.pull_request.draft == false
     runs-on: [self-hosted, nixos]
     strategy:
       matrix:
-        home: ${{ fromJSON(needs.flake-check.outputs.homes) }}
+        home: ${{ fromJSON(needs.list-hosts.outputs.homes) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v7
@@ -138,8 +137,25 @@ jobs:
           path: path/home-${{ matrix.home }}
           retention-days: 1
 
+  # Below the matrix, for the reason on list-hosts: by now the store holds
+  # every toplevel, so whatever evaluation needs realised is already there.
+  # --show-trace because this is the command that truncates its own trace and
+  # says so; the matrix builds above already name their own file and line.
+  flake-check:
+    needs: [list-hosts, build, home]
+    if: ${{ needs.build.result == 'success' && needs.home.result == 'success' }}
+    runs-on: [self-hosted, nixos]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Flake check
+        # --no-build has to stay: `checks` is deploy-rs's schema and
+        # activation checks, and the activation check depends on each node's
+        # profile path. Realising them here would rebuild what the matrix
+        # just did. They are built in their own job below instead.
+        run: nix flake check --no-build --show-trace
+
   deploy-checks:
-    needs: [flake-check, build]
+    needs: [list-hosts, build]
     # After the matrix, not as part of the gate: by now every toplevel these
     # depend on is in the shared store, so this is the cheap part on its own.
     # Only worth running when every host built -- a missing toplevel fails
@@ -158,15 +174,19 @@ jobs:
             .#checks.x86_64-linux.deploy-activate
 
   push:
-    needs: [flake-check, build, home]
+    needs: [list-hosts, build, home]
     # Push whatever did build, even if some hosts failed -- but never on a
-    # failed flake check. A skipped `needs` still satisfies `!cancelled()`,
-    # so the flake-check result has to be asserted explicitly or an eval
+    # tree that does not evaluate. A skipped `needs` still satisfies
+    # `!cancelled()`, so the result has to be asserted explicitly or an eval
     # error would silently fall through to a push of the previous closure.
-    if: ${{ !cancelled() && needs.flake-check.result == 'success' }}
+    # list-hosts, not flake-check: the eval error is the thing that has to
+    # block a push, and gating on the relocated check would also skip the
+    # push whenever a single host failed to build -- which is exactly the
+    # case this job exists to serve.
+    if: ${{ !cancelled() && needs.list-hosts.result == 'success' }}
     uses: ./.github/workflows/push-cache.yml
     with:
-      all-hosts: ${{ needs.flake-check.outputs.hosts }}
+      all-hosts: ${{ needs.list-hosts.outputs.hosts }}
       # Weekly reconcile: re-offer everything so anything GC'd comes back.
       reset-record: ${{ github.event_name == 'schedule' }}
     secrets: inherit
