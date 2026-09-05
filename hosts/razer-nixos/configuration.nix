@@ -90,15 +90,15 @@
 
       gaming.enable = true;
 
-      # IR camera is the greyscale node of the integrated 13d3:56d5 camera.
-      # rgb pinned to the v4l2 node: the PipeWire "primary" path stalled
-      # during enrollment (fd handoff from the GUI session never delivered
-      # frames) and would be unavailable at the greeter anyway.
+      # RGB-only for now: gazed's IR capture stalls on this camera (stream
+      # opens, v4l2 DQBUF never returns; only reproducible inside gazed) --
+      # reported upstream. rgb pinned to the v4l2 node because the PipeWire
+      # "primary" path needs a user session the greeter won't have.
+      # IR node when re-enabling: irCamera = "usb:13d3:56d5".
       gaze = {
         enable = true;
         gui = true;
         rgbCamera = "/dev/video0";
-        irCamera = "usb:13d3:56d5";
       };
 
       flatpak = {
