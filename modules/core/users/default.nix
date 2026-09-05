@@ -28,6 +28,7 @@ in
       extraGroups = [
         "networkmanager"
         "wheel"
+        "input"
       ]
       ++ cfg.extraGroups;
       initialHashedPassword = "$y$j9T$ee5r38mtIKQ.eA.TimY7g0$6DUlYVVIus9SD0mPDWDrDeovBmlaVqIJ4/4TKruS1hD";
