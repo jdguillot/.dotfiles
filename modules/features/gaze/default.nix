@@ -23,6 +23,21 @@ in
 
     gui = lib.mkEnableOption "the Gaze GTK4 configuration GUI";
 
+    rgbCamera = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "/dev/video0";
+      description = ''
+        RGB camera node. The upstream default `"primary"` goes through
+        PipeWire, which needs a user session to lend the root daemon a
+        stream fd -- flaky for enrollment handoff and absent entirely at
+        greeters/lock screens. A direct `/dev/video*` node avoids that.
+        NOTE: with the upstream default `mutableConfig = true`, the config
+        file is seeded once; changing this later needs a matching edit to
+        /etc/gaze/config.toml (or set `services.gaze.mutableConfig = false`).
+      '';
+    };
+
     irCamera = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -51,12 +66,14 @@ in
     services.gaze = {
       enable = true;
       gui.enable = cfg.gui;
-      settings = lib.mkIf (cfg.irCamera != null) {
-        cameras = {
+      settings.cameras =
+        lib.optionalAttrs (cfg.rgbCamera != null) {
+          rgb = cfg.rgbCamera;
+        }
+        // lib.optionalAttrs (cfg.irCamera != null) {
           ir = cfg.irCamera;
           emitter_enabled = true;
         };
-      };
     };
 
     security.pam.services.dankshell = lib.mkIf cfg.dmsLockScreen {

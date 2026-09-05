@@ -91,9 +91,13 @@
       gaming.enable = true;
 
       # IR camera is the greyscale node of the integrated 13d3:56d5 camera.
+      # rgb pinned to the v4l2 node: the PipeWire "primary" path stalled
+      # during enrollment (fd handoff from the GUI session never delivered
+      # frames) and would be unavailable at the greeter anyway.
       gaze = {
         enable = true;
         gui = true;
+        rgbCamera = "/dev/video0";
         irCamera = "usb:13d3:56d5";
       };
 
