@@ -19,10 +19,6 @@
         {
           "enabled": true,
           "id": "homeAssistantMonitor"
-        },
-        {
-          "enabled": true,
-          "id": "aiOverviewControl"
         }
       ],
       "clickThrough": false,
@@ -47,6 +43,18 @@
         },
         {
           "enabled": true,
+          "id": "aiOverviewControl"
+        },
+        {
+          "enabled": true,
+          "id": "developerUtilities"
+        },
+        {
+          "enabled": true,
+          "id": "quickCapture"
+        },
+        {
+          "enabled": false,
           "focusedWindowCompactMode": true,
           "focusedWindowSize": 0,
           "id": "focusedWindow"
@@ -84,9 +92,9 @@
         {
           "enabled": true,
           "id": "controlCenterButton",
-          "showAudioPercent": true,
+          "showAudioPercent": false,
           "showBatteryIcon": false,
-          "showBrightnessIcon": true,
+          "showBrightnessIcon": false,
           "showBrightnessPercent": false,
           "showIdleInhibitorIcon": false,
           "showMicIcon": false,
@@ -173,6 +181,11 @@
   },
   "dockOpenOnOverview": true,
   "osdPowerProfileEnabled": true,
+  "screenPreferences": {
+    "wallpaper": [
+      "all"
+    ]
+  },
   "showOccupiedWorkspacesOnly": true,
   "showWeekNumber": true,
   "showWorkspaceApps": true,
