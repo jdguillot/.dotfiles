@@ -174,6 +174,27 @@ or after that fix. Nothing downstream runs otherwise, so a week that cannot
 be made to work ends with a failed run and a summary rather than a pull
 request.
 
+### How the bump has to be applied
+
+`.github/scripts/boot-requirement.sh` records `kernel`, `initrd` and the
+modules tree for every host before the bump and again after it, and names the
+hosts a plain `switch` cannot fully apply. It is pure evaluation — no
+building — and the result goes in the pull request body.
+
+This is a deterministic check on purpose, not something the triage model is
+asked to judge: it is the same comparison `nixos-rebuild` makes to decide
+whether a reboot is pending, only across the bump rather than against the
+running system.
+
+The modules tree is the entry that earns its place. It is built from
+`boot.extraModulePackages` as well as the kernel, so an out-of-tree driver
+bump — nvidia, here — shows up even when the kernel is unchanged. That case
+is worse than under-applying: new NVML userspace cannot initialise against
+the still-loaded old module, so
+`nvidia-container-toolkit-cdi-generator` fails activation and takes docker,
+traefik, litellm, comfyui and odysseus with it. deploy-rs then rolls the
+whole thing back. Use `deploy .#<host> --boot` and reboot for those hosts.
+
 ### cache and pr
 
 The cache push is the same reusable workflow `cachix.yml` uses, so the

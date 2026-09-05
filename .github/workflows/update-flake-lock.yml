@@ -133,9 +133,18 @@ jobs:
           /path/
           /build-hosts.json
           /build-homes.json
+          /boot-pre.json
+          /boot-post.json
+          /reboot-notes.md
           /build-failure.log
           /fix-notes.md
           EOF
+
+      - name: Record boot inputs before the bump
+        # Pure evaluation of kernel/initrd/modules per host, so the step
+        # after the bump can say which hosts a plain `switch` cannot fully
+        # apply. Has to run before apply-updates.sh moves the lock.
+        run: .github/scripts/boot-requirement.sh record boot-pre.json
 
       - name: Apply the bump
         id: apply
@@ -200,6 +209,14 @@ jobs:
           echo "hosts=$(cat build-hosts.json)" >> "$GITHUB_OUTPUT"
           echo "green=true" >> "$GITHUB_OUTPUT"
 
+      - name: Work out how the bump has to be applied
+        id: reboot
+        if: steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true'
+        run: |
+          .github/scripts/boot-requirement.sh record boot-post.json
+          .github/scripts/boot-requirement.sh compare boot-pre.json boot-post.json > reboot-notes.md
+          cat reboot-notes.md >> "$GITHUB_STEP_SUMMARY"
+
       # Push the branch from here, not from the pr job: the agent's fix lives
       # in this working tree, and only this job has it. A branch push is not
       # a pull request, and it only happens when the tree is green.
@@ -229,6 +246,7 @@ jobs:
           path: |
             build-failure.log
             fix-notes.md
+            reboot-notes.md
           if-no-files-found: ignore
           retention-days: 14
 
@@ -279,6 +297,12 @@ jobs:
               echo "> The cache push did not succeed ($CACHED) &mdash; switching will build locally."
             fi
             echo ""
+            if [ -s update-report/reboot-notes.md ]; then
+              echo "## Applying this bump"
+              echo ""
+              cat update-report/reboot-notes.md
+              echo ""
+            fi
             echo "## Pre-update triage"
             echo ""
             jq -r .summary upstream-signal/verdict.json
