@@ -36,8 +36,11 @@ jobs:
   # import-from-derivation throughout -- and `--no-build` refuses to realise
   # it, so a check run ahead of the matrix fails with `path '...' is not
   # valid` on a cold store. The check moved below the matrix; this eval stays
-  # here because the matrix cannot be built without it, and it is still the
-  # gate that catches a flake that does not evaluate at all.
+  # here because the matrix cannot be built without it. It is not a syntax
+  # gate: `builtins.attrNames` forces the attrset spine, not each
+  # configuration, so a broken host module passes here and fails a second
+  # later in its own matrix job -- nix evaluates before it builds, so that
+  # costs a second, not a build.
   list-hosts:
     runs-on: [self-hosted, nixos]
     outputs:
@@ -175,14 +178,16 @@ jobs:
 
   push:
     needs: [list-hosts, build, home]
-    # Push whatever did build, even if some hosts failed -- but never on a
-    # tree that does not evaluate. A skipped `needs` still satisfies
-    # `!cancelled()`, so the result has to be asserted explicitly or an eval
-    # error would silently fall through to a push of the previous closure.
-    # list-hosts, not flake-check: the eval error is the thing that has to
-    # block a push, and gating on the relocated check would also skip the
-    # push whenever a single host failed to build -- which is exactly the
-    # case this job exists to serve.
+    # Push whatever did build, even if some hosts failed. A skipped `needs`
+    # still satisfies `!cancelled()`, so the result has to be asserted
+    # explicitly rather than left implicit.
+    #
+    # list-hosts, not flake-check: gating on the relocated check would skip
+    # the push whenever one host failed to build, which is the case this job
+    # exists to serve. Nothing is lost by not gating on evaluation either --
+    # a tree that does not evaluate uploads no `path-*` artifacts, and
+    # push-cache.yml exits 0 on an empty root set rather than falling back to
+    # anything.
     if: ${{ !cancelled() && needs.list-hosts.result == 'success' }}
     uses: ./.github/workflows/push-cache.yml
     with:

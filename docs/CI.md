@@ -101,11 +101,13 @@ been seen on both the laptop and the runner. Re-running is the fix.
 Two gates are worth understanding:
 
 - The push job requires `needs.list-hosts.result == 'success'`. A skipped
-  `needs` still satisfies `!cancelled()`, so without that explicit assertion
-  a failed evaluation would fall straight through to a push. It gates on the
-  eval, not on **flake-check**: a tree that does not evaluate must not be
-  pushed, but flake-check is skipped whenever a single host fails to build,
-  and pushing what *did* build is the whole point of this job.
+  `needs` still satisfies `!cancelled()`, so the result has to be asserted
+  explicitly rather than left implicit. It gates on the eval rather than on
+  **flake-check** because flake-check is skipped whenever a single host fails
+  to build, and pushing what *did* build is the whole point of this job.
+  Nothing is lost by not gating on evaluation: a tree that does not evaluate
+  uploads no `path-*` artifacts, and `push-cache.yml` exits 0 on an empty
+  root set rather than falling back to anything.
 - The weekly run passes `reset-record: true`, which ignores the pushed-paths
   record and re-offers the whole closure, so anything garbage-collected or
   evicted upstream comes back.
