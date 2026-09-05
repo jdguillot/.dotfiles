@@ -104,6 +104,45 @@ flake input rather than coming from nixpkgs.
 | `search`   | `dsearch` | Indexed filesystem search; runs a user service that keeps the index warm |
 | `calendar` | `dcal`    | DankCalendar, with CalDAV sync and a reminder service |
 
+### Pinned plugins (`plugins.*`)
+
+DMS's plugin manager clones plugins from GitHub into
+`~/.config/DankMaterialShell/plugins/<id>` and records the commits in
+`plugins.lock.json` — reproducible only for the machine that ran it. The
+plugin set is pinned in `npins/sources.json` instead and deployed by
+`home/modules/features/dank/plugins.nix`, which maps each pin onto
+upstream's `programs.dank-material-shell.plugins.<id>.src`. Home Manager
+then writes each `plugins/<id>` as a store symlink.
+
+Attribute names in that module's catalog are the plugin's own `id` from its
+`plugin.json`, because DMS keys both the directory and the
+`plugin_settings.json` entry on it. Adding a plugin is two steps:
+
+```bash
+npins add github <owner> <repo> --branch <branch> --name dms-plugin-<name>
+# then add one catalog line in home/modules/features/dank/plugins.nix
+```
+
+`npins update dms-plugin-<name>` moves one forward; the GUI's own
+"update plugin" no longer applies, since the source is a read-only store
+path. `plugins.exclude` drops a catalog entry on a host, `plugins.extra`
+adds one without touching the catalog.
+
+The first switch after this hands the paths over: any real directory (or
+`.repos` symlink) DMS had installed is renamed to `<id>.pre-nix-bak`, and
+the matching `plugins.lock.json` entries are dropped so the GUI updater
+stops treating them as its own. Plugins installed through the GUI later are
+untouched — Home Manager only owns the names in the catalog.
+
+`plugin_settings.json` is deliberately **not** managed. Upstream turns it
+into a read-only store symlink the moment any plugin declares `settings`,
+which would break the settings GUI, and it is where plugins keep API tokens
+(the Home Assistant monitor stores a long-lived token and an internal URL
+there) — neither belongs in a public repo. Activation only seeds
+`{"<id>": {"enabled": true}}` for catalog plugins the file does not mention
+yet, merging under whatever is already there, so a GUI toggle survives a
+switch and new plugins arrive switched on.
+
 ### Plugin dependencies (`extraQtPackages`)
 
 DMS bar plugins can need QML modules the shell wasn't built against — the

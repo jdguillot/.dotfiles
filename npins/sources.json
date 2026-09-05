@@ -55,6 +55,149 @@
       "url": "https://github.com/nodnarbnitram/claude-code-extensions/archive/35e7f7deae689e12b94f9c242b8f59efe0f66476.tar.gz",
       "hash": "sha256-hupckXf0IYr5Cv08wdYNDHHAss5Ajefowioes16GgrQ="
     },
+    "dms-plugin-ai-overview": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "bernardopg",
+        "repo": "AiOverviewControl"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "f2d0fc19493539c3134da3090b0887538ecbdfb0",
+      "url": "https://github.com/bernardopg/AiOverviewControl/archive/f2d0fc19493539c3134da3090b0887538ecbdfb0.tar.gz",
+      "hash": "sha256-11zusgffdPd3/ZQ56uurmuYSWsdZwrdF8bVRHC8cNHM="
+    },
+    "dms-plugin-dankscale": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "dwright134",
+        "repo": "dms-dankscale"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "bddebf0e2935ba23b0614ff9af5bf8f4ed6d3d9f",
+      "url": "https://github.com/dwright134/dms-dankscale/archive/bddebf0e2935ba23b0614ff9af5bf8f4ed6d3d9f.tar.gz",
+      "hash": "sha256-o5kcFV7VAmHJqsKgnjDuuryubnuI9U+GQIPOlENZ5ao="
+    },
+    "dms-plugin-developer-utilities": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "xxyangyoulin",
+        "repo": "dms-plugin-developer-utilities"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "b115dcbbe0d82c80190f4fcc255a935e33889f4a",
+      "url": "https://github.com/xxyangyoulin/dms-plugin-developer-utilities/archive/b115dcbbe0d82c80190f4fcc255a935e33889f4a.tar.gz",
+      "hash": "sha256-bpsE5x26Ou7Sfzgv/ttIxfqK3w51x+kSP2dKOIGakTA="
+    },
+    "dms-plugin-hass": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "xxyangyoulin",
+        "repo": "dms-plugin-hass"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "9acf0ae748b1fd4686b763a85b5b65b5d0931c08",
+      "url": "https://github.com/xxyangyoulin/dms-plugin-hass/archive/9acf0ae748b1fd4686b763a85b5b65b5d0931c08.tar.gz",
+      "hash": "sha256-eZYYAFDdtLD80NV6FVuFsrystpksXP24KfjOebEVjFk="
+    },
+    "dms-plugin-nix-monitor": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "antonjah",
+        "repo": "nix-monitor"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "ef3db9d5a525ddf41355e8c456b40d56480a6626",
+      "url": "https://github.com/antonjah/nix-monitor/archive/ef3db9d5a525ddf41355e8c456b40d56480a6626.tar.gz",
+      "hash": "sha256-lTbQ13lQ3ZPNkdnFmxAMGf1Gjx//80lDDlcJR8msREI="
+    },
+    "dms-plugin-nix-package-runner": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "iahccc",
+        "repo": "NixPackageRunner"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "829ad93c15b7c0ec82a6d7483728029037442601",
+      "url": "https://github.com/iahccc/NixPackageRunner/archive/829ad93c15b7c0ec82a6d7483728029037442601.tar.gz",
+      "hash": "sha256-ur+1oN+QmTu7p5ZMpL3rCd4JGYbkerko4twa+tH6uvg="
+    },
+    "dms-plugin-quick-capture": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "hthienloc",
+        "repo": "dms-quick-capture"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "0dbf5c4eb2609244cad6dc937b5f254a27a906ff",
+      "url": "https://github.com/hthienloc/dms-quick-capture/archive/0dbf5c4eb2609244cad6dc937b5f254a27a906ff.tar.gz",
+      "hash": "sha256-t7A2im0t200FFhxRPMNHgXjPzva+t5hV3R2DOn/FJpg="
+    },
+    "dms-plugin-tailscale": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "cglavin50",
+        "repo": "dms-tailscale"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "f035c3a0923e5872f912fc9bd4cc0c7f161fbe2a",
+      "url": "https://github.com/cglavin50/dms-tailscale/archive/f035c3a0923e5872f912fc9bd4cc0c7f161fbe2a.tar.gz",
+      "hash": "sha256-cXuljANI8aO5cb7xwIs/ttucJD/y9s9PXuUw7LS+BGI="
+    },
+    "dms-plugin-typing-sounds": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "hthienloc",
+        "repo": "dms-typing-sounds"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "0d61da952116aa18942128ca216bffc558684fdf",
+      "url": "https://github.com/hthienloc/dms-typing-sounds/archive/0d61da952116aa18942128ca216bffc558684fdf.tar.gz",
+      "hash": "sha256-pWeyreTQvLhq/ka/mBTyo+kBxG8WSUdhPZCgQSx90hI="
+    },
+    "dms-plugin-wallpaper-carousel": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "motor-dev",
+        "repo": "wallpaperCarousel"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "761ecd1b7f347beee9f17909f8334d987c935a1a",
+      "url": "https://github.com/motor-dev/wallpaperCarousel/archive/761ecd1b7f347beee9f17909f8334d987c935a1a.tar.gz",
+      "hash": "sha256-/LoehTfSeeqkgIXw46Ll/PrxeEDhg4RZI5BXib6yEnI="
+    },
+    "dms-plugins": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "AvengeMedia",
+        "repo": "dms-plugins"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "2a0f6c57207545433f26b2af32b7d4e72b4c09e2",
+      "url": "https://github.com/AvengeMedia/dms-plugins/archive/2a0f6c57207545433f26b2af32b7d4e72b4c09e2.tar.gz",
+      "hash": "sha256-r8jPExx8Kyhk7XGFL9QxfnwvsNVSMMct/RcNMOukCww="
+    },
     "hyperskills": {
       "type": "Git",
       "repository": {

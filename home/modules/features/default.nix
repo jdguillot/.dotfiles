@@ -4,6 +4,7 @@
     ./shell/default.nix
     ./noctalia/default.nix
     ./dank/default.nix
+    ./dank/plugins.nix
     ./niri/default.nix
     ./sops/default.nix
     ./editor/default.nix
