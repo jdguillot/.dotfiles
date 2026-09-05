@@ -17,6 +17,7 @@ let
   nixSkills = sources.nix-skills;
   cceSkills = "${sources.claude-code-extensions}/.claude/skills";
   mattpocockSkills = "${sources.mattpocock-skills}/skills";
+  hyperSkills = "${sources.hyperskills}/skills";
 
   # One catalog drives everything: adding a vendored skill is one line here.
   # `requires` names catalog entries that must ship alongside this one.
@@ -39,11 +40,13 @@ let
     to-spec = "${mattpocockSkills}/engineering/to-spec";
     improve-codebase-architecture = "${mattpocockSkills}/engineering/improve-codebase-architecture";
     codebase-design = "${mattpocockSkills}/engineering/codebase-design";
+    tui-design = "${hyperSkills}/tui-design";
   };
 
   # Normalize plain-path entries, then close over `requires` so a shipped
   # skill always brings its companions.
-  entryOf = name: if lib.isAttrs catalog.${name} then catalog.${name} else { path = catalog.${name}; };
+  entryOf =
+    name: if lib.isAttrs catalog.${name} then catalog.${name} else { path = catalog.${name}; };
   closure = names: lib.unique (lib.concatMap (n: [ n ] ++ (entryOf n).requires or [ ]) names);
   catalogSkills = lib.genAttrs (closure (lib.attrNames catalog)) (n: (entryOf n).path);
 
@@ -85,7 +88,7 @@ in
     extraSkills = lib.mkOption {
       type = lib.types.attrsOf (lib.types.either lib.types.path lib.types.str);
       default = { };
-      example = lib.literalExpression ''{ my-skill = ./my-skill; }'';
+      example = lib.literalExpression "{ my-skill = ./my-skill; }";
       description = "Extra skills (name → skill directory), merged over the local and vendored catalog.";
     };
   };

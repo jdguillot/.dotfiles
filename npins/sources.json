@@ -55,6 +55,19 @@
       "url": "https://github.com/nodnarbnitram/claude-code-extensions/archive/35e7f7deae689e12b94f9c242b8f59efe0f66476.tar.gz",
       "hash": "sha256-hupckXf0IYr5Cv08wdYNDHHAss5Ajefowioes16GgrQ="
     },
+    "hyperskills": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "hyperb1iss",
+        "repo": "hyperskills"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "63dc003083b8dfcda80f0d520f3565c06db12208",
+      "url": "https://github.com/hyperb1iss/hyperskills/archive/63dc003083b8dfcda80f0d520f3565c06db12208.tar.gz",
+      "hash": "sha256-1DY94LNrYmCC/3MxW5bhyVcrr/xzttrcYLURNPW9YRM="
+    },
     "mattpocock-skills": {
       "type": "Git",
       "repository": {
