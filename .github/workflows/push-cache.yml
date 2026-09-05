@@ -1,0 +1,109 @@
+# .github/workflows/push-cache.yml
+#
+# Reusable: takes the per-host `path-*` artifacts a build job uploaded and
+# pushes the deduplicated union closure once per cache. Called by both
+# cachix.yml and update-flake-lock.yml -- the diffing against the
+# pushed-paths record is subtle enough that a second copy would drift.
+#
+# Callers must upload one artifact per successfully built host, named
+# `path-<hostname>`, containing a single file whose contents are the
+# toplevel store path.
+name: Push cache
+
+on:
+  workflow_call:
+    inputs:
+      all-hosts:
+        description: JSON array of every host the caller tried to build; the difference against the artifacts present is reported as failed.
+        type: string
+        default: "[]"
+      reset-record:
+        description: Ignore the pushed-paths record and re-offer the whole closure, so anything GC'd or evicted upstream comes back.
+        type: boolean
+        default: false
+    secrets:
+      ATTIC_TOKEN:
+        required: true
+      CACHIX_AUTH_TOKEN:
+        required: true
+
+jobs:
+  push:
+    runs-on: [self-hosted, nixos]
+    steps:
+      - uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: path-*
+          path: paths
+          merge-multiple: true
+      # Paths recorded here were fully pushed by an earlier run; the diff
+      # below skips even the per-path existence queries for them. Cache keys
+      # are immutable, so save under the run id and restore the newest.
+      - uses: actions/cache@v6
+        with:
+          path: pushed-paths.txt
+          key: pushed-paths-${{ github.run_id }}
+          restore-keys: |
+            pushed-paths-
+      - name: Push new paths once
+        env:
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        run: |
+          cat paths/* 2>/dev/null | sort -u > roots.txt || true
+          # Every host failed to build. The Report step below writes the
+          # summary line, with the host names.
+          if ! [ -s roots.txt ]; then
+            echo "No successful builds to push."
+            exit 0
+          fi
+          nix path-info -r $(< roots.txt) | sort -u > closure.txt
+          touch pushed-paths.txt
+          sort -u pushed-paths.txt > prev.txt
+          if [ "${{ inputs.reset-record }}" = "true" ]; then
+            : > prev.txt
+          fi
+          comm -13 prev.txt closure.txt > new.txt
+          if [ -s new.txt ]; then
+            attic login local https://attic.cyberfighter.space/ "$ATTIC_TOKEN"
+            xargs attic push main < new.txt
+            cachix push jdguillot < new.txt
+          fi
+          # Only reached after successful pushes; a failed run keeps the old
+          # record so nothing is skipped by mistake next time.
+          sort -u prev.txt closure.txt > pushed-paths.txt
+      - name: Report
+        env:
+          # Every host the caller was asked to build; artifacts present are
+          # the subset that succeeded. Naming the difference keeps a partial
+          # push from reading like a complete one.
+          ALL_HOSTS: ${{ inputs.all-hosts }}
+        run: |
+          # tr, not jq: the runner PATH is coreutils + nix + git and little
+          # else, and the value is a flat JSON array of host names.
+          missing=$(comm -23 \
+            <(printf '%s' "$ALL_HOSTS" | tr -d '[]" ' | tr ',' '\n' | sort) \
+            <(ls paths 2>/dev/null | sort) | paste -sd', ')
+          [ -s roots.txt ] || {
+            echo "No successful builds to push (failed: ${missing:-all})." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          # True deduplicated size: sum of NAR sizes over the union closure.
+          union=0
+          while read -r _ s; do union=$((union + s)); done < <(xargs nix path-info -s < closure.txt)
+          {
+            echo "## Cache push"
+            echo ""
+            echo "| Host | Closure | Paths | Toplevel |"
+            echo "|---|---|---|---|"
+            for f in paths/*; do
+              p=$(cat "$f")
+              read -r _ s <<<"$(nix path-info -S "$p" | tail -1)"
+              echo "| \`${f##*/}\` | $(numfmt --to=iec "$s")B | $(nix path-info -r "$p" | wc -l) | \`${p##*/}\` |"
+            done
+            echo "| **union (deduplicated)** | **$(numfmt --to=iec "$union")B** | **$(wc -l < closure.txt)** | pushed once |"
+            echo ""
+            echo "**New paths pushed this run:** $(wc -l < new.txt) of $(wc -l < closure.txt) &mdash; the rest were already recorded as pushed. Targets: \`attic:main\`, \`cachix:jdguillot\`."
+            [ -n "$missing" ] && echo "**Not pushed (build failed):** $missing"
+          } >> "$GITHUB_STEP_SUMMARY"
