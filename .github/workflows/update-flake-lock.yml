@@ -121,7 +121,7 @@ jobs:
         # opencode included: it is only reached on the failure path, but
         # finding out it is absent there means finding out after a build has
         # already failed, with the fix step silently skipped.
-        run: .github/scripts/preflight.sh jq nix npins git opencode
+        run: .github/scripts/preflight.sh jq nix npins git opencode mcp-nixos
 
       - name: Keep the run's scratch files out of the commit
         # The commit below has to stage whatever the fix agent touched, so it

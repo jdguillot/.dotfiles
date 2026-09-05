@@ -169,10 +169,44 @@ upstream renamed. It is told not to touch the lock files — reverting the bump
 is not a fix — and to write what it did to `fix-notes.md`, which becomes part
 of the pull request body. Then the check and build run again.
 
+It gets one MCP server, `nixos` (`mcp-nixos`, on the runner's PATH from the
+host's `github-runner.extraPackages`). A bump almost always breaks on an
+option or attribute that upstream renamed, and that is a question about what
+nixpkgs looks like *now* — the model behind the agent was trained months ago
+and would otherwise guess. `--pure` on the run only disables external
+plugins; MCP servers are a separate part of the config and still load.
+
+The agent's whole session goes to the job log, which is public along with the
+repo. That is deliberate rather than accidental: see "What the agent can
+reach" below.
+
 The job is green only if the flake checked and **every** host built, before
 or after that fix. Nothing downstream runs otherwise, so a week that cannot
 be made to work ends with a failed run and a summary rather than a pull
 request.
+
+#### What the agent can reach
+
+The runner is a systemd `DynamicUser` with `ProtectHome`, `ProtectSystem=strict`
+and `NoNewPrivileges`, ephemeral, and **not** in `nix.settings.trusted-users`.
+So although ryzn-server can decrypt `secrets/secrets.yaml`, the agent cannot:
+
+- every sops secret lands as `0400 root:root` under `/run/secrets`, and
+  `/run/secrets.d` is `drwxr-x--x root:keys` — traversable, not readable;
+- both age key sources (`/var/lib/sops-nix/key.txt` and the host ed25519 key)
+  are `0600 root`, so it cannot decrypt the checked-in ciphertext either;
+- `ProtectHome` hides `/home` and `/root`, so no user's tokens are in reach.
+
+What it *can* read is `/nix/store` and the checkout, both already public. The
+one credential in its environment is the workflow's `github.token`, carried in
+`NIX_CONFIG` for flake fetches; Actions masks it in logs, and it is scoped to
+this repo's `contents`/`pull-requests`.
+
+That is the whole reason the transcript can go to a public log: there is
+nothing in the agent's reach that is not already published. If that stops
+being true — a secret widened to a group the runner is in, a job that hands
+it a real credential — the transcript has to stop being printed before the
+secret is added, not after.
 
 ### How the bump has to be applied
 

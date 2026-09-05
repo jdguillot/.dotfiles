@@ -119,6 +119,9 @@
         # npins bumps the vendored sources, and opencode is the agent that
         # tries to adapt the repo when a bump breaks it (against this host's
         # own loopback Ollama -- see .github/opencode/opencode.json).
+        # mcp-nixos backs that config's `nixos` MCP server: a bump usually
+        # breaks on a renamed option, and the agent needs to look the current
+        # one up rather than guess from a model trained months ago.
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
@@ -127,6 +130,7 @@
           pkgs.jq
           pkgs.npins
           pkgs.opencode
+          pkgs.mcp-nixos
           pkgs.curl
         ];
       };
