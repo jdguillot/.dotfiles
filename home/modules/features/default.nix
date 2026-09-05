@@ -16,6 +16,7 @@
     ./tools/agent-browser/default.nix
     ./tools/lsp/default.nix
     ./tools/skills/default.nix
+    ./tools/claude-code/default.nix
     ./tools/lazygit/default.nix
     ./tools/midnight-commander/default.nix
     ./tools/opencode/default.nix

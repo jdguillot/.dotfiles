@@ -129,8 +129,9 @@ The base `editor` module also supports simple `vim`, `neovim`, and `vscode` togg
 ## Tool submodules
 
 All tool submodules live below `cyberfighter.features.tools.*`. The
-agent-tooling modules (`mcp`, `skills`, `lsp`, `agentBrowser`,
-`opencode`, `crush`, `tmuxai`) and the dev half of the shared CLI list
+agent-tooling modules (`mcp`, `skills`, `lsp`, `claude-code`,
+`agentBrowser`, `opencode`, `crush`, `tmuxai`) and the dev half of the
+shared CLI list
 default to `cyberfighter.traits.dev`, so non-dev hosts get none of them
 without per-user lines.
 
@@ -154,6 +155,7 @@ without per-user lines.
 | `lsp` | `enable` | one server table feeding LSP diagnostics to both Claude Code (generated plugin) and opencode (settings.lsp, auto-download disabled); commands resolve from PATH — config-language servers from devPackages, toolchain servers from project dev shells |
 | `agentBrowser` | `enable`, `browserPackage` | agent-browser CLI (ref-based browser automation for AI agents); wrapped to drive nixpkgs chromium since the upstream Chrome download cannot run on NixOS |
 | `mcp` | `enable`, `use`, `githubTokenSecret`, `context7ApiKey` | single source of truth for MCP servers, merged into Claude Code, opencode, Copilot, and Crush configs plus tmuxai's `mcp.json`; the catalog lives in the module and `use.<name>` toggles entries per home (unknown names fail an assertion); only broadly useful servers default on — domain-specific ones are scoped per-project (see `docs/RECOMMENDATIONS.md`) |
+| `claude-code` | `enable`, `remoteControl`, `feedback`, `extraSettings` | Claude Code settings that should hold on every install &mdash; Remote Control and feedback are off unless a home turns them on. Merged into the **mutable** `~/.claude/settings.json` at activation (declared keys win, hand-set ones survive) rather than through `programs.claude-code.settings`, which writes that file as a read-only store symlink and would leave `/config` nowhere to save the model, theme or effort level. Skills and LSP servers come from `skills` and `lsp`; this module only owns `settings.json` |
 | `skills` | `enable`, `extraSkills` | shared agent skills for Claude Code, opencode, Crush, and TmuxAI; the vendored catalog is a data table in the module (one line per skill, `requires` pairs companions), third-party skill repos are pinned via npins (see `docs/RECOMMENDATIONS.md`), local skills live in the module's `skills/` folder |
 
 ## SSH and SOPS integration
