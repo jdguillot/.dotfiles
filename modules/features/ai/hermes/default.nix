@@ -434,6 +434,13 @@ in
           # Also on boot and on every activation, so a file broken while the
           # watcher was down is repaired without waiting for the next write.
           wantedBy = [ "multi-user.target" ];
+          # No start rate limit: the gateway rewrites its state file
+          # continuously, so the default 5-per-10s trips within seconds of
+          # normal use and leaves both this and the .path unit failed for
+          # good -- which then fails every deploy-rs activation check. The
+          # unit is idempotent and cheap, and systemd will not run two at
+          # once, so unbounded triggering is the correct setting here.
+          startLimitIntervalSec = 0;
           path = [
             pkgs.coreutils
             pkgs.findutils
