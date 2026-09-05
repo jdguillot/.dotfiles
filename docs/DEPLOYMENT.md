@@ -66,6 +66,7 @@ This repo currently exports these deploy nodes:
 | `thkpd-pve1` | `system`, `home` |
 | `vm-gameserver-nix` | `system`, `home` |
 | `simple-vm` | `system` only |
+| `ryzn-server` | `system`, `home` |
 
 ### Common commands
 
@@ -122,6 +123,36 @@ deploy.nodes.my-host = mkDeployNode "my-host" hostConfigs.my-host true;
 ```
 
 Set the last argument to `false` if you only want the system profile.
+
+### Unattended deploys: `deptui-agent`
+
+`ryzn-server` runs `deptui-agent` (the daemon from the same
+[deptui](https://github.com/jdguillot/deptui) flake input that provides
+the TUI), enabled through `cyberfighter.features.deptui-agent` (see
+`docs/MODULES.md`). It polls this repo's `main` every 15 minutes and
+deploys new commits to every deploy node — both profiles — from its own
+private clone, so nothing ever deploys from a dirty working tree.
+
+Operational notes:
+
+- Manual `deploy` runs still work and take no lock; the deptui TUI warns
+  and offers to pause the agent when you deploy an agent-managed host.
+- The agent's identity is the `deptui-agent-ssh-key` sops secret; its
+  public key is in the shared `ssh.authorizedKeys`, so every host
+  already trusts it. Host keys are learned on first contact
+  (`StrictHostKeyChecking=accept-new`).
+- A failed host is parked until a new commit or a kick; a host that was
+  simply offline is caught up automatically when it answers again.
+- Kick it instead of waiting for the next poll — locally
+  (`deptui-agent kick`, socket access via the `deptui-agent` group) or
+  over TCP from CI:
+
+  ```bash
+  curl -X POST -H "Authorization: Bearer $TOKEN" http://ryzn-server:7337/kick
+  ```
+
+  where `$TOKEN` is the `deptui-agent-listen-token` sops secret
+  (`sops -d --extract '["deptui-agent-listen-token"]' secrets/secrets.yaml`).
 
 ## `nixos-anywhere`
 

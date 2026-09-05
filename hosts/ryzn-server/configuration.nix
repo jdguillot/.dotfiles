@@ -371,6 +371,59 @@
       # cloudflared-tunnel-token.
       cloudflared.enable = true;
 
+      # Unattended deploys: polls this repo's main and pushes updates to
+      # the deploy-capable hosts with deploy-rs. Its ssh key is the
+      # deptui-agent-ssh-key sops secret; the public half is in the shared
+      # ssh.authorizedKeys, so every target already trusts it.
+      deptui-agent = {
+        enable = true;
+
+        # Kick endpoint for CI (POST /kick, bearer token from the
+        # deptui-agent-listen-token sops secret). Token-gated; a leaked
+        # token can only trigger a poll of this already-watched repo.
+        listen.enable = true;
+        openFirewall = true;
+
+        # Fleet and self split into two watches: a self-deploy that
+        # restarts the agent kills whatever run it belongs to, and
+        # alphabetical host order would put ryzn-server first. The split
+        # keeps that blast radius away from the other hosts; persisted
+        # state plus catch-up recover the self watch afterwards.
+        watches =
+          let
+            repo = "https://github.com/jdguillot/.dotfiles";
+            # skip_checks: deploy-rs otherwise evaluates deployChecks for
+            # every host on each invocation; the CI matrix on this box
+            # already builds every host's closure. accept-new: headless
+            # TOFU -- first contact records the target's host key, a
+            # prompt would hang the daemon.
+            hostFlags = {
+              skip_checks = true;
+              ssh.extra_opts = "StrictHostKeyChecking=accept-new";
+            };
+          in
+          {
+            fleet = {
+              inherit repo;
+              branch = "main";
+              interval = "15m";
+              hosts = lib.genAttrs [
+                "simple-vm"
+                "sys-galp-nix"
+                "thkpd-pve1"
+                "vm-gameserver-nix"
+              ] (_: hostFlags);
+            };
+
+            self = {
+              inherit repo;
+              branch = "main";
+              interval = "15m";
+              hosts.ryzn-server = hostFlags;
+            };
+          };
+      };
+
       docker = {
         enable = true;
         enableOnBoot = true;

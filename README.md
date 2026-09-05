@@ -236,6 +236,11 @@ The flake exports deploy nodes for:
 - `thkpd-pve1`
 - `simple-vm`
 - `vm-gameserver-nix`
+- `ryzn-server`
+
+Deploys also run unattended: `deptui-agent` on `ryzn-server` polls this
+repo's `main` and pushes updates to every deploy node (see
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
 
 Typical commands:
 

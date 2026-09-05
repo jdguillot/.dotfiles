@@ -14,6 +14,7 @@
     ./features/attic/default.nix
     ./features/cloudflared/default.nix
     ./features/compose/default.nix
+    ./features/deptui-agent/default.nix
     ./features/desktop/default.nix
     ./features/sound/default.nix
     ./features/fonts/default.nix
