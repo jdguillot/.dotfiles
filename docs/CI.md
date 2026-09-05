@@ -226,7 +226,17 @@ secret is added, not after.
 
 ### How the bump has to be applied
 
-`nix flake check` runs with `--show-trace`; the per-host `nix build` calls do
+`nix flake check` runs **last**, after every host and home has been built,
+not first. Evaluating a flake output can need a store path realised --
+hermes-agent is uv2nix, which is import-from-derivation throughout -- and
+`--no-build` refuses to realise it. The check then fails with `path '...' is
+not valid` naming something that has nothing to do with the bump, and passes
+on a re-run once the builds have populated the store. That cost one run an
+hour of a fix agent chasing a phantom. The cheap `nix eval` of the host and
+home lists stays up front as the fail-fast gate, and a genuinely broken
+evaluation still fails the per-host build, with a better message.
+
+It runs with `--show-trace`; the per-host `nix build` calls do
 not. A failing build already names the offending file and line, and the trace
 only adds nixpkgs-internal frames that crowd the log's trim window. The check
 is the opposite case: it truncates its own trace by default and tells you to

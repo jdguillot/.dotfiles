@@ -8,26 +8,22 @@
 # failure needs the failing tree and the failing log in the same workspace,
 # and a matrix job cannot hand its working tree to the next job.
 #
-# The host list is derived here, after the check, rather than passed in: when
-# the bump breaks evaluation there is no list to pass, and this script is the
-# thing that has to report that.
+# The host list is derived here rather than passed in: when the bump breaks
+# evaluation there is no list to pass, and this script is the thing that has
+# to report that.
+#
+# Order matters. `nix flake check` runs last, not first, because evaluating a
+# flake output can need a store path realised (hermes-agent is uv2nix, which
+# is import-from-derivation throughout) and `--no-build` refuses to realise
+# it -- the check then fails with `path '...' is not valid` for a path that
+# has nothing to do with the bump, and passes on a re-run once the builds
+# have populated the store. Cheap `nix eval` of the two lists stays up front
+# as the fail-fast gate; a genuinely broken evaluation also fails the
+# per-host build below, with a better message than the check gives.
 set -euo pipefail
 
 : > build-failure.log
 mkdir -p path
-
-# --no-build on the gate: deploy-rs's activation check depends on every
-# node's profile path, so realising the checks here would build all the
-# toplevels before the first host is even named. They are built at the end
-# instead, once the loop below has them.
-# --show-trace only here. A failing `nix build` already names the offending
-# file and line, and the trace adds ~800 lines of nixpkgs-internal frames that
-# would crowd the log's trim window. `nix flake check` is the opposite: it
-# truncates by default and says so, and its errors surface through a module
-# chain the untraced output never names.
-echo "::group::nix flake check"
-nix flake check --no-build --show-trace 2>&1 | tee -a build-failure.log
-echo "::endgroup::"
 
 nix eval .#nixosConfigurations --apply builtins.attrNames --json > build-hosts.json
 nix eval .#homeConfigurations --apply builtins.attrNames --json > build-homes.json
@@ -75,8 +71,23 @@ if [ ${#failed[@]} -gt 0 ]; then
   exit 1
 fi
 
-# Cheap now that every toplevel they depend on is built. Catches a
-# deploy.nodes change that a bump broke without breaking any host.
+# Both cheap now that every toplevel they depend on is built, and the store
+# holds whatever evaluation needs realised.
+#
+# --show-trace on the check only. A failing `nix build` already names the
+# offending file and line, and the trace adds ~800 lines of nixpkgs-internal
+# frames that would crowd the fix agent's log budget. `nix flake check` is the
+# opposite: it truncates its own trace by default and says so, and its errors
+# reach you through a module chain the untraced output never names.
+#
+# --no-build still: deploy-rs's activation check depends on every node's
+# profile path, and those are built explicitly below rather than as a side
+# effect of the check.
+echo "::group::nix flake check"
+nix flake check --no-build --show-trace 2>&1 | tee -a build-failure.log
+echo "::endgroup::"
+
+# Catches a deploy.nodes change that a bump broke without breaking any host.
 echo "::group::deploy-rs checks"
 nix build --no-link --print-out-paths \
   .#checks.x86_64-linux.deploy-schema \
