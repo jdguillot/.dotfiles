@@ -22,6 +22,9 @@ let
     dankKDEConnect = "${dmsPlugins}/DankKDEConnect";
     dankLauncherKeys = "${dmsPlugins}/DankLauncherKeys";
     dankscale = sources.dms-plugin-dankscale;
+    # Status/health widget for the system-level gaze face-auth daemon
+    # (cyberfighter.features.gaze); read-only, works without the daemon.
+    gazeAuth = sources.dms-plugin-gaze-auth;
     developerUtilities = sources.dms-plugin-developer-utilities;
     homeAssistantMonitor = sources.dms-plugin-hass;
     nixMonitor = sources.dms-plugin-nix-monitor;

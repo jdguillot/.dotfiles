@@ -33,6 +33,7 @@
     ./features/filesystems/default.nix
     ./features/bluetooth/default.nix
     ./features/gaming/default.nix
+    ./features/gaze/default.nix
     ./features/vscode/default.nix
     ./features/vpn/default.nix
     ./features/security/default.nix

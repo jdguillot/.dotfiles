@@ -65,6 +65,13 @@
       url = "github:AvengeMedia/dcal";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Face authentication daemon + PAM modules. `follows` is safe here only
+    # because our nixpkgs is unstable (gaze needs its rustc and onnxruntime
+    # >= 1.21); on a stable channel the build breaks partway through.
+    gaze = {
+      url = "github:GunduLabs/gaze";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     lanzaboote = {
       url = "github:nix-community/lanzaboote/v1.1.0";
       inputs.nixpkgs.follows = "nixpkgs";

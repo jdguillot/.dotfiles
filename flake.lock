@@ -190,11 +190,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1788590036,
-        "narHash": "sha256-veObrjQUCAuhlPNcNR9lvM8vQ50GfYJWfkqofIgjuT0=",
+        "lastModified": 1788630561,
+        "narHash": "sha256-3JjG38xP14dmoo1eENMeQq3XyBN30yrkPjl4j4jZD+0=",
         "owner": "jdguillot",
         "repo": "deptui",
-        "rev": "c45a2e9fa05f95b1f04fe24afe567ac759c594fb",
+        "rev": "310fc760ed9a304a75360897f3237bbde1e2c78b",
         "type": "github"
       },
       "original": {
@@ -416,6 +416,26 @@
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "gaze": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788628326,
+        "narHash": "sha256-3bccAjqG7ipZAKwokfI49MoTYWDLP7gOfVhL5yvzQTM=",
+        "owner": "GunduLabs",
+        "repo": "gaze",
+        "rev": "4959d5075fc53299f1fa606ee267a0aa5e150a8c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "GunduLabs",
+        "repo": "gaze",
         "type": "github"
       }
     },
@@ -1016,6 +1036,7 @@
         "dgop": "dgop",
         "disko": "disko",
         "dms": "dms",
+        "gaze": "gaze",
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager_2",
         "lanzaboote": "lanzaboote",

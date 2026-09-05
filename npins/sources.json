@@ -94,6 +94,19 @@
       "url": "https://github.com/xxyangyoulin/dms-plugin-developer-utilities/archive/b115dcbbe0d82c80190f4fcc255a935e33889f4a.tar.gz",
       "hash": "sha256-bpsE5x26Ou7Sfzgv/ttIxfqK3w51x+kSP2dKOIGakTA="
     },
+    "dms-plugin-gaze-auth": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "arqueon",
+        "repo": "dms-gaze-auth"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "9ef6d4f1a79d68c49849bffd76d496b02feb52e7",
+      "url": "https://github.com/arqueon/dms-gaze-auth/archive/9ef6d4f1a79d68c49849bffd76d496b02feb52e7.tar.gz",
+      "hash": "sha256-QPAK4eFSsxYfRmGYOZqUAYSlLpukm0eZHn5c6SSHdPo="
+    },
     "dms-plugin-hass": {
       "type": "Git",
       "repository": {
