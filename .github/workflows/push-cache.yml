@@ -105,5 +105,10 @@ jobs:
             echo "| **union (deduplicated)** | **$(numfmt --to=iec "$union")B** | **$(wc -l < closure.txt)** | pushed once |"
             echo ""
             echo "**New paths pushed this run:** $(wc -l < new.txt) of $(wc -l < closure.txt) &mdash; the rest were already recorded as pushed. Targets: \`attic:main\`, \`cachix:jdguillot\`."
-            [ -n "$missing" ] && echo "**Not pushed (build failed):** $missing"
+            # `if`, not `[ ... ] && echo`: this is the last command in the
+            # block, so a false test would make the whole step exit 1 on
+            # every run where nothing failed.
+            if [ -n "$missing" ]; then
+              echo "**Not pushed (build failed):** $missing"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
