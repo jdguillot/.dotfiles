@@ -51,6 +51,51 @@ in
       '';
     };
 
+    maxJobs = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      example = 2;
+      description = ''
+        `max-jobs`: concurrent derivations, each of which may still use every
+        core (`cores` stays 0). The daemon's idle CPU/IO scheduling keeps
+        builds from starving the desktop of CPU, but each parallel Rust/C++
+        derivation holds 1-2G per compiler job regardless of priority; on a
+        low-RAM machine the default (`auto` = one per core) swaps the desktop
+        out. Leave null for `auto` on hosts with headroom.
+      '';
+    };
+
+    daemonMemoryHigh = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "10G";
+      description = ''
+        `MemoryHigh` for nix-daemon.service — the memory analogue of the
+        idle CPU/IO scheduling: under pressure the kernel reclaims from the
+        build cgroup first instead of paging out the user session. Builds
+        slow down instead of the desktop.
+      '';
+    };
+
+    remoteBuilders = lib.mkOption {
+      type = lib.types.listOf lib.types.attrs;
+      default = [ ];
+      example = lib.literalExpression ''
+        [ { hostName = "ryzn-server"; sshUser = "cyberfighter"; maxJobs = 2; } ]
+      '';
+      description = ''
+        `nix.buildMachines` entries. Builders are preferred, never required:
+        an unreachable builder logs a warning and the derivation builds
+        locally (as long as `maxJobs` here stays above 0), at the cost of an
+        SSH timeout per attempt. `--builders ""` on any nix command forces
+        local for that invocation. The daemon connects as root, so the
+        builder's host key must be pinned via `programs.ssh.knownHosts` and
+        root's SSH to it must be non-interactive (e.g. Tailscale SSH). The
+        `sshUser` must be in `trusted-users` on the builder or locally-built
+        (unsigned) inputs are refused.
+      '';
+    };
+
     extraOptions = lib.mkOption {
       type = lib.types.lines;
       default = "";
@@ -117,8 +162,20 @@ in
         download-buffer-size = 524288000;
       };
 
+      nix.settings.max-jobs = lib.mkIf (cfg.maxJobs != null) cfg.maxJobs;
+
+      nix.buildMachines = cfg.remoteBuilders;
+      nix.distributedBuilds = cfg.remoteBuilders != [ ];
+      # Builders fetch dependencies from the substituters themselves instead
+      # of receiving them over the SSH pipe from this machine.
+      nix.settings.builders-use-substitutes = lib.mkIf (cfg.remoteBuilders != [ ]) true;
+
       nix.daemonCPUSchedPolicy = "idle";
       nix.daemonIOSchedClass = "idle";
+
+      systemd.services.nix-daemon.serviceConfig.MemoryHigh = lib.mkIf (
+        cfg.daemonMemoryHigh != null
+      ) cfg.daemonMemoryHigh;
 
       nix.extraOptions = ''
         !include ${config.sops.templates."access-tokens".path}
