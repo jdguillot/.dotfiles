@@ -15,12 +15,12 @@ set -euo pipefail
 : > build-failure.log
 mkdir -p path
 
-# No --no-build: this also builds deploy-rs's schema and activation checks,
-# which a bump can break without breaking any host. It still does not build
-# the hosts -- flake check only forces their derivations -- so the loop below
-# is what proves them.
+# --no-build on the gate: deploy-rs's activation check depends on every
+# node's profile path, so realising the checks here would build all the
+# toplevels before the first host is even named. They are built at the end
+# instead, once the loop below has them.
 echo "::group::nix flake check"
-nix flake check 2>&1 | tee -a build-failure.log
+nix flake check --no-build 2>&1 | tee -a build-failure.log
 echo "::endgroup::"
 
 nix eval .#nixosConfigurations --apply builtins.attrNames --json > build-hosts.json
@@ -49,3 +49,11 @@ if [ ${#failed[@]} -gt 0 ]; then
   echo "failed to build: ${failed[*]}" | tee -a build-failure.log
   exit 1
 fi
+
+# Cheap now that every toplevel they depend on is built. Catches a
+# deploy.nodes change that a bump broke without breaking any host.
+echo "::group::deploy-rs checks"
+nix build --no-link --print-out-paths \
+  .#checks.x86_64-linux.deploy-schema \
+  .#checks.x86_64-linux.deploy-activate 2>&1 | tee -a build-failure.log
+echo "::endgroup::"

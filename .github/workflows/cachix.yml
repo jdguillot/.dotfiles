@@ -38,12 +38,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Flake check
-        # No --no-build: `checks` is deploy-rs's schema and activation
-        # checks, and evaluating those only proves they assemble. Building
-        # them is seconds on this runner. It does not build the hosts --
-        # flake check never does, it forces their derivations and stops --
-        # so the matrix below is still what proves the systems.
-        run: nix flake check
+        # --no-build, and it has to stay: `checks` is deploy-rs's schema and
+        # activation checks, and the activation check depends on each node's
+        # profile path. Realising it therefore realises the host toplevels,
+        # which drags the entire build into this one serial job ahead of the
+        # matrix -- measured at 54s to 7m22s. The checks are built in their
+        # own job below instead, once the matrix has the toplevels.
+        run: nix flake check --no-build
       - name: List hosts
         id: list-hosts
         # The build matrix comes straight from the flake, so a host added to
@@ -97,6 +98,25 @@ jobs:
           name: path-${{ matrix.host }}
           path: path/${{ matrix.host }}
           retention-days: 1
+
+  deploy-checks:
+    needs: [flake-check, build]
+    # After the matrix, not as part of the gate: by now every toplevel these
+    # depend on is in the shared store, so this is the cheap part on its own.
+    # Only worth running when every host built -- a missing toplevel fails
+    # the activation check for a reason that has nothing to do with deploy.
+    if: ${{ needs.build.result == 'success' }}
+    runs-on: [self-hosted, nixos]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the deploy-rs checks
+        # Validates deploy.nodes against deploy-rs's schema and assembles
+        # each node's activation script. `nix flake check` only evaluates
+        # these, so a violation that surfaces at build time slips past it.
+        run: |
+          nix build --no-link --print-out-paths \
+            .#checks.x86_64-linux.deploy-schema \
+            .#checks.x86_64-linux.deploy-activate
 
   push:
     needs: [flake-check, build]
