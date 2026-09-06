@@ -114,14 +114,9 @@
         enable = true;
         url = "https://github.com/jdguillot/.dotfiles";
         count = 4;
-        # cachix/attic push the closure, findutils supplies xargs. The rest
-        # is the weekly update workflow: gh reads upstream issue trackers,
-        # npins bumps the vendored sources, and opencode is the agent that
-        # tries to adapt the repo when a bump breaks it (against this host's
-        # own loopback Ollama -- see .github/opencode/opencode.json).
-        # mcp-nixos backs that config's `nixos` MCP server: a bump usually
-        # breaks on a renamed option, and the agent needs to look the current
-        # one up rather than guess from a model trained months ago.
+        # cachix/attic push the closure; findutils supplies xargs. opencode
+        # is the fix-up agent for the weekly update workflow (see
+        # .github/opencode/opencode.json; mcp-nixos backs its `nixos` server).
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
@@ -200,9 +195,8 @@
       };
 
       # Team gateway for Ollama: per-user keys and model allowlist
-      # (litellm-config.yaml), minted with `litellm-keys`. The hostname is
-      # private -- compose interpolates it from the litellm-env dotenv at up
-      # time. The DNS-01 token must cover the team zone too.
+      # (litellm-config.yaml), minted with `litellm-keys`. Hostname comes
+      # from the litellm-env dotenv; the DNS-01 token must cover the team zone.
       ai.litellm = {
         enable = true;
         configFile = ./litellm-config.yaml;
@@ -322,10 +316,9 @@
         pgid = 100;
       };
 
-      # HTTPS in front of the containers: the shared module config rendered
-      # from these options; dashboard at ryzn-server-traefik.cyberfighter.space.
-      # DNS-01 issuance, but every routed subdomain still needs a DNS record
-      # pointing at 192.168.101.94 -- traefik does not create those.
+      # HTTPS in front of the containers; dashboard at
+      # ryzn-server-traefik.cyberfighter.space. DNS-01 issuance, but every
+      # routed subdomain still needs a DNS record at 192.168.101.94.
       traefik = {
         enable = true;
         dnsDomain = "cyberfighter.space";
@@ -334,10 +327,9 @@
         # from the default secret names, shared with thkpd-pve1.
 
         routes = {
-          # SearXNG runs natively (no labels), so it routes as a file-provider
-          # fragment reaching the host. chain-no-auth: the instance is already
-          # LAN-open, and basic auth would break adding it as a browser search
-          # engine.
+          # SearXNG runs natively, so it routes as a file-provider fragment.
+          # chain-no-auth: already LAN-open; basic auth would break its use
+          # as a browser search engine.
           searxng = {
             host = "search.cyberfighter.space";
             port = config.cyberfighter.features.searxng.port;
@@ -345,10 +337,9 @@
             backend = "host";
           };
 
-          # The LAN URL (split-horizon) and the tunnel-forwarded team URL;
-          # each name gets its own DNS-01 cert. chain-no-auth: Odysseus has
-          # its own login, no second password prompt. Rendered into the
-          # container's labels via ai.odysseus.labels above.
+          # split-horizon LAN and tunnel team URLs; each name gets its own
+          # DNS-01 cert. chain-no-auth: Odysseus has its own login. Labels
+          # render into ai.odysseus.labels above.
           odysseus = {
             host = "odysseus.cyberfighter.space";
             extraHosts = [ "\${ODYSSEUS_TEAM_HOST}" ];
@@ -363,12 +354,9 @@
         # litellm container's labels; tailscale serve is the personal path.
       };
 
-      # Outbound-only tunnel: the Zero Trust dashboard routes the published
-      # hostnames down to traefik :443, with Cloudflare Access in front at
-      # the edge. No inbound ports.
-      # Tunnel token from the Zero Trust dashboard; runs the connector only,
-      # grants no account access. Secret name defaults to
-      # cloudflared-tunnel-token.
+      # Outbound-only: Zero Trust routes the published hostnames to traefik
+      # :443 behind Cloudflare Access; no inbound ports. The token (default
+      # secret cloudflared-tunnel-token) runs the connector only.
       cloudflared.enable = true;
 
       # Unattended deploys: polls this repo's main and pushes updates to
@@ -384,16 +372,13 @@
         listen.enable = true;
         openFirewall = true;
 
-        # Fleet and self split into two watches: a self-deploy that
-        # restarts the agent kills whatever run it belongs to, and
-        # alphabetical host order would put ryzn-server first. The split
-        # keeps that blast radius away from the other hosts; persisted
-        # state plus catch-up recover the self watch afterwards.
+        # Two watches so a self-deploy never restarts the agent mid-run
+        # (alphabetical order would put ryzn-server first); persisted state
+        # plus catch-up recover the self watch afterwards.
         watches =
           let
             repo = "https://github.com/jdguillot/.dotfiles";
-            # skip_checks: deploy-rs otherwise evaluates deployChecks for
-            # every host on each invocation; the CI matrix on this box
+            # skip_checks: this repo's CI matrix
             # already builds every host's closure. (Host-key policy needs
             # nothing here: the upstream module defaults the agent's ssh
             # to accept-new, and pinned fleet keys from hosts/default.nix
@@ -456,10 +441,9 @@
     defaultSession = "plasma"; # Wayland
   };
 
-  # Session on demand, not at boot: the idle Plasma session holds ~4-5GiB of
-  # VRAM the models need. Boot to multi-user (upstream graphical.target has a
-  # baked-in Wants=display-manager, so a wantedBy override is not enough);
-  # `systemctl start display-manager` brings up Sunshine, `stop` frees VRAM.
+  # Session on demand: idle Plasma holds ~4-5GiB of VRAM the models need.
+  # multi-user target (graphical.target hard-Wants display-manager);
+  # `systemctl start/stop display-manager` brings up Sunshine / frees VRAM.
   systemd.defaultUnit = lib.mkForce "multi-user.target";
 
   # --------------------------------------------------------------- storage
