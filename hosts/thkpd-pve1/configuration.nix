@@ -55,6 +55,7 @@ in
         enable = true;
         passwordAuth = false; # Key-only authentication
         permitRootLogin = "yes";
+        additionalRootKeys = proxmoxKeys;
       };
 
       docker.enable = true;
@@ -227,8 +228,6 @@ in
       iptables -A nixos-fw -s 172.18.0.0/16 -p tcp --dport 8090 -j nixos-fw-accept
     '';
   };
-
-  users.users.root.openssh.authorizedKeys.keys = proxmoxKeys;
 
   services.openssh.settings = {
     AcceptEnv = lib.mkForce [
