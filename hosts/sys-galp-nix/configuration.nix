@@ -92,4 +92,9 @@
   '';
 
   virtualisation.waydroid.enable = true;
+
+  # Plasma turns fwupd on for Discover. Secure Boot is off here so the dbx
+  # revocation list is inert, and this coreboot NVRAM cannot fit a larger one
+  # anyway -- without this the update fails on every check.
+  services.fwupd.daemonSettings.DisabledPlugins = [ "uefi_dbx" ];
 }
