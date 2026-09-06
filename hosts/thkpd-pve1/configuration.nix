@@ -81,6 +81,8 @@ in
             port = config.cyberfighter.features.attic.port;
             auth = "none";
             backend = "host";
+            # Substitution is a burst of narinfo requests; limited, it 429s.
+            rateLimit = false;
           };
           # UniFi OS Server VM (proxmox 102, dnsmasq reservation .4). Browser
           # entry only; devices inform straight to unifi-os.cyberfighter.space.

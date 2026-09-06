@@ -33,5 +33,10 @@
 [http.middlewares.chain-no-auth.chain]
   middlewares = ["middlewares-rate-limit", "middlewares-secure-headers"]
 
+# For machine clients whose normal traffic is a burst -- nix substituting
+# from attic fans out hundreds of narinfo requests and was 429ing itself.
+[http.middlewares.chain-no-auth-unlimited.chain]
+  middlewares = ["middlewares-secure-headers"]
+
 [http.middlewares.chain-basic-auth.chain]
   middlewares = ["middlewares-rate-limit", "middlewares-secure-headers", "simpleAuth"]

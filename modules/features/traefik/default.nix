@@ -50,7 +50,14 @@ let
   # (native host services). The chain spelling -- `@file` from a label, bare
   # from a fragment -- lives only here.
   ruleOf = r: lib.concatMapStringsSep " || " (h: "Host(`${h}`)") ([ r.host ] ++ r.extraHosts);
-  chainOf = r: if r.auth == "basic" then "chain-basic-auth" else "chain-no-auth";
+  chainOf =
+    r:
+    if r.auth == "basic" then
+      "chain-basic-auth"
+    else if r.rateLimit then
+      "chain-no-auth"
+    else
+      "chain-no-auth-unlimited";
 
   dockerRoutes = lib.filterAttrs (_: r: r.backend == "docker") cfg.routes;
   # Both render as file-provider fragments; only the backend URL differs.
@@ -152,6 +159,12 @@ let
           default = null;
           example = "https://192.168.1.10:11443";
           description = "Absolute backend URL for url backends: a service on another machine or VM. An https URL works against a self-signed cert because traefik.toml sets serversTransport.insecureSkipVerify.";
+        };
+
+        rateLimit = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Apply the shared rate-limit middleware. Turn off for machine clients whose normal traffic is a burst (a binary cache); basic-auth routes keep it regardless, as a brute-force backstop.";
         };
 
         auth = lib.mkOption {
@@ -396,6 +409,10 @@ in
           lib.attrValues cfg.routes
         );
         message = "cyberfighter.features.traefik.routes: docker and host backends need `port`, url backends need `url`";
+      }
+      {
+        assertion = lib.all (r: r.rateLimit || r.auth == "none") (lib.attrValues cfg.routes);
+        message = "cyberfighter.features.traefik.routes: rateLimit = false needs auth = \"none\" (basic-auth routes stay rate limited)";
       }
       {
         # Interpolated into a TOML string; an explicit scheme keeps traefik from guessing.
