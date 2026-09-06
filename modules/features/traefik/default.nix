@@ -53,7 +53,10 @@ let
   chainOf = r: if r.auth == "basic" then "chain-basic-auth" else "chain-no-auth";
 
   dockerRoutes = lib.filterAttrs (_: r: r.backend == "docker") cfg.routes;
-  hostRoutes = lib.filterAttrs (_: r: r.backend == "host") cfg.routes;
+  # Both render as file-provider fragments; only the backend URL differs.
+  hostRoutes = lib.filterAttrs (_: r: r.backend == "host" || r.backend == "url") cfg.routes;
+  backendUrlOf =
+    r: if r.backend == "url" then r.url else "http://host.docker.internal:${toString r.port}";
 
   labelsOf = name: r: {
     "traefik.enable" = "true";
@@ -101,7 +104,7 @@ let
       [http.services.srv-${name}.loadBalancer]
         passHostHeader = true
         [[http.services.srv-${name}.loadBalancer.servers]]
-          url = "http://host.docker.internal:${toString r.port}"
+          url = "${backendUrlOf r}"
     '';
 
   # The dynamic mount must be ONE symlink to a directory of REAL files:
@@ -139,8 +142,16 @@ let
         };
 
         port = lib.mkOption {
-          type = lib.types.port;
-          description = "Backend port: the container port for docker backends (traefik connects over the shared network, not the host publish), the host port for host backends.";
+          type = lib.types.nullOr lib.types.port;
+          default = null;
+          description = "Backend port: the container port for docker backends (traefik connects over the shared network, not the host publish), the host port for host backends. Required for those two; unused by url backends.";
+        };
+
+        url = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "https://192.168.1.10:11443";
+          description = "Absolute backend URL for url backends: a service on another machine or VM. An https URL works against a self-signed cert because traefik.toml sets serversTransport.insecureSkipVerify.";
         };
 
         auth = lib.mkOption {
@@ -156,9 +167,10 @@ let
           type = lib.types.enum [
             "docker"
             "host"
+            "url"
           ];
           default = "docker";
-          description = "docker renders labels for a compose service (consume via routeLabels or routeLabelFiles); host renders a file-provider fragment reaching the host over host.docker.internal.";
+          description = "docker renders labels for a compose service (consume via routeLabels or routeLabelFiles); host renders a file-provider fragment reaching the host over host.docker.internal; url renders the same fragment against `url`, for a backend on another machine.";
         };
 
         service = lib.mkOption {
@@ -234,7 +246,10 @@ in
       type = lib.types.listOf lib.types.str;
       # Public recursors on purpose: the split-horizon zone means the LAN
       # resolver knows no _acme-challenge TXT records (see traefik.toml).
-      default = [ "1.1.1.1:53" "1.0.0.1:53" ];
+      default = [
+        "1.1.1.1:53"
+        "1.0.0.1:53"
+      ];
       description = ''
         DNS resolvers lego's ACME DNS-01 challenge uses to verify the TXT
         record, as `host` or `host:port`. Rendered into traefik.toml's
@@ -364,13 +379,30 @@ in
         message = "cyberfighter.features.traefik.dnsResolvers entries must be `host` or `host:port` (letters, digits, '.', ':', '-', '[', ']')";
       }
       {
-        assertion = builtins.all (n: builtins.match "[^/]+" n != null && n != "middlewares.toml") (builtins.attrNames cfg.dynamicFiles);
+        assertion = builtins.all (n: builtins.match "[^/]+" n != null && n != "middlewares.toml") (
+          builtins.attrNames cfg.dynamicFiles
+        );
         message = "cyberfighter.features.traefik.dynamicFiles names must be bare file names, and not middlewares.toml (which the module ships)";
       }
       {
         # Route names become router/service keys and file names.
-        assertion = builtins.all (n: builtins.match "[A-Za-z0-9-]+" n != null) (builtins.attrNames cfg.routes);
+        assertion = builtins.all (n: builtins.match "[A-Za-z0-9-]+" n != null) (
+          builtins.attrNames cfg.routes
+        );
         message = "cyberfighter.features.traefik.routes names must be letters, digits and '-'";
+      }
+      {
+        assertion = lib.all (r: if r.backend == "url" then r.url != null else r.port != null) (
+          lib.attrValues cfg.routes
+        );
+        message = "cyberfighter.features.traefik.routes: docker and host backends need `port`, url backends need `url`";
+      }
+      {
+        # Interpolated into a TOML string; an explicit scheme keeps traefik from guessing.
+        assertion = lib.all (
+          r: r.url == null || builtins.match "https?://[A-Za-z0-9.:_/-]+" r.url != null
+        ) (lib.attrValues cfg.routes);
+        message = "cyberfighter.features.traefik.routes url must be an http(s):// URL of host, optional port and path";
       }
       {
         # Hosts are interpolated into label values and TOML strings.

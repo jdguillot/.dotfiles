@@ -31,6 +31,9 @@ in
       bootloader = {
         type = "systemd-boot";
         efiCanTouchVariables = true;
+        # 127M ESP; a kernel+initrd pair is ~60M, so only the incoming
+        # generation plus one fits while a switch writes the new files.
+        configurationLimit = 1;
       };
 
       extraGroups = [ "docker" ];
@@ -72,11 +75,21 @@ in
 
         # auth = none: nix substituter requests carry attic's own bearer
         # tokens; basic auth would clobber the Authorization header.
-        routes.attic = {
-          host = "attic.cyberfighter.space";
-          port = config.cyberfighter.features.attic.port;
-          auth = "none";
-          backend = "host";
+        routes = {
+          attic = {
+            host = "attic.cyberfighter.space";
+            port = config.cyberfighter.features.attic.port;
+            auth = "none";
+            backend = "host";
+          };
+          # UniFi OS Server VM (proxmox 102, dnsmasq reservation .4). Browser
+          # entry only; devices inform straight to unifi-os.cyberfighter.space.
+          unifi = {
+            host = "unifi.cyberfighter.space";
+            backend = "url";
+            url = "https://192.168.101.4:11443";
+            auth = "none";
+          };
         };
       };
 

@@ -101,6 +101,16 @@ in
         description = "Allow bootloader to modify EFI variables";
       };
 
+      configurationLimit = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 10;
+        description = ''
+          Generations kept on the ESP. A new generation's kernel and initrd
+          are written before older ones are pruned, so the ESP must fit
+          `configurationLimit + 1` of them; a small ESP wants 1.
+        '';
+      };
+
       luksDevice = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
@@ -144,7 +154,10 @@ in
       })
 
       (lib.mkIf (cfg.bootloader.type == "systemd-boot") {
-        loader.systemd-boot.enable = true;
+        loader.systemd-boot = {
+          enable = true;
+          configurationLimit = cfg.bootloader.configurationLimit;
+        };
       })
 
       # Options live at boot.lanzaboote.*, NOT boot.loader.lanzaboote.*.
@@ -154,9 +167,8 @@ in
           # sbctl >= 0.14 keeps its PKI here; older guides still say
           # /etc/secureboot.
           pkiBundle = "/var/lib/sbctl";
-          # Unbounded by default, and every generation is a full unified
-          # kernel image on the ESP -- without a cap a 1G ESP fills up.
-          configurationLimit = 10;
+          # Every generation is a full unified kernel image on the ESP.
+          configurationLimit = cfg.bootloader.configurationLimit;
         };
         # The editor is an `init=/bin/sh` root shell the moment Secure Boot
         # is ever turned off; sd-stub only ignores the cmdline while it is on.
@@ -167,9 +179,8 @@ in
         loader.limine = {
           enable = true;
           efiSupport = true;
-          # Bound what the ESP holds (cheap: limine stores plain files, not
-          # per-generation images).
-          maxGenerations = 10;
+          # Cheap here: limine stores plain files, not per-generation images.
+          maxGenerations = cfg.bootloader.configurationLimit;
           # `init=/bin/sh` at the menu, exploitable even with Secure Boot on
           # (no sd-stub equivalent); the module refuses secureBoot with it.
           enableEditor = false;
