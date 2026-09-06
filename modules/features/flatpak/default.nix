@@ -42,7 +42,7 @@ let
     ++ (lib.optionals cfg.browsers browserPackages)
     ++ (lib.optionals cfg.cad cadPackages)
     ++ (lib.optionals cfg.electronics electronicsPackages)
-    ++ (lib.optionals (features.gaming.enable && cfg.enable) gamingPackages)
+    ++ (lib.optionals cfg.gaming gamingPackages)
     ++ cfg.extraPackages;
   # Dedupe: a host may list a flatpak explicitly that a preset also adds.
   flatpakPackages = lib.unique allPackages;
@@ -64,7 +64,12 @@ in
 
     electronics = lib.mkEnableOption "Electronics software (Arduino IDE, Fritzing)";
 
-    gaming = lib.mkEnableOption "Gaming packages (SGDBoop, Lutris)";
+    gaming = lib.mkOption {
+      type = lib.types.bool;
+      default = features.gaming.enable;
+      defaultText = lib.literalExpression "config.cyberfighter.features.gaming.enable";
+      description = "Gaming packages (SGDBoop, Lutris). Defaults to the host's gaming feature.";
+    };
 
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.str;
