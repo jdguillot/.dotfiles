@@ -150,9 +150,13 @@ Set the last argument to `false` if you only want the system profile.
 `ryzn-server` runs `deptui-agent` (the daemon from the same
 [deptui](https://github.com/jdguillot/deptui) flake input that provides
 the TUI), enabled through `cyberfighter.features.deptui-agent` (see
-`docs/MODULES.md`). It polls this repo's `main` every 15 minutes and
-deploys new commits to every deploy node — both profiles — from its own
-private clone, so nothing ever deploys from a dirty working tree.
+`docs/MODULES.md`). It tracks this repo's `latest` tag rather than `main`:
+`cachix.yml` moves the tag only after every host built, the checks passed
+and the closures reached the caches, then kicks the agent (see
+`docs/CI.md`). Deploys go to every deploy node — both profiles — from the
+agent's own private clone, so nothing ever deploys from a dirty working
+tree, and never from a commit CI has not vetted. The monthly cron on both
+watches is a safety net for a missed kick, not the normal path.
 
 Operational notes:
 
@@ -164,18 +168,20 @@ Operational notes:
   come from the `system.hostKey` pins in `hosts/default.nix` where set,
   and are learned on first contact otherwise
   (`StrictHostKeyChecking=accept-new`).
-- A failed host is parked until a new commit or a kick; a host that was
-  simply offline is caught up automatically when it answers again.
+- A failed host is parked until the tag moves again or a kick; a host that
+  was simply offline is caught up automatically when it answers again.
 - Kick it instead of waiting for the next poll — locally
-  (`deptui-agent kick`, socket access via the `deptui-agent` group) or
-  over TCP from CI:
+  (`deptui-agent kick --watch fleet`, socket access via the `deptui-agent`
+  group; this is what CI does, since the runners are on the same host) or
+  over TCP from elsewhere:
 
   ```bash
-  curl -X POST -H "Authorization: Bearer $TOKEN" http://ryzn-server:7337/kick
+  curl -X POST -H "Authorization: Bearer $TOKEN" "http://ryzn-server:7337/kick?watch=fleet"
   ```
 
   where `$TOKEN` is the `deptui-agent-listen-token` sops secret
   (`sops -d --extract '["deptui-agent-listen-token"]' secrets/secrets.yaml`).
+  A kick names no ref: it deploys whatever `latest` points at, nothing more.
 
 ## `nixos-anywhere`
 

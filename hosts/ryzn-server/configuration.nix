@@ -117,6 +117,7 @@
         # cachix/attic push the closure; findutils supplies xargs. opencode
         # is the fix-up agent for the weekly update workflow (see
         # .github/opencode/opencode.json; mcp-nixos backs its `nixos` server).
+        # deptui-agent is the kick after a green build (cachix.yml).
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
@@ -127,7 +128,13 @@
           pkgs.opencode
           pkgs.mcp-nixos
           pkgs.curl
+          config.services.deptui-agent.package
         ];
+        # Control-socket access for that kick. It is the agent's whole
+        # control surface (pause, cancel, approve too), but it names no
+        # refs: nothing the runner can do here deploys anything the tag
+        # would not.
+        extraGroups = [ config.services.deptui-agent.group ];
       };
 
       tailscale = {
@@ -359,16 +366,18 @@
       # secret cloudflared-tunnel-token) runs the connector only.
       cloudflared.enable = true;
 
-      # Unattended deploys: polls this repo's main and pushes updates to
-      # the deploy-capable hosts with deploy-rs. Identity is self-generated
-      # on first start (`deptui-agent pubkey` prints the public half, which
-      # lives in the shared ssh.authorizedKeys).
+      # Unattended deploys: tracks this repo's `latest` tag, which CI moves
+      # only after every host built, checked and reached the caches
+      # (.github/workflows/cachix.yml), then kicks both watches. Identity
+      # is self-generated on first start (`deptui-agent pubkey` prints the
+      # public half, which lives in the shared ssh.authorizedKeys).
       deptui-agent = {
         enable = true;
 
-        # Kick endpoint for CI (POST /kick, bearer token from the
-        # deptui-agent-listen-token sops secret). Token-gated; a leaked
-        # token can only trigger a poll of this already-watched repo.
+        # Kick endpoint for off-host callers (POST /kick, bearer token from
+        # the deptui-agent-listen-token sops secret); CI runs on this host
+        # and uses the control socket instead. Token-gated; a leaked token
+        # can only trigger a poll of this already-watched repo.
         listen.enable = true;
         openFirewall = true;
 
@@ -390,8 +399,9 @@
           {
             fleet = {
               inherit repo;
-              branch = "main";
-              interval = "15m";
+              tag = "latest";
+              # Safety net only: CI kicks this watch as soon as the tag moves.
+              cron = "0 2 1 * *"; # monthly, off-peak
               git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
               hosts = lib.genAttrs [
                 "simple-vm"
@@ -403,8 +413,9 @@
 
             self = {
               inherit repo;
-              branch = "main";
-              interval = "15m";
+              tag = "latest";
+              # Safety net only: CI kicks this watch as soon as the tag moves.
+              cron = "0 2 1 * *"; # monthly, off-peak
               git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
               hosts.ryzn-server = hostFlags;
             };

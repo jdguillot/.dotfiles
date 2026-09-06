@@ -238,8 +238,9 @@ The flake exports deploy nodes for:
 - `vm-gameserver-nix`
 - `ryzn-server`
 
-Deploys also run unattended: `deptui-agent` on `ryzn-server` polls this
-repo's `main` and pushes updates to every deploy node (see
+Deploys also run unattended: `deptui-agent` on `ryzn-server` tracks this
+repo's `latest` tag, which CI moves once a push to `main` has built, checked
+and reached the caches, and pushes it to every deploy node (see
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
 
 Typical commands:

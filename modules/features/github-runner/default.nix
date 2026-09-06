@@ -61,6 +61,17 @@ in
       description = "Extra packages on the job PATH, on top of the nix/git/tar baseline the module ships.";
     };
 
+    extraGroups = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = lib.literalExpression "[ config.services.deptui-agent.group ]";
+      description = ''
+        Supplementary groups for the runner units. The runner is a
+        DynamicUser, so this is the only way to grant it a group-gated
+        socket; every job on the host gets the access.
+      '';
+    };
+
     secrets.token = lib.mkOption {
       type = lib.types.str;
       default = "github-runner-pat";
@@ -122,6 +133,9 @@ in
         pkgs.coreutils
       ]
       ++ cfg.extraPackages;
+      serviceOverrides = lib.mkIf (cfg.extraGroups != [ ]) {
+        SupplementaryGroups = cfg.extraGroups;
+      };
     };
   };
 }

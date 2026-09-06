@@ -39,7 +39,7 @@ in
           dotfiles = {
             repo = "https://github.com/jdguillot/.dotfiles";
             branch = "main";
-            interval = "15m";
+            interval = "15m"; # or cron = "0 */6 * * *"
             git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
             hosts.thkpd-pve1 = { };
           };

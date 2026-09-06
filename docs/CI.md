@@ -16,7 +16,7 @@ running on the server.
 The runner's job PATH is nearly empty by design; anything a workflow calls
 has to be listed in `github-runner.extraPackages` on `ryzn-server`. Today
 that is `cachix`, `attic-client`, `findutils`, `gh`, `jq`, `npins`,
-`opencode` and `curl`.
+`opencode`, `curl` and `deptui-agent`.
 
 Adding a tool there does nothing until `ryzn-server` is rebuilt, and the
 failure that follows is opaque — `jq: command not found` partway through
@@ -34,9 +34,9 @@ deploy .#ryzn-server.system --remote-build
 Triggered by pushes to `main`, by pull requests, and weekly on Sundays.
 
 ```
-               ┌─> build (matrix, one per host) ─┬─> deploy-checks
-list-hosts ────┤                                 ├─> flake-check
-               └─> home  (matrix, one per home) ─┴─> push
+               ┌─> build (matrix, one per host) ─┬─> deploy-checks ─┐
+list-hosts ────┤                                 ├─> flake-check ───┼─> release ─> deploy
+               └─> home  (matrix, one per home) ─┴─> push ──────────┘
 ```
 
 - **list-hosts** emits the host and home lists, read straight out of the
@@ -67,6 +67,25 @@ list-hosts ────┤                                 ├─> flake-check
 - **push** calls the reusable `push-cache.yml` with whatever artifacts exist.
   Hosts that failed simply have no artifact, so a partial run pushes the
   hosts that worked and names the ones it skipped in the job summary.
+- **release** force-moves the `latest` tag to the commit and creates or
+  updates the GitHub release of the same name. Pushes to `main` only, and
+  only once **flake-check**, **deploy-checks** and **push** all succeeded —
+  a plain `needs` already skips the job when any of them failed or was
+  skipped. The tag is the ref `deptui-agent` watches (see
+  `docs/DEPLOYMENT.md`), which is why it may only ever point at a tree that
+  built, checked and reached the caches: a host switching to an uncached
+  closure would rebuild it locally. The ref is force-moved rather than
+  deleted and recreated because the agent resolves it with `git ls-remote`,
+  and a poll landing in the gap would find nothing. A tag push matches no
+  `branches` filter, so it does not re-trigger the workflow.
+- **deploy** runs `deptui-agent kick --watch fleet` then `--watch self`
+  over the agent's control socket — the runners are the agent's host, so
+  the TCP listener and its token are not involved. The CLI is on the job
+  PATH from `github-runner.extraPackages`, and socket access comes from
+  `github-runner.extraGroups` putting the runner units in the agent's
+  group. A kick is "check now" and names no ref. Kicks that land mid-run
+  are queued, so `fleet` runs first and the self-deploy of `ryzn-server`,
+  which restarts the agent, waits for it.
 
 ### Why the gate keeps `--no-build`
 
@@ -229,6 +248,13 @@ What it *can* read is `/nix/store` and the checkout, both already public. The
 one credential in its environment is the workflow's `github.token`, carried in
 `NIX_CONFIG` for flake fetches; Actions masks it in logs, and it is scoped to
 this repo's `contents`/`pull-requests`.
+
+The one group it is in beyond its own is `deptui-agent`'s
+(`github-runner.extraGroups`), for the kick in `cachix.yml`. That socket is
+the agent's full control surface — pause, cancel, approve as well as kick —
+but none of it names a ref: the worst a job can do is deploy, or hold back,
+whatever `latest` already points at, and moving `latest` needs the same
+`contents: write` a job already has.
 
 That is the whole reason the transcript can go to a public log: there is
 nothing in the agent's reach that is not already published. If that stops

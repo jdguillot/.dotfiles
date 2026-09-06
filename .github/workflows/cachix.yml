@@ -195,3 +195,60 @@ jobs:
       # Weekly reconcile: re-offer everything so anything GC'd comes back.
       reset-record: ${{ github.event_name == 'schedule' }}
     secrets: inherit
+
+  # The tag is what the deploy agent watches (hosts/ryzn-server,
+  # features.deptui-agent), so it must only ever point at a tree that built,
+  # checked and reached the caches -- a host switching to an uncached closure
+  # would rebuild it locally. A plain `needs` skips this job whenever any of
+  # the three failed or was skipped; no explicit result check needed. Push
+  # events only: the weekly reconcile builds the same commit, and pull
+  # requests are not main.
+  release:
+    needs: [flake-check, deploy-checks, push]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, nixos]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Preflight
+        run: .github/scripts/preflight.sh gh git
+      - name: Move the latest tag
+        # Force-move the ref rather than delete-and-recreate: the agent
+        # resolves it with `git ls-remote`, and a poll landing between the
+        # two would find no tag and skip. A tag push matches no `branches`
+        # filter, so this does not re-trigger the workflow.
+        run: git push --force origin "$GITHUB_SHA:refs/tags/latest"
+      - name: Update the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Built, checked and cached by [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+            echo ""
+            echo "\`${GITHUB_SHA::7}\` $(git log -1 --format=%s "$GITHUB_SHA")"
+          } > notes.md
+          if gh release view latest >/dev/null 2>&1; then
+            gh release edit latest --title latest --notes-file notes.md --latest
+          else
+            gh release create latest --title latest --notes-file notes.md --latest
+          fi
+
+  # A kick is "check now", nothing more: the watches name the tag. The
+  # runners are the agent's host, so this goes over the control socket --
+  # no token, no listener; the CLI and the socket group come from
+  # github-runner.extraPackages/extraGroups on ryzn-server. A kick that
+  # lands while a run is in flight is queued, so fleet then self is safe in
+  # sequence and the self-deploy (which restarts the agent) waits for the
+  # fleet run.
+  deploy:
+    needs: release
+    runs-on: [self-hosted, nixos]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Preflight
+        run: .github/scripts/preflight.sh deptui-agent
+      - name: Kick deptui-agent
+        run: |
+          deptui-agent kick --watch fleet
+          deptui-agent kick --watch self
