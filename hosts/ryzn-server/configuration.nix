@@ -392,6 +392,7 @@
               inherit repo;
               branch = "main";
               interval = "15m";
+              git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
               hosts = lib.genAttrs [
                 "simple-vm"
                 "sys-galp-nix"
@@ -404,6 +405,7 @@
               inherit repo;
               branch = "main";
               interval = "15m";
+              git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
               hosts.ryzn-server = hostFlags;
             };
           };
