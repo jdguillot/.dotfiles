@@ -18,7 +18,6 @@ let
   # both the directory under plugins/ and the entry in plugin_settings.json
   # on that id, so a mismatch installs a plugin that nothing can enable.
   catalog = {
-    aiOverviewControl = sources.dms-plugin-ai-overview;
     dankKDEConnect = "${dmsPlugins}/DankKDEConnect";
     dankLauncherKeys = "${dmsPlugins}/DankLauncherKeys";
     dankscale = sources.dms-plugin-dankscale;
@@ -32,7 +31,6 @@ let
     quickCapture = sources.dms-plugin-quick-capture;
     tailscale = sources.dms-plugin-tailscale;
     typingSounds = sources.dms-plugin-typing-sounds;
-    wallpaperCarousel = sources.dms-plugin-wallpaper-carousel;
   };
 
   selected = lib.filterAttrs (name: _: !(lib.elem name plugins.exclude)) (catalog // plugins.extra);
@@ -101,7 +99,7 @@ in
     exclude = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "wallpaperCarousel" ];
+      example = [ "typingSounds" ];
       description = "Catalog entries to leave out, by plugin id.";
     };
 

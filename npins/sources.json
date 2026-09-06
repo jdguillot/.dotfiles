@@ -55,19 +55,6 @@
       "url": "https://github.com/nodnarbnitram/claude-code-extensions/archive/35e7f7deae689e12b94f9c242b8f59efe0f66476.tar.gz",
       "hash": "sha256-hupckXf0IYr5Cv08wdYNDHHAss5Ajefowioes16GgrQ="
     },
-    "dms-plugin-ai-overview": {
-      "type": "Git",
-      "repository": {
-        "type": "GitHub",
-        "owner": "bernardopg",
-        "repo": "AiOverviewControl"
-      },
-      "branch": "main",
-      "submodules": false,
-      "revision": "f2d0fc19493539c3134da3090b0887538ecbdfb0",
-      "url": "https://github.com/bernardopg/AiOverviewControl/archive/f2d0fc19493539c3134da3090b0887538ecbdfb0.tar.gz",
-      "hash": "sha256-11zusgffdPd3/ZQ56uurmuYSWsdZwrdF8bVRHC8cNHM="
-    },
     "dms-plugin-dankscale": {
       "type": "Git",
       "repository": {
@@ -184,19 +171,6 @@
       "revision": "0d61da952116aa18942128ca216bffc558684fdf",
       "url": "https://github.com/hthienloc/dms-typing-sounds/archive/0d61da952116aa18942128ca216bffc558684fdf.tar.gz",
       "hash": "sha256-pWeyreTQvLhq/ka/mBTyo+kBxG8WSUdhPZCgQSx90hI="
-    },
-    "dms-plugin-wallpaper-carousel": {
-      "type": "Git",
-      "repository": {
-        "type": "GitHub",
-        "owner": "motor-dev",
-        "repo": "wallpaperCarousel"
-      },
-      "branch": "main",
-      "submodules": false,
-      "revision": "761ecd1b7f347beee9f17909f8334d987c935a1a",
-      "url": "https://github.com/motor-dev/wallpaperCarousel/archive/761ecd1b7f347beee9f17909f8334d987c935a1a.tar.gz",
-      "hash": "sha256-/LoehTfSeeqkgIXw46Ll/PrxeEDhg4RZI5BXib6yEnI="
     },
     "dms-plugins": {
       "type": "Git",
