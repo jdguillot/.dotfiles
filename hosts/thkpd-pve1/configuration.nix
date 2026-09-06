@@ -84,12 +84,12 @@ in
             # Substitution is a burst of narinfo requests; limited, it 429s.
             rateLimit = false;
           };
-          # UniFi OS Server VM (proxmox 102, dnsmasq reservation .4). Browser
-          # entry only; devices inform straight to unifi-os.cyberfighter.space.
+          # UniFi OS Server VM (proxmox 102). Browser entry only; devices
+          # inform straight to the VM's own name.
           unifi = {
             host = "unifi.cyberfighter.space";
             backend = "url";
-            url = "https://192.168.101.4:11443";
+            url = "https://unifi-os.cyberfighter.space:11443";
             auth = "none";
           };
         };
