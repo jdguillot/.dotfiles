@@ -158,9 +158,11 @@ Operational notes:
 
 - Manual `deploy` runs still work and take no lock; the deptui TUI warns
   and offers to pause the agent when you deploy an agent-managed host.
-- The agent's identity is the `deptui-agent-ssh-key` sops secret; its
-  public key is in the shared `ssh.authorizedKeys`, so every host
-  already trusts it. Host keys are learned on first contact
+- The agent generates its own ssh identity on first start;
+  `deptui-agent pubkey` prints the public half, which lives in the
+  shared `ssh.authorizedKeys` so every host already trusts it. Host keys
+  come from the `system.hostKey` pins in `hosts/default.nix` where set,
+  and are learned on first contact otherwise
   (`StrictHostKeyChecking=accept-new`).
 - A failed host is parked until a new commit or a kick; a host that was
   simply offline is caught up automatically when it answers again.
