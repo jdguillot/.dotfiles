@@ -4,8 +4,10 @@
 // window-motion binds of the same name in base.kdl — this is DMS's stock
 // preset keymap (its niri homeModule's enableKeybinds), reproduced as KDL
 // text because our niri config is text, not niri-flake `settings`.
-
-spawn-at-startup "dms" "run"
+//
+// No spawn-at-startup here: dms.service (programs.dank-material-shell
+// .systemd.enable in the dank module) starts the shell with
+// graphical-session.target.
 
 binds {
     Mod+Space hotkey-overlay-title="Application Launcher" { spawn "dms" "ipc" "spotlight" "toggle"; }

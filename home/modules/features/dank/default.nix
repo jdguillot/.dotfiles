@@ -113,11 +113,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # niri spawns dms from its shell layer (shells/dank.kdl), so the systemd
-    # unit stays off — enabling both double-spawns the shell.
+    # systemd owns the shell, as DMS's niri docs recommend: dms.service runs
+    # `dms run --session` bound to graphical-session.target, restarts on
+    # failure, and `dms restart` becomes a plain unit restart. The niri shell
+    # layer (shells/dank.kdl) must not also spawn-at-startup "dms", or the
+    # shell runs twice.
     programs.dank-material-shell = {
       enable = true;
-      systemd.enable = false;
+      systemd.enable = true;
       enableSystemMonitoring = cfg.apps.monitor; # gates the Mod+M binding
       enableDynamicTheming = true; # matugen wallpaper theming
       package = lib.mkIf (cfg.extraQtPackages != [ ]) (
@@ -127,6 +130,16 @@ in
       # read-only store symlink and the Settings GUI could no longer save.
       # It is seeded on activation and mirrored back by dank-capture instead.
     };
+
+    # Hand icon lookup to Qt's own theme engine. Without QS_ICON_THEME, DMS's
+    # IconThemeService probes the GTK icon theme and then resolves every
+    # uncached icon name by spawning `find -L` over the whole theme chain
+    # (~700k entries with Papirus), ~2 s per lookup, re-run for every miss
+    # whenever desktop entries change -- minutes of CPU after each restart
+    # or switch. With the variable set it skips the probe and never forks.
+    systemd.user.services.dms.Service.Environment = [
+      "QS_ICON_THEME=${config.gtk.iconTheme.name}"
+    ];
 
     # dgop is not pulled in by the DMS module itself, but the bar's cpuUsage
     # and memUsage widgets and the Mod+M process list all shell out to it.
@@ -153,22 +166,20 @@ in
       ''
     );
 
-    systemd.user = lib.mkIf (cfg.capture.enable && cfg.capture.watch) {
-      paths.dank-capture = {
-        Unit.Description = "Watch DMS settings for changes";
-        Path.PathChanged = liveSettings;
-        Install.WantedBy = [ "default.target" ];
-      };
+    systemd.user.paths.dank-capture = lib.mkIf (cfg.capture.enable && cfg.capture.watch) {
+      Unit.Description = "Watch DMS settings for changes";
+      Path.PathChanged = liveSettings;
+      Install.WantedBy = [ "default.target" ];
+    };
 
-      services.dank-capture = {
-        Unit.Description = "Mirror DMS settings into the dotfiles checkout";
-        Service = {
-          Type = "oneshot";
-          # DMS rewrites the file on every toggle; settle first so a slider
-          # drag produces one snapshot instead of a dozen.
-          ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
-          ExecStart = lib.getExe captureScript;
-        };
+    systemd.user.services.dank-capture = lib.mkIf (cfg.capture.enable && cfg.capture.watch) {
+      Unit.Description = "Mirror DMS settings into the dotfiles checkout";
+      Service = {
+        Type = "oneshot";
+        # DMS rewrites the file on every toggle; settle first so a slider
+        # drag produces one snapshot instead of a dozen.
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
+        ExecStart = lib.getExe captureScript;
       };
     };
   };
