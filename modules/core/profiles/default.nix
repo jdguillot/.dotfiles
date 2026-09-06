@@ -33,14 +33,7 @@ in
           printing.enable = lib.mkDefault false;
           networking.networkmanager = lib.mkDefault true;
 
-          flatpak = {
-            enable = lib.mkDefault true;
-            extraPackages = lib.mkDefault [
-              "com.github.tchx84.Flatseal"
-              "org.libreoffice.LibreOffice"
-              "org.videolan.VLC"
-            ];
-          };
+          flatpak.enable = lib.mkDefault true;
         };
 
         packages = {

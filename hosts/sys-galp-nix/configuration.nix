@@ -58,12 +58,16 @@
 
       gaming.enable = true;
 
-      flatpak.extraPackages = [
-        "com.moonlight_stream.Moonlight"
-        "io.github.flattool.Warehouse"
-        "net.lutris.Lutris"
-        "us.zoom.Zoom"
-      ];
+      flatpak = {
+        # bella is deliberately not in wheel, and her Plasma session runs
+        # Discover's unattended updater against the system installation.
+        unprivilegedRuntimeInstall = true;
+
+        extraPackages = [
+          "com.github.xournalpp.xournalpp"
+          "us.zoom.Zoom"
+        ];
+      };
 
       sops = {
         enable = true;

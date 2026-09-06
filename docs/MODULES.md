@@ -68,7 +68,7 @@ modules/
 
 | Profile | Defaults applied |
 | --- | --- |
-| `desktop` | enables `features.desktop`, `graphics`, `sound`; sets `networking.networkmanager = true`; enables Flatpak with a small default package set; enables `packages.includeBase` and `packages.includeDesktop`; defaults `bootloader.type` to `systemd-boot` |
+| `desktop` | enables `features.desktop`, `graphics`, `sound`; sets `networking.networkmanager = true`; enables Flatpak (the module supplies the staple package set); enables `packages.includeBase` and `packages.includeDesktop`; defaults `bootloader.type` to `systemd-boot` |
 | `wsl` | keeps graphics support on, defaults `networking.networkmanager = false`, leaves desktop package bundles off, and defaults `bootloader.type` to `none` |
 | `minimal` | keeps package defaults lean, defaults `networking.networkmanager = true`, keeps desktop packages off, defaults `bootloader.type` to `systemd-boot`, and disables sleep/hibernate targets |
 | `none` | applies no bundled defaults |
@@ -259,7 +259,7 @@ Example:
 
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
-| `flatpak` | `enable`, `browsers`, `cad`, `electronics`, `gaming`, `extraPackages` | wraps `nix-flatpak` with category toggles | <https://mynixos.com/search?q=services.flatpak> |
+| `flatpak` | `enable`, `desktop`, `browsers`, `cad`, `electronics`, `gaming`, `extraPackages`, `unprivilegedRuntimeInstall` | wraps `nix-flatpak` with category toggles; every enabled category is concatenated with the host's `extraPackages` and deduped, so a host adds to the set rather than replacing it; `desktop` (Flatseal, LibreOffice, VLC, Moonlight, Warehouse) defaults to `packages.includeDesktop`; the root timer only updates the declared packages, so a desktop updater (KDE Discover) still handles the rest — `unprivilegedRuntimeInstall` adds a polkit rule granting `org.freedesktop.Flatpak.runtime-install` to active local sessions so a non-wheel user is not prompted for an admin password when an update pulls a new runtime branch | <https://mynixos.com/search?q=services.flatpak> |
 | `cachix` | `enable` | turns on repo Cachix integration; asserts SOPS is enabled | <https://mynixos.com/search?q=nix.settings.substituters> |
 | `onepassword` | `enable` | system-side 1Password integration | <https://mynixos.com/search?q=1password> |
 | `vscode` | `enable` | system package integration for VS Code | <https://mynixos.com/search?q=vscode> |

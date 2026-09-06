@@ -9,6 +9,14 @@ let
   cfg = config.cyberfighter.features.flatpak;
   inherit (config.cyberfighter) features;
 
+  desktopPackages = [
+    "com.github.tchx84.Flatseal"
+    "org.libreoffice.LibreOffice"
+    "org.videolan.VLC"
+    "com.moonlight_stream.Moonlight"
+    "io.github.flattool.Warehouse"
+  ];
+
   browserPackages = [
     "io.github.zen_browser.zen"
     "org.chromium.Chromium"
@@ -25,11 +33,13 @@ let
   ];
 
   gamingPackages = [
-    "com.moonlight_stream.Moonlight"
+    "com.steamgriddb.SGDBoop"
+    "net.lutris.Lutris"
   ];
 
   allPackages =
-    (lib.optionals cfg.browsers browserPackages)
+    (lib.optionals cfg.desktop desktopPackages)
+    ++ (lib.optionals cfg.browsers browserPackages)
     ++ (lib.optionals cfg.cad cadPackages)
     ++ (lib.optionals cfg.electronics electronicsPackages)
     ++ (lib.optionals (features.gaming.enable && cfg.enable) gamingPackages)
@@ -41,23 +51,36 @@ in
   options.cyberfighter.features.flatpak = {
     enable = lib.mkEnableOption "Flatpak support and Flathub";
 
+    desktop = lib.mkOption {
+      type = lib.types.bool;
+      default = config.cyberfighter.packages.includeDesktop;
+      defaultText = lib.literalExpression "config.cyberfighter.packages.includeDesktop";
+      description = "Desktop staples (Flatseal, LibreOffice, VLC, Moonlight, Warehouse). Defaults to the host's desktop package bundle.";
+    };
+
     browsers = lib.mkEnableOption "Browser packages (Zen Browser, Chromium)";
 
     cad = lib.mkEnableOption "CAD software (OpenSCAD, FreeCAD)";
 
     electronics = lib.mkEnableOption "Electronics software (Arduino IDE, Fritzing)";
 
-    gaming = lib.mkEnableOption "Gaming packages (Moonlight)";
+    gaming = lib.mkEnableOption "Gaming packages (SGDBoop, Lutris)";
 
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "Additional Flatpak packages to install";
+      description = "Host-specific Flatpak packages, concatenated with whatever the category toggles above select";
       example = [
-        "com.moonlight_stream.Moonlight"
+        "md.obsidian.Obsidian"
         "us.zoom.Zoom"
       ];
     };
+
+    unprivilegedRuntimeInstall = lib.mkEnableOption ''
+      installing Flatpak runtimes from an active local session without an
+      admin password, so a desktop updater running as a non-wheel user can
+      finish updates that pull a new runtime branch
+    '';
   };
 
   config = lib.mkIf cfg.enable {
@@ -69,6 +92,21 @@ in
         onCalendar = "weekly";
       };
     };
+
+    # Flatpak's policy already lets an active local session update apps and
+    # runtimes unattended, but installing one is auth_admin_keep -- so a
+    # routine update that pulls a NEW runtime branch (org.kde.Platform 6.10
+    # -> 6.11) stalls on a password a non-wheel user cannot supply. Only
+    # runtime-install is granted; installing apps, uninstalling and
+    # reconfiguring remotes stay behind the prompt.
+    security.polkit.extraConfig = lib.mkIf cfg.unprivilegedRuntimeInstall ''
+      polkit.addRule(function(action, subject) {
+        if (action.id == "org.freedesktop.Flatpak.runtime-install" &&
+            subject.local && subject.active) {
+          return polkit.Result.YES;
+        }
+      });
+    '';
 
     systemd.services.flatpak-repo = {
       wantedBy = [ "multi-user.target" ];
