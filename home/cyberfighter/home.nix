@@ -113,8 +113,10 @@
         ghostty.settings.fullscreen = "false";
       };
 
+      # Theming writes dconf over the session bus, which minimal hosts
+      # (headless servers) do not run; the activation fails outright there.
       desktop = {
-        enable = true;
+        enable = hostMeta.profile != "minimal";
       };
 
       tools = {
