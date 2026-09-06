@@ -372,9 +372,9 @@
       cloudflared.enable = true;
 
       # Unattended deploys: polls this repo's main and pushes updates to
-      # the deploy-capable hosts with deploy-rs. Its ssh key is the
-      # deptui-agent-ssh-key sops secret; the public half is in the shared
-      # ssh.authorizedKeys, so every target already trusts it.
+      # the deploy-capable hosts with deploy-rs. Identity is self-generated
+      # on first start (`deptui-agent pubkey` prints the public half, which
+      # lives in the shared ssh.authorizedKeys).
       deptui-agent = {
         enable = true;
 
@@ -394,12 +394,12 @@
             repo = "https://github.com/jdguillot/.dotfiles";
             # skip_checks: deploy-rs otherwise evaluates deployChecks for
             # every host on each invocation; the CI matrix on this box
-            # already builds every host's closure. accept-new: headless
-            # TOFU -- first contact records the target's host key, a
-            # prompt would hang the daemon.
+            # already builds every host's closure. (Host-key policy needs
+            # nothing here: the upstream module defaults the agent's ssh
+            # to accept-new, and pinned fleet keys from hosts/default.nix
+            # take precedence.)
             hostFlags = {
               skip_checks = true;
-              ssh.extra_opts = "StrictHostKeyChecking=accept-new";
             };
           in
           {

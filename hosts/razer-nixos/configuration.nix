@@ -150,12 +150,9 @@
   # stays as overflow. Paging survives builds without going through the SSD.
   zramSwap.enable = true;
 
-  # Tailscale SSH's per-node host key (port 22 on the tailnet address is
-  # intercepted by tailscaled, not the real sshd). Pinned so the nix-daemon's
-  # batch-mode SSH to the remote builder gets a known host; if it ever
-  # rotates, builds fall back to local with a verification warning.
-  programs.ssh.knownHosts."ryzn-server".publicKey =
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILJF1qfm012fP6lTXrEA54zyK1+iYVEirdySFIe6L99l";
+  # ryzn-server's host key (remote-builder pin) now comes from
+  # hosts/default.nix `hostKey` via modules/core/known-hosts — the same
+  # key this file used to pin by hand.
 
   programs.fish.enable = true;
   boot = {

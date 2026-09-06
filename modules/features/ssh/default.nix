@@ -7,6 +7,15 @@
 let
   cfg = config.cyberfighter.features.ssh;
   systemUser = config.cyberfighter.system.username;
+  standardAuthorizedKeys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBUyIMVw6JsHKA53g8WmxN5gkA0Qy/Gh1lmv8IqiXD5L cyberfighter@razer-nixos"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJq8jkRxEPluMdKOpipdV3Q3Xk7nVWCat22/viMon2C1"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL283JLrCc6GKpFQibuhGHTjvKJxfNQt4dCiJ4cRydII jdguillot@work-nix-wsl"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINzDIEawDjVkkleRbQlliqcGSAl/yW0FcAm11ScpHk9l deptui-agent@ryzn-server"
+  ];
+  rootAuthorizedKeys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBUyIMVw6JsHKA53g8WmxN5gkA0Qy/Gh1lmv8IqiXD5L cyberfighter@razer-nixos"
+  ];
 in
 {
   options.cyberfighter.features.ssh = {
@@ -30,23 +39,23 @@ in
       description = "Root login setting";
     };
 
-    authorizedKeys = lib.mkOption {
+    additionalAuthorizedKeys = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBUyIMVw6JsHKA53g8WmxN5gkA0Qy/Gh1lmv8IqiXD5L cyberfighter@razer-nixos"
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJq8jkRxEPluMdKOpipdV3Q3Xk7nVWCat22/viMon2C1"
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL283JLrCc6GKpFQibuhGHTjvKJxfNQt4dCiJ4cRydII jdguillot@work-nix-wsl"
-        # The auto-deploy daemon on ryzn-server; private half is the
-        # deptui-agent-ssh-key sops secret.
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBlkR5t3RmOxcfvSLz/x4ulnNOedYmEpAPHHrfZbKQG deptui-agent@ryzn-server"
-      ];
-      description = "SSH public keys authorized to log in as root and the primary system user";
+      default = [ ];
+      description = "SSH public keys authorized to log in as primary system user";
+    };
+
+    additionalRootKeys = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "SSH public keys authorized to log in as root, added to the built-in root keys";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    users.users.root.openssh.authorizedKeys.keys = cfg.authorizedKeys;
-    users.users.${systemUser}.openssh.authorizedKeys.keys = cfg.authorizedKeys;
+    users.users.root.openssh.authorizedKeys.keys = rootAuthorizedKeys ++ cfg.additionalRootKeys;
+    users.users.${systemUser}.openssh.authorizedKeys.keys =
+      standardAuthorizedKeys ++ cfg.additionalAuthorizedKeys;
 
     services.openssh = {
       enable = true;

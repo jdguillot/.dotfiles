@@ -1,12 +1,14 @@
 # deptui-agent -- unattended deploy-rs runner (github:jdguillot/deptui).
 # Thin `cyberfighter.features.deptui-agent` wrapper around the upstream
 # module (`inputs.deptui.nixosModules.deptui-agent`): watches/settings pass
-# straight through; secrets enter by sops name and reach the daemon as file
-# paths, never through the store.
+# straight through.
 #
-# The agent needs its own ssh identity on every target: the public half is
-# in `cyberfighter.features.ssh.authorizedKeys`, and targets already allow
-# non-interactive sudo for wheel, which unattended activation requires.
+# Identity: the agent GENERATES its own ed25519 key on first start (the
+# upstream default) -- the private half never leaves the host, so there is
+# no ssh secret to manage. Read the public half with `deptui-agent pubkey`
+# and keep it in `cyberfighter.features.ssh` standardAuthorizedKeys; targets
+# already allow non-interactive sudo for wheel, which unattended activation
+# requires. The only sops secret left is the optional TCP listener token.
 {
   config,
   lib,
@@ -79,16 +81,6 @@ in
     };
 
     secrets = {
-      sshKey = lib.mkOption {
-        type = lib.types.str;
-        default = "deptui-agent-ssh-key";
-        description = ''
-          Sops secret holding the agent's private ssh key (targets and
-          private repos). The module declares the secret, owned by the
-          agent's service user.
-        '';
-      };
-
       listenToken = lib.mkOption {
         type = lib.types.str;
         default = "deptui-agent-listen-token";
@@ -121,32 +113,23 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = sopsEnabled;
-        message = "cyberfighter.features.deptui-agent needs cyberfighter.features.sops.enable = true for its key and token secrets.";
+        assertion = cfg.listen.enable -> sopsEnabled;
+        message = "cyberfighter.features.deptui-agent.listen needs cyberfighter.features.sops.enable = true for the listener token secret.";
       }
     ];
 
-    sops.secrets =
-      {
-        ${cfg.secrets.sshKey} = {
-          owner = config.services.deptui-agent.user;
-          mode = "0400";
-          restartUnits = [ "deptui-agent.service" ];
-        };
-      }
-      // lib.optionalAttrs cfg.listen.enable {
-        ${cfg.secrets.listenToken} = {
-          owner = config.services.deptui-agent.user;
-          mode = "0400";
-          restartUnits = [ "deptui-agent.service" ];
-        };
+    sops.secrets = lib.optionalAttrs cfg.listen.enable {
+      ${cfg.secrets.listenToken} = {
+        owner = config.services.deptui-agent.user;
+        mode = "0400";
+        restartUnits = [ "deptui-agent.service" ];
       };
+    };
 
     services.deptui-agent = {
       enable = true;
       watches = cfg.watches;
       settings = cfg.settings;
-      sshKeyFile = config.sops.secrets.${cfg.secrets.sshKey}.path;
       openFirewall = cfg.openFirewall;
 
       listen = lib.mkIf cfg.listen.enable {

@@ -133,6 +133,9 @@
           inputs
           pkgs-stable
           hostMeta
+          # The full host map, so fleet-wide modules (core/known-hosts)
+          # can derive per-host facts about every OTHER host too.
+          hostConfigs
           ;
         hostSystem = system;
       };

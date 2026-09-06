@@ -9,6 +9,7 @@
     ./core/system/default.nix
     ./core/users/default.nix
     ./core/nix-settings/default.nix
+    ./core/known-hosts/default.nix
 
     ./features/ai/default.nix
     ./features/attic/default.nix

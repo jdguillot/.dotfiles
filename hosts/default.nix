@@ -9,6 +9,15 @@
 # "system", or "system+home". flake.nix derives nixosConfigurations,
 # homeConfigurations, and deploy.nodes from these fields -- registering a
 # host here is the only registration step.
+# `system.hostKey` (optional) is the host's ed25519 PUBLIC host key -- just
+# the "ssh-ed25519 AAAA..." part, WITHOUT the leading hostname ssh-keyscan
+# prints (hostNames come from the attr name). modules/core/known-hosts pins
+# every non-null entry into programs.ssh.knownHosts fleet-wide. Filling it
+# is OPTIONAL hardening (deptui-agent trusts-and-pins on first contact by
+# itself) with one exception: a host used as a REMOTE BUILDER must be
+# pinned -- the nix-daemon's batch-mode ssh cannot do trust-on-first-use,
+# and without a pin remote builds silently fall back to local. That is why
+# ryzn-server's key stays filled (razer builds through it).
 let
   hosts = {
     razer-nixos = {
@@ -55,6 +64,7 @@ let
       system = {
         hostname = "thkpd-pve1";
         username = "cyberfighter";
+        hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFyQFHfTKerpKsleyzakegpS+q8jAbekdvE9GvLpMTcg";
         stateVersion = "25.11";
       };
     };
@@ -89,6 +99,7 @@ let
       system = {
         hostname = "ryzn-server";
         username = "cyberfighter";
+        hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILJF1qfm012fP6lTXrEA54zyK1+iYVEirdySFIe6L99l";
         stateVersion = "26.11";
       };
     };
