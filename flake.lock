@@ -190,11 +190,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1788675647,
-        "narHash": "sha256-rLD3Ham5HGufrQRWeICXRS4QLRMuIrOb+nqaYaPAmBs=",
+        "lastModified": 1788676634,
+        "narHash": "sha256-GK6JLnfDPSnEOo5yECqOPL90no2xPXmFZ5NS2tQmlhU=",
         "owner": "jdguillot",
         "repo": "deptui",
-        "rev": "1d435a755f1f7219fc56c75ef354ff14cf90464e",
+        "rev": "0fa39fb5fb5432496e4fa66d13bdda085bc5bfa2",
         "type": "github"
       },
       "original": {
