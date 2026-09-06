@@ -1,4 +1,7 @@
-# Game server VM running on the thkpd-pve1 Proxmox hypervisor
+# Game server VM running on the thkpd-pve1 Proxmox hypervisor (VM 101,
+# 6 cores, 12G — raised from 8G on 2026-09-06 after the Astroneer server
+# grew past it and the VM thrashed itself unreachable; the server's own
+# ceiling is `gameserver.astroneer.memoryMax`).
 # Hosts an Astroneer dedicated server via AstroTuxLauncher (Wine-based launcher)
 {
   inputs,
@@ -73,6 +76,11 @@
     enable = true;
     secretPath = config.sops.secrets."playit-agent-secret".path;
   };
+
+  # Proxmox has `agent: 1` for this VM; without the guest service that
+  # only means `qm agent ping` times out. With it, the hypervisor can
+  # run diagnostics inside the guest when ssh cannot get in.
+  services.qemuGuest.enable = true;
 
   # Upstream services.playit takes a path, so this one secret stays
   # host-declared.

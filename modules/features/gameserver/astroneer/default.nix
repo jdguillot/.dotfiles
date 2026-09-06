@@ -45,6 +45,20 @@ in
       description = "Open firewall ports for the game port (UDP)";
     };
 
+    memoryMax = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = "6G";
+      example = "8G";
+      description = ''
+        Hard memory ceiling for the server's cgroup (systemd `MemoryMax`),
+        with swap for the unit capped at 512M. Past it the kernel kills the
+        server and `Restart=on-failure` brings it back, instead of the
+        whole VM grinding into swap: on 2026-09-06 the Wine-hosted server
+        silently grew past the VM's 8G, the box thrashed for an hour and
+        even sshd could not answer. null removes the limit.
+      '';
+    };
+
     secrets = {
       publicIp = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
@@ -198,6 +212,10 @@ in
           ExecStart = "${astroTuxLauncher}/bin/AstroTuxLauncher start";
           Restart = "on-failure";
           RestartSec = "30s";
+        }
+        // lib.optionalAttrs (cfg.memoryMax != null) {
+          MemoryMax = cfg.memoryMax;
+          MemorySwapMax = "512M";
         };
 
         environment.HOME = stateDir;
