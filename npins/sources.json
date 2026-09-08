@@ -142,9 +142,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "0dbf5c4eb2609244cad6dc937b5f254a27a906ff",
-      "url": "https://github.com/hthienloc/dms-quick-capture/archive/0dbf5c4eb2609244cad6dc937b5f254a27a906ff.tar.gz",
-      "hash": "sha256-t7A2im0t200FFhxRPMNHgXjPzva+t5hV3R2DOn/FJpg="
+      "revision": "665e1c323745a31ede300fc9773c1eee44f3fce7",
+      "url": "https://github.com/hthienloc/dms-quick-capture/archive/665e1c323745a31ede300fc9773c1eee44f3fce7.tar.gz",
+      "hash": "sha256-nAnSHyv03P4Fe5msNmWQ6YlQ49baaOs2MyOZdIIezkM="
     },
     "dms-plugin-tailscale": {
       "type": "Git",
@@ -181,9 +181,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "2a0f6c57207545433f26b2af32b7d4e72b4c09e2",
-      "url": "https://github.com/AvengeMedia/dms-plugins/archive/2a0f6c57207545433f26b2af32b7d4e72b4c09e2.tar.gz",
-      "hash": "sha256-r8jPExx8Kyhk7XGFL9QxfnwvsNVSMMct/RcNMOukCww="
+      "revision": "6fc7f25bfb24f93b6488fb8a36ed67b5f242abdb",
+      "url": "https://github.com/AvengeMedia/dms-plugins/archive/6fc7f25bfb24f93b6488fb8a36ed67b5f242abdb.tar.gz",
+      "hash": "sha256-KGpNgxN/zXiMjLLm4zLX+Wgnj1vx8bGGd6WwGBWo7Ds="
     },
     "hyperskills": {
       "type": "Git",
@@ -246,9 +246,9 @@
       },
       "branch": "dev",
       "submodules": false,
-      "revision": "affaee1e668001a57e2966e8f26a436f19ec1304",
-      "url": "https://github.com/odysseus-dev/odysseus/archive/affaee1e668001a57e2966e8f26a436f19ec1304.tar.gz",
-      "hash": "sha256-46d28HiUpOlc1CsQiDgs3R76cbC/wjxIsxUwtnZA2EI="
+      "revision": "934d23c0be29c9721385f34565c0ae2cbd60da04",
+      "url": "https://github.com/odysseus-dev/odysseus/archive/934d23c0be29c9721385f34565c0ae2cbd60da04.tar.gz",
+      "hash": "sha256-/kGtXHIP9XTMqxK7aP5BotnCKY1Zc9MVUFVd5w0HdMg="
     },
     "tmux-sessionx": {
       "type": "Git",
