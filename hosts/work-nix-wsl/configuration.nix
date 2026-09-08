@@ -56,10 +56,13 @@
       tailscale = {
         enable = true;
         # WSL shares one network namespace across all distros, so anything Tailscale
-        # programs here breaks networking for every distro. Keep it off the shared stack:
+        # programs here breaks networking for every distro. Keep it off the shared
+        # stack (routes AND resolv.conf — /etc/resolv.conf is literally an inode at
+        # /mnt/wsl/resolv.conf visible from every WSL distro):
         useRoutingFeatures = "none"; # no subnet/exit-node route programming (table 52)
         acceptRoutes = true; # don't pull others' subnet routes into the shared stack
         acceptDns = false; # don't overwrite the shared /etc/resolv.conf
+        # (WSL bypasses MagicDNS entirely — nameservers are set here, not via Tailscale)
         extraUpFlags = [ "--netfilter-mode=off" ]; # don't install iptables/nftables rules
         secrets.authKey = "tailscale-authkey";
       };
@@ -78,10 +81,27 @@
     defaultUser = config.cyberfighter.system.username;
     docker-desktop.enable = true;
     useWindowsDriver = true;
+    # WSL would otherwise re-point /etc/resolv.conf at /mnt/wsl/resolv.conf at boot,
+    # clobbering the NixOS-managed one below.
+    wslConf.network.generateResolvConf = false;
     # wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;
     wslConf.interop.enabled = true; # Ensure Windows interop is enabled
   };
+
+  # Home-lab DNS. In a WSL distro there is no running network manager/dhclient
+  # to consume networking.nameservers (NixOS-WSL disables dhcpcd and WSL fixes
+  # the netns), so that knob writes nothing — write the file directly instead.
+  # /etc/resolv.conf is per-distro, so decoupling it from the shared
+  # /mnt/wsl/resolv.conf (which we leave alone) keeps the sibling distro's DNS
+  # intact. 192.168.101.1 = lab DNS (ryzn-server, *.cyberfighter.space);
+  # 10.255.255.254 = WSL's fixed proxy to the Windows resolver (everything else).
+  networking.resolvconf.enable = false; # so this file is ours, and the etc-file assertion passes
+  environment.etc."resolv.conf".text = ''
+    nameserver 192.168.101.1
+    nameserver 10.255.255.254
+    search cyberfighter.space
+  '';
 
   # Workaround for WSL 2.7.3: /mnt/shared_memory is missing at boot, so WSLg
   # falls back to RAIL copy mode ("[WARN: COPY MODE]" in window titles) and

@@ -45,7 +45,8 @@
         # programs here breaks networking for every distro. Keep it off the shared stack:
         useRoutingFeatures = "none"; # no subnet/exit-node route programming (table 52)
         acceptRoutes = false; # don't pull others' subnet routes into the shared stack
-        acceptDns = false; # don't overwrite the shared /etc/resolv.conf
+        acceptDns = true; # manage /etc/resolv.conf here (WSL writes the file, so
+                         # tailscaled's writes work); enables MagicDNS + split DNS
         extraUpFlags = [ "--netfilter-mode=off" ]; # don't install iptables/nftables rules
       };
 
@@ -61,6 +62,9 @@
     enable = true;
     defaultUser = config.cyberfighter.system.username;
     useWindowsDriver = true;
+    # Don't let WSL regenerate /etc/resolv.conf — it would wipe the file
+    # tailscaled manages for MagicDNS / split DNS.
+    wslConf.network.generateResolvConf = false;
     wslConf.automount.root = "/";
     wslConf.interop.appendWindowsPath = false;
     wslConf.interop.enabled = true; # Ensure Windows interop is enabled
