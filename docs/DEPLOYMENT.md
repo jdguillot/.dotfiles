@@ -56,6 +56,26 @@ Useful aliases defined by the Home Manager shell module:
 - `nu` - `nix flake update`
 - `nb` - build without switching
 
+### Rate-limited GitHub fetches (work network)
+
+`codeload.github.com` — the host that actually serves flake-input
+tarballs — rate-limits per IP and ignores `access-tokens`, so on a
+shared work egress IP fetches 429 no matter how valid the PAT is (the
+error is misleadingly reported under the `api.github.com` URL). Skip
+GitHub entirely and copy the locked sources from a host that already
+has them:
+
+```bash
+scripts/copy-flake-inputs.sh                 # all missing input sources
+scripts/copy-flake-inputs.sh hermes-agent    # one input
+```
+
+Defaults to pulling from ryzn-server over Tailscale (resolved with
+`tailscale ip` for a stable IP even when MagicDNS is off); pass
+`user@host` as the second argument to use another source store. Store paths are
+computed from `flake.lock` narHashes, so nothing touches the network
+except the `nix copy` itself.
+
 ### Distributed builds (razer-nixos → ryzn-server)
 
 razer-nixos offloads derivations to ryzn-server via
