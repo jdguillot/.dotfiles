@@ -84,7 +84,17 @@ cmd_record() {
                             text: ((.evidence // "") + " " + (.reason // "")) } ]
        + [ $l[0][]?     | { name, reason, origin: "fix-agent",
                             text: ((.tracking // "") + " " + (.reason // "")) } ])
-      | group_by(.name) | map(.[0])' 2>/dev/null || echo '[]'
+      # Merged, not deduped. hold-input.sh writes its hold into the verdict
+      # too -- the replay reads holds from there -- so the same name arrives
+      # from both sources, and taking either one alone loses the other half:
+      # the verdict copy has no tracking URL, the late copy is the one that
+      # says a person did not decide this. Text from both, so a URL is found
+      # wherever it was written.
+      | group_by(.name)
+      | map({ name: .[0].name,
+              reason: ((map(select(.origin == "fix-agent"))[0] // .[0]).reason),
+              origin: (if any(.[]; .origin == "fix-agent") then "fix-agent" else .[0].origin end),
+              text: (map(.text) | join(" ")) })' 2>/dev/null || echo '[]'
   )
 
   local out="$prev"
