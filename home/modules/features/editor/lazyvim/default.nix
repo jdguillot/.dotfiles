@@ -224,6 +224,7 @@ in
             markdown-preview-nvim
             vim-table-mode
             neorg
+            telescope-manix
           ];
           mkEntryFromDrv =
             drv:
@@ -265,25 +266,25 @@ in
               { import = "lazyvim.plugins.extras.editor.mini-diff"},
         ''
         + lib.optionalString cfg.dev ''
-              -- Dev-trait extras: languages, DAP, AI, formatting. The
-              -- markdown/notes extras ride here until a notes trait exists.
-              { import = "lazyvim.plugins.extras.ai.copilot" },
-              -- { import = "lazyvim.plugins.extras.ai.copilot-native" }, -- waiting on blink to support accepting word by word
-              { import = "lazyvim.plugins.extras.ai.sidekick" },
-              { import = "lazyvim.plugins.extras.lang.markdown" },
-              { import = "lazyvim.plugins.extras.lang.nix" },
-              { import = "lazyvim.plugins.extras.lang.yaml" },
-              { import = "lazyvim.plugins.extras.lang.java" },
-              { import = "lazyvim.plugins.extras.lang.json" },
-              { import = "lazyvim.plugins.extras.lang.python" },
-              { import = "lazyvim.plugins.extras.lang.typescript" },
-              { import = "lazyvim.plugins.extras.lang.rust" },
-              { import = "lazyvim.plugins.extras.dap.core" },
-              { import = "lazyvim.plugins.extras.lang.ember" },
-              { import = "lazyvim.plugins.extras.formatting.prettier" },
-              { import = "lazyvim.plugins.extras.lang.tailwind"},
-              { import = "lazyvim.plugins.extras.util.gh"},
-              { import = "lazyvim.plugins.extras.lang.git"},
+          -- Dev-trait extras: languages, DAP, AI, formatting. The
+          -- markdown/notes extras ride here until a notes trait exists.
+          { import = "lazyvim.plugins.extras.ai.copilot" },
+          -- { import = "lazyvim.plugins.extras.ai.copilot-native" }, -- waiting on blink to support accepting word by word
+          { import = "lazyvim.plugins.extras.ai.sidekick" },
+          { import = "lazyvim.plugins.extras.lang.markdown" },
+          { import = "lazyvim.plugins.extras.lang.nix" },
+          { import = "lazyvim.plugins.extras.lang.yaml" },
+          { import = "lazyvim.plugins.extras.lang.java" },
+          { import = "lazyvim.plugins.extras.lang.json" },
+          { import = "lazyvim.plugins.extras.lang.python" },
+          { import = "lazyvim.plugins.extras.lang.typescript" },
+          { import = "lazyvim.plugins.extras.lang.rust" },
+          { import = "lazyvim.plugins.extras.dap.core" },
+          { import = "lazyvim.plugins.extras.lang.ember" },
+          { import = "lazyvim.plugins.extras.formatting.prettier" },
+          { import = "lazyvim.plugins.extras.lang.tailwind"},
+          { import = "lazyvim.plugins.extras.util.gh"},
+          { import = "lazyvim.plugins.extras.lang.git"},
         ''
         + ''
 

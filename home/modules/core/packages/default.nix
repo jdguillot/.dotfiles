@@ -31,6 +31,7 @@ in
         python3Packages.pip-tools
         gitmux
         lsof
+        manix
       ];
     })
 

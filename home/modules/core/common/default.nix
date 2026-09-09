@@ -33,6 +33,12 @@ in
       };
     };
 
+    # Enables the generated Home Manager options JSON in the profile
+    # (~/.nix-profile/share/doc/home-manager/options.json). manix's HM
+    # options cache reads it directly when <home-manager> is not on NIX_PATH
+    # (our channel-less, flake-only setup) — see manix PR #20.
+    manual.json.enable = true;
+
     # Enable systemd user services (required for sops-nix home-manager module)
     systemd.user.enable = true;
 
