@@ -369,21 +369,6 @@ jobs:
           echo "hosts=$(cat build-hosts.json)" >> "$GITHUB_OUTPUT"
           echo "green=true" >> "$GITHUB_OUTPUT"
 
-      # After the fix step, so the fix agent's own holds are in it, and on
-      # every outcome: a week that did not build is exactly the week whose
-      # hold has to be remembered. Its own branch, so this does not wait on
-      # the pull request that a blocked week never opens.
-      - name: Record the hold ledger
-        if: always() && steps.changed.outputs.changed == 'true'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          .github/scripts/hold-ledger.sh record
-          if [ -s hold-report.md ]; then
-            cat hold-report.md >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       # The job finishes green whatever happens here, so the summary is the
       # only place the outcome is stated. Without this the page ends on a
       # build log and the reader has to work out for themselves that no pull
@@ -398,6 +383,21 @@ jobs:
           AGENT_ATTEMPTED: ${{ steps.fix.outputs.attempted }}
           AGENT_STOPPED: ${{ steps.fix.outputs.stopped }}
         run: .github/scripts/update-blocked-summary.sh
+
+      # After the fix step, so the fix agent's own holds are in it, and on
+      # every outcome: a week that did not build is exactly the week whose
+      # hold has to be remembered. Its own branch, so this does not wait on
+      # the pull request that a blocked week never opens.
+      - name: Record the hold ledger
+        if: always() && steps.changed.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          .github/scripts/hold-ledger.sh record
+          if [ -s hold-report.md ]; then
+            cat hold-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Work out how the bump has to be applied
         id: reboot

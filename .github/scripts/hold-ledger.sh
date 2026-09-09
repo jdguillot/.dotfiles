@@ -163,8 +163,15 @@ write_report() {
     echo ""
     echo "| Input | Held for | Since | Waiting on | Upstream |"
     echo "|---|---|---|---|---|"
-    jq -r '.holds | to_entries[] | .value as $v |
-      "| `\(.key)` | \($v.weeks) week\(if $v.weeks == 1 then "" else "s" end) | \($v.first_seen) | \($v.reason) | " +
+    # First sentence only, and a pipe in it would end the cell early: the
+    # reason is whatever the model wrote, and the full text is in the ledger
+    # anyway. This table is about how long, not about why.
+    jq -r '
+      def cell: gsub("\n"; " ") | gsub("\\|"; "&#124;");
+      def brief: (if test("\\. ") then (split(". ")[0] + ".") else . end)
+                 | (if length > 110 then .[0:107] + "&hellip;" else . end);
+      .holds | to_entries[] | .value as $v |
+      "| `\(.key)` | \($v.weeks) week\(if $v.weeks == 1 then "" else "s" end) | \($v.first_seen) | \($v.reason | brief | cell) | " +
       (if ($v.upstream | length) == 0 then "&mdash;"
        else ([$v.upstream[] | "\(.url) (\(.state))"] | join("<br>")) end) + " |"' <<<"$out"
     echo ""
