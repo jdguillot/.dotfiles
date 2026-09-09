@@ -1,13 +1,8 @@
-# .github/workflows/update-flake-lock.yml
+# .github/workflows/weekly-update.yml
 #
-# The weekly dependency bump, end to end: look before updating, update, prove
-# it builds, warm the caches, then open the PR.
-#
-# Dependabot cannot do any of this -- `.github/dependabot.yml` only
-# understands `github-actions`, so without this workflow flake.lock and
-# npins/sources.json only move when someone runs the update by hand.
-# Fast-moving inputs are the reason: hermes-agent ships several times a week,
-# so a lock left alone for a month is a month of missed releases.
+# The weekly bump, end to end: stage the user's `staging/*` work, triage the
+# upstream changes against it, apply the bump minus the holds, prove it
+# builds, warm the caches, then open the pull request.
 #
 # Runs on the self-hosted ryzn-server runners, not ubuntu-latest, for three
 # reasons: the builds land in the store the other machines pull from, the
@@ -15,12 +10,23 @@
 # triage model is on this host's loopback.
 #
 # The shape:
-#   scan    gather upstream evidence, ask the local model what to hold back
-#   update  apply the bump minus the holds, flake check, build every host,
-#           let an agent try to adapt the repo on failure, push the branch
-#   cache   push what built, so the closure is hot before anyone switches
-#   pr      open the PR -- only reached when every host is green
-name: Update flake.lock
+#   scan     pull in from `staging/*` any branch that will merge cleanly
+#            (leave the rest for their own pull request), gather upstream
+#            evidence, ask the local model what to hold back and what the
+#            week of upstream changes means for this host
+#   update   reproduce that tree in this job (same starting tree, same
+#            branches, so the merges agree), apply the bump minus the holds,
+#            flake check, build every host, let an agent try to adapt the
+#            repo on failure, push the branch
+#   cache    push what built, so the closure is hot before anyone switches
+#   pr       open the pull request -- only reached when the tree is green
+#            AND it is actually different from `main` (something bumped, or
+#            staged work landed; a no-change week opens nothing)
+#
+# A no-change week is a real outcome, not an error: if nothing staged and
+# nothing to bump, the run finishes green with an empty PR and no one has
+# to read it.
+name: Weekly update
 
 on:
   schedule:
@@ -51,16 +57,29 @@ concurrency:
 env:
   NIX_CONFIG: |
     access-tokens = github.com=${{ github.token }}
-  UPDATE_BRANCH: automated/update-flake-lock
+  UPDATE_BRANCH: automated/weekly-update
 
 jobs:
   scan:
     runs-on: [self-hosted, nixos]
     steps:
       - uses: actions/checkout@v7
+        with:
+          # `git merge` needs ancestry. A depth-1 clone would make the
+          # `staging/*` attempts fail with `shallow` errors.
+          fetch-depth: 0
 
       - name: Preflight
-        run: .github/scripts/preflight.sh gh jq curl nix
+        run: .github/scripts/preflight.sh gh jq curl git
+
+      # Pull in the staging work first, before asking the LLM to reason
+      # about anything. The LLM is looking at two documents: the upstream
+      # digest and the staged commit subjects; it needs both.
+      - name: Merge `staging/*` branches
+        run: |
+          .github/scripts/merge-staging.sh
+          echo "### Staged branches" >> "$GITHUB_STEP_SUMMARY"
+          cat staging-report/staging.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Collect upstream signal
         if: ${{ !inputs.skip-scan }}
@@ -72,11 +91,19 @@ jobs:
         run: |
           mkdir -p upstream-signal
           if [ "${{ inputs.skip-scan }}" = "true" ]; then
-            echo '{"holds":[],"summary":"Triage skipped by manual dispatch.","degraded":true}' \
+            echo '{"holds":[],"summary":"Triage skipped by manual dispatch.",
+                   "staged_notes":"Triage skipped by manual dispatch.",
+                   "degraded":true}' \
               > upstream-signal/verdict.json
           else
-            .github/scripts/scan-verdict.sh
+            STAGED_REPORT=staging-report .github/scripts/scan-verdict.sh
           fi
+
+      - name: Ask the model for release notes
+        # Independent so a model failure degrades one side and not the other;
+        # the gate below is the same either way.
+        if: ${{ !inputs.skip-scan }}
+        run: .github/scripts/scan-release-notes.sh
 
       - name: Summarise
         run: |
@@ -85,12 +112,26 @@ jobs:
             echo ""
             jq -r .summary upstream-signal/verdict.json
             echo ""
+            staged_notes=$(jq -r '.staged_notes // ""' upstream-signal/verdict.json)
+            if [ -n "$staged_notes" ]; then
+              echo "### The staged work"
+              echo ""
+              echo "$staged_notes"
+              echo ""
+            fi
             if [ "$(jq '.holds | length' upstream-signal/verdict.json)" -gt 0 ]; then
               echo "| Held back | Reason | Evidence |"
               echo "|---|---|---|"
-              jq -r '.holds[] | "| `\(.name)` | \(.reason) | \(.evidence) |"' upstream-signal/verdict.json
+              jq -r '.holds[] | "| `\(.name)` | \(.reason) | \(.evidence) |"' \
+                upstream-signal/verdict.json
             else
               echo "Nothing held back."
+            fi
+            if [ -s upstream-signal/release-notes.md ]; then
+              echo ""
+              echo "## Release notes preview"
+              echo ""
+              cat upstream-signal/release-notes.md
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -105,14 +146,16 @@ jobs:
     runs-on: [self-hosted, nixos]
     outputs:
       # 'true' only when the flake checked and every host built -- after the
-      # agent's fix, if it took one. Everything downstream keys off this.
+      # agent's fix, if it took one. Empty on a no-change week; the `if`
+      # gates below all treat empty as 'skip', which is what we want.
       green: ${{ steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true' }}
       hosts: ${{ steps.verify.outputs.hosts || steps.reverify.outputs.hosts }}
-      changed: ${{ steps.apply.outputs.changed }}
+      changed: ${{ steps.changed.outputs.changed }}
       agent-fixed: ${{ steps.fix.outputs.attempted }}
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           # The branch is force-pushed from here, so the job needs push
           # credentials on the checkout it already has.
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
@@ -133,6 +176,7 @@ jobs:
         # local to this checkout and are themselves never committed.
         run: |
           cat >> .git/info/exclude <<'EOF'
+          /staging-report/
           /upstream-signal/
           /path/
           /build-hosts.json
@@ -144,6 +188,15 @@ jobs:
           /fix-notes.md
           EOF
 
+      # Re-run the merge here, not on the `scan` job's tree: the scan's
+      # working tree died with the job. Same starting commit, same branches,
+      # same sort order -> same merge result, so what we build is what the
+      # triage judged. The `staging-report` that this produces is what the
+      # `pr` job prints, and it is byte-identical to the one the scan job
+      # saw.
+      - name: Merge `staging/*` branches (reproduce the scan's tree)
+        run: .github/scripts/merge-staging.sh
+
       - name: Record boot inputs before the bump
         # Pure evaluation of kernel/initrd/modules per host, so the step
         # after the bump can say which hosts a plain `switch` cannot fully
@@ -154,16 +207,29 @@ jobs:
         id: apply
         run: |
           .github/scripts/apply-updates.sh
-          if git diff --quiet -- flake.lock npins/sources.json; then
+
+      # 'changed' means: the tree this job will push is different from
+      # main. That includes the staged merges (committed) and the flake bump
+      # (still uncommitted at this point). This is the gate for opening a
+      # pull request at all.
+      #
+      # Diff against `origin/main` WITHOUT a second commit on purpose: that
+      # compares the working tree (with the uncommitted lock/npins changes)
+      # to main. A `HEAD` comparison would miss a bump that is only in the
+      # working tree and report a no-change week as one.
+      - name: Determine whether the tree changed
+        id: changed
+        run: |
+          if git diff --quiet origin/main; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Every input was already current, or every one was held back." >> "$GITHUB_STEP_SUMMARY"
+            echo "Nothing changed: no staged branches merged, and every input was already up to date or held back." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check and build every host
         id: verify
-        if: steps.apply.outputs.changed == 'true'
+        if: steps.changed.outputs.changed == 'true'
         continue-on-error: true
         run: |
           .github/scripts/check-and-build.sh
@@ -173,7 +239,7 @@ jobs:
 
       - name: Let the agent try to adapt the repo
         id: fix
-        if: steps.apply.outputs.changed == 'true' && steps.verify.outcome == 'failure'
+        if: steps.changed.outputs.changed == 'true' && steps.verify.outcome == 'failure'
         continue-on-error: true
         env:
           # opencode keeps its session database and its provider packages
@@ -261,31 +327,41 @@ jobs:
 
       # Push the branch from here, not from the pr job: the agent's fix lives
       # in this working tree, and only this job has it. A branch push is not
-      # a pull request, and it only happens when the tree is green.
+      # a pull request, and it only happens when the tree is green AND it is
+      # actually different from main (a no-change week keeps main untouched).
       - name: Push the branch
-        if: steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true'
+        if: steps.changed.outputs.changed == 'true' && \
+            (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$UPDATE_BRANCH"
           git add -A
-          git commit -m "chore(flake): update flake.lock and npins"
+          git commit -m "chore: weekly update"
           git push --force origin "$UPDATE_BRANCH"
 
       # Named path-* so push-cache.yml's download pattern picks it up; the
       # directory is stripped on upload, so each host lands as paths/<host>.
+      # Only on a no-change week the closure is not new, so skip the push;
+      # the caches already have the previous closure and that is still valid.
       - uses: actions/upload-artifact@v7
-        if: steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true'
+        if: steps.changed.outputs.changed == 'true' && \
+            (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true')
         with:
           name: path-bundle
           path: path/
           retention-days: 1
 
+      # The `pr` job and the next run both need to know what was in this tree.
+      # Uploaded unconditionally on a changed week (or always, so a no-change
+      # week's log still has the report), so the PR body prints it.
       - uses: actions/upload-artifact@v7
-        if: always() && steps.apply.outputs.changed == 'true'
+        if: always() && steps.changed.outputs.changed == 'true'
         with:
           name: update-report
           path: |
+            staging-report/staging.md
+            staging-report/staged-commits.txt
             build-failure.log
             fix-notes.md
             reboot-notes.md
@@ -294,7 +370,7 @@ jobs:
 
   cache:
     needs: update
-    if: needs.update.outputs.green == 'true'
+    if: needs.update.outputs.green == 'true' && needs.update.outputs.changed == 'true'
     uses: ./.github/workflows/push-cache.yml
     with:
       all-hosts: ${{ needs.update.outputs.hosts }}
@@ -303,8 +379,9 @@ jobs:
   pr:
     needs: [update, cache]
     # A cache hiccup should not cost the week its pull request, so this waits
-    # for the push but does not require it to have succeeded.
-    if: ${{ !cancelled() && needs.update.outputs.green == 'true' }}
+    # for the push but does not require it to have succeeded. A no-change
+    # week is a legitimate "no pull request" outcome.
+    if: ${{ !cancelled() && needs.update.outputs.green == 'true' && needs.update.outputs.changed == 'true' }}
     runs-on: [self-hosted, nixos]
     steps:
       - uses: actions/download-artifact@v8
@@ -330,7 +407,7 @@ jobs:
           n=$(tr -d '[]" ' <<<"$HOSTS" | tr ',' '\n' | grep -c .)
           body=pr-body.md
           {
-            echo "Automated weekly bump of \`flake.lock\` and \`npins/sources.json\`."
+            echo "Weekly update: the week's upstream bump plus any \`staging/*\` work that merged cleanly."
             echo ""
             echo "\`nix flake check\` passed and all $n hosts built on \`ryzn-server\`."
             if [ "$CACHED" = "success" ]; then
@@ -339,16 +416,33 @@ jobs:
               echo "> The cache push did not succeed ($CACHED) &mdash; switching will build locally."
             fi
             echo ""
-            if [ -s update-report/reboot-notes.md ]; then
-              echo "## Applying this bump"
+
+            if [ -s update-report/staging.md ]; then
+              echo "## Staged branches"
               echo ""
-              cat update-report/reboot-notes.md
+              cat update-report/staging.md
               echo ""
+              if [ -s update-report/staged-commits.txt ]; then
+                echo "### Commits landed"
+                echo ""
+                echo '```'
+                cat update-report/staged-commits.txt
+                echo '```'
+                echo ""
+              fi
             fi
+
             echo "## Pre-update triage"
             echo ""
             jq -r .summary upstream-signal/verdict.json
             echo ""
+            staged_notes=$(jq -r '.staged_notes // ""' upstream-signal/verdict.json)
+            if [ -n "$staged_notes" ] && [ "$staged_notes" != "N/A: no staged work merged." ]; then
+              echo "### The staged work"
+              echo ""
+              echo "$staged_notes"
+              echo ""
+            fi
             if [ "$(jq '.holds | length' upstream-signal/verdict.json)" -gt 0 ]; then
               echo "### Held at their current revision"
               echo ""
@@ -357,6 +451,21 @@ jobs:
               jq -r '.holds[] | "| `\(.name)` | \(.reason) | \(.evidence) |"' upstream-signal/verdict.json
               echo ""
             fi
+
+            if [ -s upstream-signal/release-notes.md ]; then
+              echo "## What landed upstream"
+              echo ""
+              cat upstream-signal/release-notes.md
+              echo ""
+            fi
+
+            if [ -s update-report/reboot-notes.md ]; then
+              echo "## Applying this bump"
+              echo ""
+              cat update-report/reboot-notes.md
+              echo ""
+            fi
+
             if [ -s update-report/fix-notes.md ]; then
               echo "## The bump needed a code change"
               echo ""
@@ -365,12 +474,13 @@ jobs:
               echo "> Written by the agent that made the change. Read the diff outside the lock files carefully."
               echo ""
             fi
-            echo "<sub>Opened by \`.github/workflows/update-flake-lock.yml\`, run [\`${{ github.run_id }}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).</sub>"
+
+            echo "<sub>Opened by \`.github/workflows/weekly-update.yml\`, run [\`${{ github.run_id }}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).</sub>"
           } > "$body"
 
           gh pr create --repo "$GITHUB_REPOSITORY" \
             --head "$UPDATE_BRANCH" --base main \
-            --title "chore(flake): update flake.lock and npins" \
+            --title "chore: weekly update" \
             --body-file "$body" \
             --label dependencies --label automated \
           || gh pr edit "$UPDATE_BRANCH" --repo "$GITHUB_REPOSITORY" --body-file "$body"

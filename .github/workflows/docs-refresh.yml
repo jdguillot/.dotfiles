@@ -1,0 +1,201 @@
+# .github/workflows/docs-refresh.yml
+#
+# Weekly refresh of `README.md` and `docs/*.md` against the repo's actual
+# state. The local model (Ollama, loopback, on the ryzn-server runner
+# host) reads the git history since the last refresh and edits the docs to
+# match. No hard lint gate, no model-retry loop: markdownlint runs once as
+# an advisory, and the pull request is opened with whatever the model
+# produced. The docs are reviewed by a human in the PR regardless.
+#
+# The previous implementation used the Copilot CLI on `ubuntu-latest`,
+# and did a `git rebase origin/main` on the running branch every time so
+# new content landed on top of main. That rebase conflicts on nearly
+# every second run (the running branch's docs and main's disagree on the
+# same hunks), and the conflict has no resolution strategy in CI, so the
+# run dies. This implementation checks out main each run, edits the docs,
+# commits, force-pushes the running branch. No rebase, no conflict, no
+# failure mode to worry about.
+name: Docs refresh
+
+on:
+  schedule:
+    # Monday 10:30 UTC -- lands before the Tuesday 05:00 UTC weekly bump.
+    # A doc change that introduces a new module or host is more likely to
+    # be coherent with a Tuesday bump that picks up the same input; a
+    # Monday refresh gives it the whole week to settle.
+    - cron: "30 10 * * 1"
+  workflow_dispatch:
+    inputs:
+      fix-timeout-minutes:
+        description: Wall-clock budget for the writing agent before it is stopped.
+        type: number
+        default: 30
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  # Not needed for this workflow (no Nix builds); keeping the shape for
+  # consistency with weekly-update.yml does more than it does here, but
+  # it is harmless and means `NIX_CONFIG` is in the env for any debug
+  # shell someone opens.
+  NIX_CONFIG: |
+    access-tokens = github.com=${{ github.token }}
+  DOCS_BRANCH: auto/doc-refresh
+
+jobs:
+  refresh:
+    runs-on: [self-hosted, nixos]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # We will commit against `origin/main`. A depth-1 clone hides the
+          # diff between last week's refresh and main's HEAD, so `git log`
+          # will lie about the last doc change. Full history.
+          fetch-depth: 0
+          ref: main
+
+      - name: Preflight
+        # markdownlint is the advisory gate; it is a hard dependency of the
+        # lint step below, so it is in the required list.
+        run: .github/scripts/preflight.sh git opencode jq gh curl markdownlint
+
+      - name: Look at what changed since the last refresh
+        run: |
+          # Anchor on the last commit that touched the docs (any author: docs
+          # changes reach main as PRs, so the newest docs-touching commit on
+          # main is the previous refresh). Everything since it is the delta
+          # this run should reflect. A bounded digest, not the whole history.
+          mkdir -p docs-report
+          last=$(git log --format=%H -n 1 -- README.md docs/ 2>/dev/null || true)
+          {
+            echo "# Recent commits since the last docs refresh"
+            echo ""
+            if [ -z "$last" ]; then
+              echo "(no docs-touching commit found in this history)"
+              echo ""
+              git --no-pager log --oneline -50
+            else
+              echo "Last commit touching the docs: \`${last:0:12}\` (`git log -1 --format=%s` below)"
+              echo ""
+              git --no-pager log -1 --format="%s (%an, %ad)" --date=short "$last"
+              echo ""
+              echo "Commits since then that this refresh should reflect:"
+              echo ""
+              git --no-pager log --oneline "${last}..HEAD"
+            fi
+          } > docs-report/summary.md
+          cat docs-report/summary.md
+
+      - name: Refresh the docs
+        env:
+          # opencode keeps its session database and its provider packages
+          # under HOME. Same pattern as the fix step in weekly-update.yml.
+          HOME: ${{ runner.temp }}/agent-home
+          OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
+          BUDGET_MINUTES: ${{ inputs.fix-timeout-minutes || 30 }}
+        run: |
+          mkdir -p "$HOME/.config/opencode"
+          # MCP server, same as the fix step.
+          if ! command -v mcp-nixos >/dev/null 2>&1; then
+            jq 'del(.mcp)' "$OPENCODE_CONFIG" > "$HOME/opencode.json"
+            export OPENCODE_CONFIG="$HOME/opencode.json"
+            echo "::warning::mcp-nixos absent; running the agent without the nixos MCP"
+          fi
+          # The agent's output is the whole run. Write it to a file as well
+          # as stdout so the job summary and the log both see it.
+          set +e
+          timeout --signal=TERM --kill-after=60s "${BUDGET_MINUTES}m" \
+            opencode run --pure --auto --agent build \
+            "$(cat .github/opencode/docs-refresh-prompt.md)" \
+            2>&1 | tee docs-report/agent-log.md
+          rc=$?
+          set -e
+
+          if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then
+            echo "::warning::docs agent hit its ${BUDGET_MINUTES}m budget and was stopped"
+            {
+              echo
+              echo "## Stopped at the ${BUDGET_MINUTES} minute budget"
+            } >> docs-report/agent-log.md
+          fi
+
+          # The agent's own account, if any, for the job summary.
+          if [ -s docs-report/CHANGELOG.md ]; then
+            {
+              echo
+              echo "## Agent's notes"
+              echo
+              cat docs-report/CHANGELOG.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          rm -f docs-report/CHANGELOG.md
+
+      - name: Advisory markdownlint
+        run: |
+          {
+            echo
+            echo "## markdownlint (advisory)"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          set +e
+          markdownlint README.md docs/*.md 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::markdownlint reported issues; the lint step is advisory, so the run continues and the pull request opens with them in it"
+          else
+            echo "markdownlint: clean" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Commit and push the docs
+        id: commit
+        run: |
+          if git diff --quiet origin/main -- README.md docs/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The model made no changes to the docs this week." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/
+          git commit -m "docs: weekly refresh"
+          git push --force-with-lease origin "HEAD:refs/heads/$DOCS_BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the pull request
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          # Same reasoning as the weekly-update PR step: a PR opened with
+          # the default GITHUB_TOKEN does not re-trigger other workflows.
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
+        run: |
+          body=pr-body.md
+          {
+            echo "Weekly refresh of \`README.md\` and \`docs/*.md\` against the current state of the repo."
+            echo ""
+            echo "Written by the local model (Qwen3.8 27B, Ollama on \`ryzn-server\`) from the git history since the last refresh. Read the diff in full before merging; the model is good at reformatting and bad at remembering what this repo actually does."
+            echo ""
+            if [ -s docs-report/agent-log.md ]; then
+              echo "<details><summary>Agent log</summary>"
+              echo
+              echo '```'
+              cat docs-report/agent-log.md
+              echo '```'
+              echo "</details>"
+              echo ""
+            fi
+            echo "<sub>Opened by \`.github/workflows/docs-refresh.yml\`, run [\`${{ github.run_id }}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).</sub>"
+          } > "$body"
+
+          gh pr create --repo "$GITHUB_REPOSITORY" \
+            --head "$DOCS_BRANCH" --base main \
+            --title "docs: weekly refresh" \
+            --body-file "$body" \
+            --label docs \
+          || gh pr edit "$DOCS_BRANCH" --repo "$GITHUB_REPOSITORY" --body-file "$body"

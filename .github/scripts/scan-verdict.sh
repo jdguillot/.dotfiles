@@ -20,15 +20,26 @@ NUM_CTX="${NUM_CTX:-262144}"
 
 digest="$OUT_DIR/digest.md"
 sources="$OUT_DIR/sources.json"
+staged="${STAGED_REPORT:-staging-report}/staged-commits.txt"
 verdict="$OUT_DIR/verdict.json"
 
 fail_open() {
   echo "scan: $1 -- proceeding with no holds" >&2
-  jq -n --arg s "$1" '{holds: [], summary: ("Scan unavailable: " + $s), degraded: true}' > "$verdict"
+  jq -n --arg s "$1" '{
+    holds: [],
+    summary: ("Scan unavailable: " + $s),
+    staged_notes: "Scan unavailable.",
+    degraded: true
+  }' > "$verdict"
   exit 0
 }
 
 [ -s "$digest" ] || fail_open "no digest to read"
+# The staged-commits file is empty when no `staging/*` branch merged into
+# this tree; the LLM prompt handles both cases. Not a failure either way.
+if [ ! -f "$staged" ]; then
+  : > "$staged"
+fi
 curl -fsS --max-time 10 "$OLLAMA_URL/api/tags" >/dev/null 2>&1 || fail_open "ollama unreachable at $OLLAMA_URL"
 
 # Named inputs only: an enum keeps the model from inventing a source name
@@ -50,9 +61,10 @@ schema=$(jq -n --argjson names "$names" '{
         required: ["name", "reason", "evidence"]
       }
     },
-    summary: { type: "string" }
+    summary: { type: "string" },
+    staged_notes: { type: "string" }
   },
-  required: ["holds", "summary"]
+  required: ["holds", "summary", "staged_notes"]
 }')
 
 request=$(jq -n \
@@ -60,6 +72,7 @@ request=$(jq -n \
   --arg system "$(cat .github/opencode/scan-prompt.md)" \
   --arg hosts "$(cat hosts/default.nix)" \
   --rawfile digest "$digest" \
+  --rawfile staged "$staged" \
   --argjson schema "$schema" \
   --argjson num_ctx "$NUM_CTX" '{
     model: $model,
@@ -68,7 +81,15 @@ request=$(jq -n \
     options: { temperature: 0, num_ctx: $num_ctx },
     messages: [
       { role: "system", content: $system },
-      { role: "user", content: ("## The machines this feeds\n\n```nix\n" + $hosts + "\n```\n\n" + $digest) }
+      { role: "user", content:
+          ("## The machines this feeds\n\n```nix\n" + $hosts + "\n```\n\n"
+           + (if $staged == ""
+                 then "## Staged branches\n"
+                      + "No staged work was merged into this tree this week.\n\n"
+                      else "## Staged branches (already merged into this tree)\n"
+                           + $staged + "\n\n"
+                      end)
+           + "## Upstream changes\n\n" + $digest) }
     ]
   }')
 
@@ -80,10 +101,14 @@ content=$(jq -r '.message.content // empty' <<<"$response")
 jq -e . >/dev/null 2>&1 <<<"$content" || fail_open "completion was not JSON"
 
 # Constrained decoding guarantees the shape, not the truth of it. Drop any
-# hold naming a source that is not actually in the update set.
+# hold naming a source that is not actually in the update set, and default
+# staged_notes to an empty string if the model omitted it (schema-required,
+# but a misbehaving decoding can produce a missing key; never a crash).
 jq --argjson names "$names" \
   '{ holds: [.holds[] | select(.name as $n | $names | index($n))],
-     summary: .summary, degraded: false }' <<<"$content" > "$verdict"
+     summary: (.summary // ""),
+     staged_notes: (.staged_notes // ""),
+     degraded: false }' <<<"$content" > "$verdict"
 
 echo "scan: $(jq '.holds | length' "$verdict") hold(s) of $(jq 'length' "$sources") sources"
 jq -r '.holds[] | "  hold \(.name): \(.reason)"' "$verdict"

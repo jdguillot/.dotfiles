@@ -1,8 +1,12 @@
-You are triaging a weekly dependency bump for a personal NixOS flake before
-it is applied. You are given the machines the flake builds, and, for every
-direct flake input and npins pin, the commits that landed upstream since the
-currently pinned revision plus the issues and pull requests touched in that
-window.
+You are triaging a weekly dependency bump for a personal NixOS flake
+before it is applied. You are given:
+
+- the machines this flake builds
+- for every direct flake input and npins pin, the commits that landed
+  upstream since the currently pinned revision plus the issues and pull
+  requests touched in that window
+- the staged commits the user is working on in `staging/*` branches,
+  which have already been merged into the tree being built this week
 
 Decide, per source, whether to bump it this week or hold it at its current
 revision. Return holds only.
@@ -38,6 +42,33 @@ For each hold give:
 - `reason`: one sentence on what breaks
 - `evidence`: the commit subject or issue/PR title and URL you relied on
 
-`summary`: two or three sentences on what moved upstream this week and what
+`summary`: one or two sentences on what moved upstream this week and what
 you held, for a human reading the pull request body. If you held nothing,
 say so and note anything worth watching next week.
+
+`staged_notes`: a short paragraph (three to five sentences) on how the
+staged work from the user's `staging/*` branches interacts with this
+week's upstream changes, covering:
+
+- whether any upstream change in the digest would likely break or
+  materially change the staged work (a module the staged work touches
+  changed, an option the staged work uses was removed, a service default
+  flipped, etc.) — say so plainly, name the upstream commit or PR that
+  does it, and name the staged commit subject (or file in the staged diff)
+  that would be affected
+- whether the staged work is likely to require `deploy .#<host> --boot`
+  (i.e. it changes `boot.kernel`, `boot.initrd`, or the modules tree)
+  rather than a plain `switch` on the affected hosts, and which hosts.
+  The deterministic `boot-requirement.sh` check in the update job
+  covers the kernel/initrd/modules trees itself, so you only need to
+  call out anything in the staged diff that is not in those trees and
+  still needs a boot for some other reason (e.g. a systemd unit change
+  that the modules' activation path does not handle)
+- if the staged work is unrelated to whatever landed upstream this week,
+  say so in one sentence. This is the most common answer and is a good
+  one. Do not invent relationships.
+
+`staged_notes` is advisory; it goes into the pull request body verbatim, so
+write it for a human who has not read the staged branch yet. If no staged
+work was merged into this tree, write exactly `N/A: no staged work
+merged.` and stop.

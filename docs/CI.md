@@ -145,17 +145,27 @@ only has to match `path-*`; its contents are flattened on download, so a
 single bundle artifact containing one file per host works as well as one
 artifact per host.
 
-## `update-flake-lock.yml` — the weekly bump
+## `weekly-update.yml` — the weekly bump
 
 Tuesdays at 05:00 UTC, or on manual dispatch. Dependabot cannot do this:
 `.github/dependabot.yml` only understands `github-actions`, so without this
-workflow `flake.lock` and `npins/sources.json` move only by hand.
+workflow `flake.lock` and `npins/sources.json` move only by hand. The
+workflow also pulls in any `staging/*` branch that merges cleanly, so a
+week of staged work that is safe to take lands with the week's bump
+instead of waiting for its own pull request.
 
 ```
 scan ──> update ──> cache ──> pr
 ```
 
 ### scan — look before updating
+
+`.github/scripts/merge-staging.sh` walks every `origin/staging/*` branch,
+sorted, and attempts a `--no-ff` merge into HEAD. A branch that cannot
+merge is skipped and named in the report; the update is not held. The
+`updated` job runs the same script against the same starting tree and the
+same branches, so it reproduces the same merge result before applying the
+bump and building.
 
 `.github/scripts/collect-upstream-signal.sh` walks every direct flake input
 and every npins pin and asks GitHub, per source, what landed since the
@@ -167,24 +177,52 @@ never `locked` — half these inputs pin one (`nixos-25.11`, `legacy-v4`,
 `stable`, `v1.1.0`), and comparing those against `HEAD` would diff them
 against master.
 
-`.github/scripts/scan-verdict.sh` hands that digest to the local model on
-this host's loopback Ollama and gets back a list of inputs to hold at their
-current revision. It is a plain `curl`, not an agent: the job is one
-judgement over one bounded document, and Ollama's JSON-schema constrained
-decoding makes the answer parseable by construction. The prompt is
+`.github/scripts/scan-verdict.sh` hands the digest and the list of staged
+commits to the local model on this host's loopback Ollama and gets back a
+list of inputs to hold at their current revision, plus a short paragraph
+on how the staged work interacts with the week's upstream changes — for
+example, whether an upstream change in the digest is likely to break
+something in the staged diff, or whether the staged work is likely to need
+`deploy .#<host> --boot` rather than a plain `switch` on the affected
+hosts. It is a plain `curl`, not an agent: the job is one judgement over
+one bounded document, and Ollama's JSON-schema constrained decoding makes
+the answer parseable by construction. The prompt is
 `.github/opencode/scan-prompt.md`.
 
-The step **fails open**. A hold list is advice; the flake check and the
-per-host builds are the actual gate, so an unreachable model or a garbled
-answer must not stall the week's bump. It records `degraded: true` and
-proceeds with no holds.
+`.github/scripts/scan-release-notes.sh` makes a second Ollama call with a
+different prompt (`.github/opencode/release-notes-prompt.md`) and a
+bounded digest of the week's upstream changes, and gets back a short
+markdown overview of what landed, grouped by this repo's own module
+families. Two calls rather than extending the verdict: the verdict is
+constrained-decoded to a schema whose `holds.name` is an enum over the
+update-target source names, and the release notes have no such shape.
+Keeping them independent means a degraded model degrades one side and not
+the other; the failure mode is the same either way (notes advisory, holds
+advice, build gate real).
+
+The verdict and the notes both **fail open**. A hold list is advice; the
+flake check and the per-host builds are the actual gate, so an unreachable
+model or a garbled answer must not stall the week's bump. They record
+`degraded: true` or skip the file and proceed without.
 
 ### update — apply, prove, and adapt
 
+First the job re-runs `.github/scripts/merge-staging.sh` against the same
+starting tree and the same branch list the scan job used, so it reproduces
+the same `staging/*` merge result before doing anything else (the scan
+job's working tree died with it). Then
 `.github/scripts/apply-updates.sh` runs `nix flake update` and `npins update`
 with an explicit name list, so a hold is a real hold — that input keeps its
 revision while everything around it moves. Inputs that `follows` nixpkgs
 still move with nixpkgs; holding those back would mean holding nixpkgs.
+
+The job then works out whether the tree it is about to push is different
+from `main` at all — diffing the working tree (staged merges committed,
+bump uncommitted) against `origin/main`. A week where nothing staged and
+nothing to bump is a legitimate "open no pull request" outcome, and the
+rest of the job — the builds, the cache push, the PR — all key off that
+`changed` output, so a no-change week ends as a green run with nothing to
+read.
 
 `.github/scripts/check-and-build.sh` then builds every host and every
 standalone home configuration, and runs `nix flake check --no-build`
@@ -321,12 +359,21 @@ closure is already in `attic` and `cachix` before anyone reads the PR — a
 switch on the other machines pulls rather than builds. The PR job waits for
 it but does not require it; a cache hiccup should not cost the week its pull
 request, and the body says so if the push did not succeed.
-
 The branch is pushed from the **update** job, not the PR job, because the
 agent's fix lives in that working tree and only that job has it. A branch
-push is not a pull request, and it only happens once the tree is green.
+push is not a pull request, and it only happens once the tree is green
+*and* different from `main`.
 
-The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull request
+The PR body, when one opens, is assembled from: the staged-branch report
+and the list of commits that landed; the triage summary and its `staged_notes`
+paragraph; the held-back table, if anything was held; the release-notes
+overview of what landed upstream, grouped by this repo's own module
+families; the "how to apply" section from `boot-requirement.sh`; and the
+fix agent's note, if the bump needed an in-repo change. Each section is
+omitted when it has nothing to say, so a clean week reads clean.
+
+The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull
+request
 opened with the default `GITHUB_TOKEN` does not trigger other workflows —
 GitHub suppresses that to avoid recursive runs — so `cachix.yml` would never
 post a status on it. The builds in the update job already proved the tree;
@@ -335,13 +382,50 @@ the PAT is so the PR visibly shows it.
 Manual dispatch takes a `skip-scan` input that bumps everything without the
 triage pass.
 
+## `docs-refresh.yml` — the weekly docs refresh
+
+Mondays at 10:30 UTC, or on manual dispatch. Refreshes `README.md` and
+`docs/*.md` against the repo's actual state by asking the local model (same
+Qwen3.8 27B on loopback Ollama, via `opencode run --auto --agent build` with
+the prompt in `.github/opencode/docs-refresh-prompt.md`) to read the git
+history since the last refresh and update the docs to match.
+
+The job checks out `main` cleanly (`fetch-depth: 0` for a real history),
+asks the model to edit the docs in place, then commits and force-pushes
+the running branch. There is no `git rebase -i origin/main` on a long
+running branch as the previous implementation had — that conflicted on
+nearly every second run because the running branch's docs and `main`'s
+disagreed on the same hunks, and a conflict has no resolution strategy in
+CI. Force-push from a clean checkout is the whole point of this rewrite.
+
+`markdownlint README.md docs/*.md` runs once, after the model's work, and
+is **advisory**, not a gate: a single stray violation does not kill the
+run or open a follow-up model call to fix it. The pull request opens with
+whatever the model produced and whatever the linter flagged, and a human
+reviews the diff before merging. That is the right shape for a docs
+refresh: the model is the one author, not a fixer, and the lint pass is
+only there to make the diff visibly consistent.
+
+The runner's `extraPackages` gained `markdownlint-cli` for this job. The
+agent gets the same `nixos` MCP server (the `mcp-nixos` binary on the
+runner's PATH) the fix agent has, so it can question its own memory of
+upstream option names when writing `docs/MODULES.md` and
+`docs/HOME-MANAGER.md`. The prompt tells it to fetch the current upstream
+docs before linking an option it is not sure about, because a wrong option
+name in a doc is worse than no link.
+
+The pull request is opened on a dedicated `auto/doc-refresh` branch, force
+pushed from each run. It is a separate branch from the weekly bump's
+`automated/weekly-update`, so a docs change does not ride along with a
+lock bump and vice-versa.
+
 ## Secrets
 
 | Secret | Used by | What it is |
 |---|---|---|
 | `ATTIC_TOKEN` | `push-cache.yml` | push token for `attic.cyberfighter.space`, cache `main` |
 | `CACHIX_AUTH_TOKEN` | `push-cache.yml` | push token for the `jdguillot` cachix cache |
-| `PERSONAL_ACCESS_TOKEN` | `update-flake-lock.yml` | fine-grained PAT, contents + pull-requests write, so the weekly PR triggers CI |
+| `PERSONAL_ACCESS_TOKEN` | `weekly-update.yml`, `docs-refresh.yml` | fine-grained PAT, contents + pull-requests write, so the weekly PRs trigger CI |
 
 The triage and fix models need no secret at all: Ollama is on the runner
 host's loopback and is unauthenticated there.

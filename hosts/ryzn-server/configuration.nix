@@ -115,15 +115,18 @@
         url = "https://github.com/jdguillot/.dotfiles";
         count = 4;
         # cachix/attic push the closure; findutils supplies xargs. opencode
-        # is the fix-up agent for the weekly update workflow (see
-        # .github/opencode/opencode.json; mcp-nixos backs its `nixos` server).
-        # deptui-agent is the kick after a green build (cachix.yml).
+        # is the fix-up agent for the weekly update workflow and the writing
+        # agent for the docs refresh (see .github/opencode/opencode.json;
+        # mcp-nixos backs its `nixos` server). markdownlint is the advisory
+        # gate on the docs refresh. deptui-agent is the kick after a green
+        # build (cachix.yml).
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
           pkgs.findutils
           pkgs.gh
           pkgs.jq
+          pkgs.markdownlint-cli
           pkgs.npins
           pkgs.opencode
           pkgs.mcp-nixos
