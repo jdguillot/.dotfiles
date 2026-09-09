@@ -42,7 +42,14 @@ on:
       fix-timeout-minutes:
         description: Wall-clock budget for the fix agent before it is stopped.
         type: number
-        default: 30
+        default: 60
+      hold:
+        description: >-
+          Inputs to hold at their current revision regardless of what the
+          triage says, space separated. For re-running a week that an
+          upstream breakage blocked.
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -98,6 +105,23 @@ jobs:
           else
             STAGED_REPORT=staging-report .github/scripts/scan-verdict.sh
           fi
+
+      # After the model, so a hand-given hold wins over its judgement. The
+      # names are not validated here: apply-updates.sh treats an unknown name
+      # as holding nothing, and the summary below prints what was held, which
+      # is where a typo shows up.
+      - name: Hold what the dispatch asked to hold
+        if: inputs.hold != ''
+        env:
+          HOLD: ${{ inputs.hold }}
+        run: |
+          for n in $HOLD; do
+            jq --arg n "$n" \
+              '.holds += [{ name: $n, reason: "held by hand on dispatch",
+                            evidence: "workflow_dispatch input" }]' \
+              upstream-signal/verdict.json > verdict.new
+            mv verdict.new upstream-signal/verdict.json
+          done
 
       - name: Ask the model for release notes
         # Independent so a model failure degrades one side and not the other;
@@ -186,6 +210,7 @@ jobs:
           /reboot-notes.md
           /build-failure.log
           /fix-notes.md
+          /late-holds.json
           EOF
 
       # Re-run the merge here, not on the `scan` job's tree: the scan's
@@ -247,8 +272,11 @@ jobs:
           # them, and this one is thrown away with the job.
           HOME: ${{ runner.temp }}/agent-home
           OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
-          # Empty on a scheduled run, where `inputs` carries nothing.
-          BUDGET_MINUTES: ${{ inputs.fix-timeout-minutes || 30 }}
+          # Empty on a scheduled run, where `inputs` carries nothing. An hour
+          # rather than half of one: the model is on this host's loopback and
+          # is shared with whatever else is using the GPU, so the same work
+          # can take twice as long depending on the week.
+          BUDGET_MINUTES: ${{ inputs.fix-timeout-minutes || 60 }}
         run: |
           mkdir -p "$HOME/.config/opencode"
           # opencode reads skills from $XDG_CONFIG_HOME/opencode/skills, and
@@ -291,14 +319,25 @@ jobs:
           set -e
 
           if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then
+            echo "stopped=true" >> "$GITHUB_OUTPUT"
             echo "::warning::fix agent hit its ${BUDGET_MINUTES}m budget and was stopped"
             {
               echo
-              echo "## Stopped at the ${BUDGET_MINUTES} minute budget"
+              echo "### Stopped at the ${BUDGET_MINUTES} minute budget"
               echo
               echo "The agent did not reach a green tree in the time it was given."
               echo "Anything above this line is its own account, written before it"
               echo "was stopped; anything it was still verifying is unverified."
+              echo
+              # Whatever it was holding when it was killed is what the
+              # re-check below builds, so the notes have to carry it: an
+              # abandoned edit that does not evaluate produces an error that
+              # looks nothing like the one the bump caused.
+              echo "It left this in the tree, unverified:"
+              echo
+              echo '```diff'
+              git --no-pager diff -- . ':!flake.lock' ':!npins/sources.json' | head -200
+              echo '```'
             } >> fix-notes.md
           fi
 
@@ -316,6 +355,21 @@ jobs:
           .github/scripts/check-and-build.sh
           echo "hosts=$(cat build-hosts.json)" >> "$GITHUB_OUTPUT"
           echo "green=true" >> "$GITHUB_OUTPUT"
+
+      # The job finishes green whatever happens here, so the summary is the
+      # only place the outcome is stated. Without this the page ends on a
+      # build log and the reader has to work out for themselves that no pull
+      # request is coming, and why.
+      - name: Say why the update did not land
+        if: >-
+          steps.changed.outputs.changed == 'true' &&
+          steps.verify.outputs.green != 'true' &&
+          steps.reverify.outputs.green != 'true'
+        env:
+          BUDGET_MINUTES: ${{ inputs.fix-timeout-minutes || 60 }}
+          AGENT_ATTEMPTED: ${{ steps.fix.outputs.attempted }}
+          AGENT_STOPPED: ${{ steps.fix.outputs.stopped }}
+        run: .github/scripts/update-blocked-summary.sh
 
       - name: Work out how the bump has to be applied
         id: reboot
@@ -366,6 +420,7 @@ jobs:
             staging-report/staged-commits.txt
             build-failure.log
             fix-notes.md
+            late-holds.json
             reboot-notes.md
           if-no-files-found: ignore
           retention-days: 14
@@ -419,16 +474,19 @@ jobs:
             fi
             echo ""
 
-            if [ -s update-report/staging.md ]; then
+            # Nested, not flat: upload-artifact roots a multi-path artifact at
+            # the paths' common ancestor, so `staging-report/` survives into
+            # the download.
+            if [ -s update-report/staging-report/staging.md ]; then
               echo "## Staged branches"
               echo ""
-              cat update-report/staging.md
+              cat update-report/staging-report/staging.md
               echo ""
-              if [ -s update-report/staged-commits.txt ]; then
+              if [ -s update-report/staging-report/staged-commits.txt ]; then
                 echo "### Commits landed"
                 echo ""
                 echo '```'
-                cat update-report/staged-commits.txt
+                cat update-report/staging-report/staged-commits.txt
                 echo '```'
                 echo ""
               fi
@@ -454,6 +512,20 @@ jobs:
               echo ""
             fi
 
+            # The scan's verdict artifact is the one the scan uploaded, so
+            # these do not double up with the table above: a hold the fix
+            # agent added exists only in the update job's copy.
+            if [ -s update-report/late-holds.json ] && [ "$(jq 'length' update-report/late-holds.json)" -gt 0 ]; then
+              echo "### Held back after the build failed"
+              echo ""
+              echo "The bump broke the build and the breakage was in the input's own tree, not in this repository. These keep the revision \`main\` has; the rest of the bump was replayed on top, and the next run picks up the upstream fix."
+              echo ""
+              echo "| Input | Why |"
+              echo "|---|---|"
+              jq -r '.[] | "| `\(.name)` | \(.reason) |"' update-report/late-holds.json
+              echo ""
+            fi
+
             if [ -s upstream-signal/release-notes.md ]; then
               echo "## What landed upstream"
               echo ""
@@ -469,7 +541,7 @@ jobs:
             fi
 
             if [ -s update-report/fix-notes.md ]; then
-              echo "## The bump needed a code change"
+              echo "## What the fix agent did"
               echo ""
               cat update-report/fix-notes.md
               echo ""

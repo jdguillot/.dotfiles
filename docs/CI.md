@@ -233,19 +233,40 @@ every host even after one fails, so a single run surfaces every breakage the
 bump caused.
 
 If that fails, `opencode run --auto` gets the failure log and
-`.github/opencode/fix-prompt.md`, and tries to adapt the repo to whatever
-upstream renamed. It is told not to touch the lock files — reverting the bump
-is not a fix — and to write what it did to `fix-notes.md`, which becomes part
-of the pull request body. Then the check and build run again.
+`.github/opencode/fix-prompt.md`. The prompt gives it two legitimate
+outcomes and asks it to decide which one it is looking at *before* editing
+anything:
 
-The attempt is bounded: `fix-timeout-minutes` (default 30, raisable on a
+- **adapt the repository**, when the error names a file here and the cause
+  is that we call something upstream renamed or removed. This is the common
+  case and the diff is a few lines.
+- **hold one input back**, via `.github/scripts/hold-input.sh <name>
+  "<reason>"`, when the error is in upstream's own tree — a stale
+  `vendorHash`, source that no longer compiles, an output that no longer
+  evaluates on its own terms. The script pins that one input to the revision
+  `main` has and replays the rest of the bump on top, so everything else
+  still moves, and records the hold for the pull request body.
+
+The dividing question the prompt gives is whether the fix would edit a
+description of *upstream's* package or *this repository's* configuration.
+Writing a `vendorHash`, hanging an `.overrideAttrs` off someone else's
+derivation, or carrying a patch for another project's source is the wrong
+side of that line: upstream fixes it within days, and the workaround then
+goes stale silently as a mismatch in the other direction. `hold-input.sh` is
+the only supported way to move the lock files from this step; a hand edit
+does not survive the replay.
+
+The attempt is bounded: `fix-timeout-minutes` (default 60, changeable on a
 manual dispatch) is both a `timeout` around the run and a line in the prompt,
 so the agent can wind down and write its notes rather than only being killed.
-The failure mode being guarded against is not a wrong edit -- a wrong edit
-fails the re-check and no pull request opens -- but *no* edit: an agent
-chasing a bad hypothesis holds the concurrency group and the GPU indefinitely.
-On a timeout the step appends a note saying so, so the agent's own account and
-the fact it was cut off both reach the pull request body.
+An hour rather than half of one because the model is on this host's loopback
+and shares the GPU with whatever else is running. The failure mode being
+guarded against is not a wrong edit -- a wrong edit fails the re-check and no
+pull request opens -- but *no* edit: an agent chasing a bad hypothesis holds
+the concurrency group and the GPU indefinitely. On a timeout the step appends
+a note saying so, along with the diff it was killed holding, because that
+unverified edit is what the re-check then builds — an abandoned experiment
+produces an error that looks nothing like the one the bump caused.
 
 It gets three skills, built as `.#ci-agent-skills` and linked into its
 opencode config: `nixos-managing` and `nix-flakes` for the repo's own subject
@@ -265,10 +286,22 @@ The agent's whole session goes to the job log, which is public along with the
 repo. That is deliberate rather than accidental: see "What the agent can
 reach" below.
 
-The job is green only if the flake checked and **every** host built, before
-or after that fix. Nothing downstream runs otherwise, so a week that cannot
-be made to work ends with a failed run and a summary rather than a pull
-request.
+The bump is treated as green only if the flake checked and **every** host
+built, before or after that fix. Nothing downstream runs otherwise: no
+branch is pushed, no cache push, no pull request, and `main` is untouched.
+
+The *run* still finishes green, though — a bump that does not build is a
+normal weekly outcome and a red X would be about upstream, not about this
+repository. So `.github/scripts/update-blocked-summary.sh` writes the
+outcome into the job summary instead: which targets failed, what nix
+reported, whether the fix agent ran, was stopped at its budget, or was never
+reached, its `fix-notes.md`, and what happens next. It also raises a warning
+annotation, which is what shows on the run itself.
+
+To retry a week that an upstream breakage blocked, dispatch the workflow
+again with the **hold** input set to the offending source's name — that is
+merged into the triage verdict before `apply-updates.sh` runs, so it wins
+over whatever the model decided.
 
 #### What the agent can reach
 
@@ -366,7 +399,8 @@ push is not a pull request, and it only happens once the tree is green
 
 The PR body, when one opens, is assembled from: the staged-branch report
 and the list of commits that landed; the triage summary and its `staged_notes`
-paragraph; the held-back table, if anything was held; the release-notes
+paragraph; the held-back table, if anything was held; a second table for
+anything the fix agent held *after* the build failed; the release-notes
 overview of what landed upstream, grouped by this repo's own module
 families; the "how to apply" section from `boot-requirement.sh`; and the
 fix agent's note, if the bump needed an in-repo change. Each section is
@@ -379,8 +413,10 @@ GitHub suppresses that to avoid recursive runs — so `ci.yml` would never
 post a status on it. The builds in the update job already proved the tree;
 the PAT is so the PR visibly shows it.
 
-Manual dispatch takes a `skip-scan` input that bumps everything without the
-triage pass.
+Manual dispatch takes three inputs: `skip-scan` bumps everything without the
+triage pass, `fix-timeout-minutes` changes the fix agent's budget, and `hold`
+takes a space-separated list of sources to hold regardless of what the triage
+says.
 
 ## `docs-refresh.yml` — the weekly docs refresh
 
