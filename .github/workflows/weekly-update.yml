@@ -330,8 +330,9 @@ jobs:
       # a pull request, and it only happens when the tree is green AND it is
       # actually different from main (a no-change week keeps main untouched).
       - name: Push the branch
-        if: steps.changed.outputs.changed == 'true' && \
-            (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true')
+        if: >-
+          steps.changed.outputs.changed == 'true' &&
+          (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -345,8 +346,9 @@ jobs:
       # Only on a no-change week the closure is not new, so skip the push;
       # the caches already have the previous closure and that is still valid.
       - uses: actions/upload-artifact@v7
-        if: steps.changed.outputs.changed == 'true' && \
-            (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true')
+        if: >-
+          steps.changed.outputs.changed == 'true' &&
+          (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true')
         with:
           name: path-bundle
           path: path/
