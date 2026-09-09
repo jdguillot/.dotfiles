@@ -61,13 +61,20 @@ Do not hold because adapting looks like work. Specifically, do not hold for:
 
 ## Holding an input back
 
-    .github/scripts/hold-input.sh <name> "<one sentence on what is broken upstream>"
+    .github/scripts/hold-input.sh <name> "<what is broken upstream>" [<issue or PR url>]
 
 `<name>` is the flake input or npins pin exactly as it appears in
 `flake.lock`'s root inputs or in `upstream-signal/sources.json`. The script
 pins that one input back to the revision `main` has and replays the rest of
-the week's bump on top, so everything else still moves. It records the hold
-for the pull request body.
+the week's bump on top, so everything else still moves.
+
+Give the URL whenever you can find one — the upstream issue or pull request
+that reports or fixes what you hit. A ledger watches it week to week and
+releases the hold when it moves, so a hold with something tracked resolves
+itself and a hold with nothing tracked sits at last month's revision until
+someone notices. Search upstream's tracker for the error before you give up
+on finding one; if there genuinely is no report, say so in `fix-notes.md`
+and pass no URL.
 
 Hold one input, not several. If a second one is genuinely broken too, hold
 it separately and re-check in between — a hold that was not needed freezes a

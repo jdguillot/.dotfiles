@@ -20,6 +20,7 @@ NUM_CTX="${NUM_CTX:-262144}"
 
 digest="$OUT_DIR/digest.md"
 sources="$OUT_DIR/sources.json"
+ledger="$OUT_DIR/ledger.json"
 staged="${STAGED_REPORT:-staging-report}/staged-commits.txt"
 verdict="$OUT_DIR/verdict.json"
 
@@ -45,6 +46,23 @@ curl -fsS --max-time 10 "$OLLAMA_URL/api/tags" >/dev/null 2>&1 || fail_open "oll
 # Named inputs only: an enum keeps the model from inventing a source name
 # that the update step would then silently fail to hold back.
 names=$(jq -c '[.[].name]' "$sources")
+
+# What previous runs held and why. Every run is otherwise the first one it
+# has ever had, so without this a hold either renews forever on a reason
+# nobody re-reads, or lapses silently because this week's evidence window
+# starts after the breakage.
+[ -s "$ledger" ] || echo '{"holds":{}}' > "$ledger"
+standing=$(jq -r '
+  if (.holds | length) == 0 then "None. Nothing is currently held."
+  else ( .holds | to_entries[] | .value as $v |
+    "- `\(.key)`: held \($v.weeks) week(s), since \($v.first_seen). Reason on record: \($v.reason)."
+    + (if ($v.upstream | length) > 0
+       then " Tracking: " + ([$v.upstream[] | "\(.url) [\(.state)]"] | join(", ")) + "."
+       else " Nothing is being tracked upstream for it." end)
+    + (if $v.stalled_weeks >= 2
+       then " Nothing has moved upstream on it for \($v.stalled_weeks) week(s)."
+       else "" end) )
+  end' "$ledger")
 
 schema=$(jq -n --argjson names "$names" '{
   type: "object",
@@ -73,6 +91,7 @@ request=$(jq -n \
   --arg hosts "$(cat hosts/default.nix)" \
   --rawfile digest "$digest" \
   --rawfile staged "$staged" \
+  --arg standing "$standing" \
   --argjson schema "$schema" \
   --argjson num_ctx "$NUM_CTX" '{
     model: $model,
@@ -89,6 +108,7 @@ request=$(jq -n \
                       else "## Staged branches (already merged into this tree)\n"
                            + $staged + "\n\n"
                       end)
+           + "## Standing holds from previous runs\n\n" + $standing + "\n\n"
            + "## Upstream changes\n\n" + $digest) }
     ]
   }')

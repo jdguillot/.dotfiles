@@ -8,11 +8,16 @@
 # fixes it. This is the only supported way to move the lock files from the
 # fix step -- a hand-edited flake.lock does not survive the replay.
 #
-# Usage: hold-input.sh <name> "<one sentence on what is broken upstream>"
+# Usage: hold-input.sh <name> "<reason>" [<upstream issue or PR url>]
+#
+# The URL is optional and worth giving when there is one: hold-ledger.sh
+# watches it week to week, and a hold with nothing tracked is the one that
+# gets forgotten at last month's revision.
 set -euo pipefail
 
-name="${1:?usage: hold-input.sh <name> <reason>}"
-reason="${2:?usage: hold-input.sh <name> <reason>}"
+name="${1:?usage: hold-input.sh <name> <reason> [url]}"
+reason="${2:?usage: hold-input.sh <name> <reason> [url]}"
+tracking="${3:-}"
 
 OUT_DIR="${OUT_DIR:-upstream-signal}"
 verdict="$OUT_DIR/verdict.json"
@@ -53,8 +58,8 @@ mv "$verdict.new" "$verdict"
 # them: the scan's holds were predicted from upstream evidence, these were
 # found by the build failing.
 [ -s "$late" ] || echo '[]' > "$late"
-jq --arg n "$name" --arg r "$reason" \
-  '. += [{ name: $n, reason: $r }]' "$late" > "$late.new"
+jq --arg n "$name" --arg r "$reason" --arg t "$tracking" \
+  '. += [{ name: $n, reason: $r, tracking: $t }]' "$late" > "$late.new"
 mv "$late.new" "$late"
 
 # Back to the pre-bump lock files, then replay: `nix flake update` takes an

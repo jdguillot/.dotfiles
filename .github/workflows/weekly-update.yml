@@ -94,6 +94,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/collect-upstream-signal.sh
 
+      # Before the model, because a hold that has already stood for weeks is
+      # the strongest thing the model can be told about a source -- and the
+      # thing it otherwise has no way to know, each run being the first.
+      - name: Read the hold ledger
+        run: |
+          mkdir -p upstream-signal
+          .github/scripts/hold-ledger.sh read > upstream-signal/ledger.json
+          jq -r '.holds | to_entries[] |
+            "held `\(.key)` for \(.value.weeks) week(s), since \(.value.first_seen): \(.value.reason)"' \
+            upstream-signal/ledger.json
+
       - name: Ask the model what to hold back
         run: |
           mkdir -p upstream-signal
@@ -192,7 +203,7 @@ jobs:
         # opencode included: it is only reached on the failure path, but
         # finding out it is absent there means finding out after a build has
         # already failed, with the fix step silently skipped.
-        run: .github/scripts/preflight.sh jq nix npins git opencode -- mcp-nixos
+        run: .github/scripts/preflight.sh jq nix npins git gh opencode -- mcp-nixos
 
       - name: Keep the run's scratch files out of the commit
         # The commit below has to stage whatever the fix agent touched, so it
@@ -211,6 +222,8 @@ jobs:
           /build-failure.log
           /fix-notes.md
           /late-holds.json
+          /holds.json
+          /hold-report.md
           EOF
 
       # Re-run the merge here, not on the `scan` job's tree: the scan's
@@ -356,6 +369,21 @@ jobs:
           echo "hosts=$(cat build-hosts.json)" >> "$GITHUB_OUTPUT"
           echo "green=true" >> "$GITHUB_OUTPUT"
 
+      # After the fix step, so the fix agent's own holds are in it, and on
+      # every outcome: a week that did not build is exactly the week whose
+      # hold has to be remembered. Its own branch, so this does not wait on
+      # the pull request that a blocked week never opens.
+      - name: Record the hold ledger
+        if: always() && steps.changed.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          .github/scripts/hold-ledger.sh record
+          if [ -s hold-report.md ]; then
+            cat hold-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       # The job finishes green whatever happens here, so the summary is the
       # only place the outcome is stated. Without this the page ends on a
       # build log and the reader has to work out for themselves that no pull
@@ -421,6 +449,7 @@ jobs:
             build-failure.log
             fix-notes.md
             late-holds.json
+            hold-report.md
             reboot-notes.md
           if-no-files-found: ignore
           retention-days: 14
@@ -441,6 +470,9 @@ jobs:
     if: ${{ !cancelled() && needs.update.outputs.green == 'true' && needs.update.outputs.changed == 'true' }}
     runs-on: [self-hosted, nixos]
     steps:
+      # Before the downloads: checkout cleans the workspace, and this job
+      # needs the repo only for sanitize-refs.sh.
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: upstream-signal
@@ -526,6 +558,11 @@ jobs:
               echo ""
             fi
 
+            if [ -s update-report/hold-report.md ]; then
+              cat update-report/hold-report.md
+              echo ""
+            fi
+
             if [ -s upstream-signal/release-notes.md ]; then
               echo "## What landed upstream"
               echo ""
@@ -550,7 +587,13 @@ jobs:
             fi
 
             echo "<sub>Opened by \`.github/workflows/weekly-update.yml\`, run [\`${{ github.run_id }}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).</sub>"
-          } > "$body"
+          # Every upstream reference in this body -- the triage evidence, the
+          # release notes, the agent's notes, the held table -- is wrapped so
+          # GitHub does not cross-reference it onto the other project's
+          # tracker. This repo is public; its bump notes are nobody else's
+          # notifications. One filter over the whole body rather than each
+          # writer remembering.
+          } | .github/scripts/sanitize-refs.sh > "$body"
 
           gh pr create --repo "$GITHUB_REPOSITORY" \
             --head "$UPDATE_BRANCH" --base main \

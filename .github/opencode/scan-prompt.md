@@ -36,6 +36,29 @@ evidence predicts, not for risk in general. Holding everything is as wrong
 as holding nothing, and a false hold silently freezes a dependency for a
 week.
 
+## Sources that are already held
+
+You are given a list of standing holds: what previous runs held, for how
+many weeks, on what reason, and whether the issue or pull request being
+tracked has moved.
+
+A standing hold is not carried over for you. Each one needs a decision this
+week, the same as any other source, and the default is still to bump:
+
+- if the digest shows the breakage fixed — the tracked pull request merged,
+  a commit whose subject matches the reason, a release that includes it —
+  do not hold it. The build is the gate; letting it through and letting the
+  build say is better than another silent week.
+- if the reason on record still stands and this week's evidence still shows
+  it, hold it again, and give the same tracked URL in `evidence` so it keeps
+  being watched.
+- a hold with nothing tracked, standing for several weeks, is the one to
+  look hardest at. Search this week's issues and PRs for something that
+  matches its reason and cite that, so the next run has something to watch.
+
+"It was held last week" is not evidence. If you cannot restate what breaks
+from *this* week's digest, let it bump.
+
 For each hold give:
 
 - `name`: the source name exactly as it appears in the digest heading

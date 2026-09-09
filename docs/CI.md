@@ -303,6 +303,59 @@ again with the **hold** input set to the offending source's name — that is
 merged into the triage verdict before `apply-updates.sh` runs, so it wins
 over whatever the model decided.
 
+#### The hold ledger
+
+Every run is otherwise the first one it has ever had, which is how a hold
+turns permanent: each week holds the same source for the same reason, and no
+run can see that the last one did the same. `.github/scripts/hold-ledger.sh`
+keeps a `holds.json` on its own branch (`automated/hold-ledger`) recording,
+per held source, how long it has stood, why, what upstream issue or pull
+request it is waiting on, and how many weeks that has gone without moving.
+
+It is written with git plumbing — `hash-object`, `mktree`, `commit-tree`,
+push the ref — so nothing is ever checked out. That keeps it off the
+mid-bump working tree, avoids a git-crypt smudge on a branch carrying none
+of it, and lets a week that never opens a pull request still record its
+state.
+
+The scan reads it before the triage runs, and the model is given the
+standing holds as a document alongside the digest. A standing hold is not
+carried over automatically: the prompt asks for a fresh decision each week,
+and "it was held last week" is explicitly not evidence. The tracked issue
+is re-probed each run, so a merged fix releases the hold on its own.
+
+When a hold reaches `ESCALATE_WEEKS` (three) with nothing having moved
+upstream, the report adds a block saying so and listing what a maintainer
+would ask for — both revisions, the failure from the run that first held it,
+what in this repo triggers it, the smallest reproducer, the nixpkgs rev.
+It stops there deliberately: filing on someone else's tracker is a person's
+call, and what is actually missing by week three is the report nobody has
+written.
+
+A probe that fails is recorded as `unknown` and leaves the stall counter
+alone, rather than counting as a quiet week. Silence is what escalates, so
+it has to be silence that was actually observed and not a rate limit.
+
+#### Upstream references never leave a link behind
+
+This repo is public. A full issue URL, or an `owner/repo#123`, inside an
+issue, a pull request body or a commit message makes GitHub post a
+cross-reference event on the *other* project's tracker — "jdguillot/.dotfiles
+mentioned this issue". A private dependency-bump note has no business
+turning up in a stranger's notifications, and a bare `#123` has the same
+shape with a different target: it links to *this* repo's PR 123.
+
+So the whole pull request body — triage evidence, release notes, the agent's
+notes, the held table — goes through `.github/scripts/sanitize-refs.sh`
+before `gh pr create`. It wraps every reference in a code span, which
+GitHub does not link and does not raise an event for, leaving the text
+readable and copy-pasteable. One filter over the finished body rather than
+each writer being trusted to have remembered.
+
+Job summaries, artifacts and the ledger file are not issue bodies and raise
+no events, so those keep their real URLs. Ledger commit messages carry none
+by design.
+
 #### What the agent can reach
 
 The runner is a systemd `DynamicUser` with `ProtectHome`, `ProtectSystem=strict`
@@ -400,7 +453,8 @@ push is not a pull request, and it only happens once the tree is green
 The PR body, when one opens, is assembled from: the staged-branch report
 and the list of commits that landed; the triage summary and its `staged_notes`
 paragraph; the held-back table, if anything was held; a second table for
-anything the fix agent held *after* the build failed; the release-notes
+anything the fix agent held *after* the build failed; the ledger's standing
+holds with how long each has stood; the release-notes
 overview of what landed upstream, grouped by this repo's own module
 families; the "how to apply" section from `boot-requirement.sh`; and the
 fix agent's note, if the bump needed an in-repo change. Each section is
