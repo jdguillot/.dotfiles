@@ -1,10 +1,10 @@
-# .github/workflows/cachix.yml
+# .github/workflows/ci.yml
 #
 # Runs on the self-hosted ryzn-server runners (cyberfighter.features.
 # github-runner); nix and substituters come from the host itself. All jobs
 # share the host's /nix/store, so build jobs hand their toplevel paths to
 # one final job that pushes the deduplicated union closure once per cache.
-name: Build and Cache
+name: CI (Build, Test, Cache, Deploy)
 on:
   push:
     branches: [main]

@@ -119,7 +119,7 @@
         # agent for the docs refresh (see .github/opencode/opencode.json;
         # mcp-nixos backs its `nixos` server). markdownlint is the advisory
         # gate on the docs refresh. deptui-agent is the kick after a green
-        # build (cachix.yml).
+        # build (ci.yml).
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
@@ -371,7 +371,7 @@
 
       # Unattended deploys: tracks this repo's `latest` tag, which CI moves
       # only after every host built, checked and reached the caches
-      # (.github/workflows/cachix.yml), then kicks both watches. Identity
+      # (.github/workflows/ci.yml), then kicks both watches. Identity
       # is self-generated on first start (`deptui-agent pubkey` prints the
       # public half, which lives in the shared ssh.authorizedKeys).
       deptui-agent = {

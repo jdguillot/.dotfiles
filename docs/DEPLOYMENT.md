@@ -171,7 +171,7 @@ Set the last argument to `false` if you only want the system profile.
 [deptui](https://github.com/jdguillot/deptui) flake input that provides
 the TUI), enabled through `cyberfighter.features.deptui-agent` (see
 `docs/MODULES.md`). It tracks this repo's `latest` tag rather than `main`:
-`cachix.yml` moves the tag only after every host built, the checks passed
+`ci.yml` moves the tag only after every host built, the checks passed
 and the closures reached the caches, then kicks the agent (see
 `docs/CI.md`). Deploys go to every deploy node — both profiles — from the
 agent's own private clone, so nothing ever deploys from a dirty working

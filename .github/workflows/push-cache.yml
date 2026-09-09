@@ -2,8 +2,8 @@
 #
 # Reusable: takes the per-host `path-*` artifacts a build job uploaded and
 # pushes the deduplicated union closure once per cache. Called by both
-# cachix.yml and update-flake-lock.yml -- the diffing against the
-# pushed-paths record is subtle enough that a second copy would drift.
+# ci.yml and weekly-update.yml -- the diffing against the pushed-paths
+# record is subtle enough that a second copy would drift.
 #
 # Callers must upload one artifact per successfully built host, named
 # `path-<hostname>`, containing a single file whose contents are the

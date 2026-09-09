@@ -29,7 +29,7 @@ what to run:
 deploy .#ryzn-server.system --remote-build
 ```
 
-## `cachix.yml` — build and cache
+## `ci.yml` — build, cache, release, deploy
 
 Triggered by pushes to `main`, by pull requests, and weekly on Sundays.
 
@@ -288,7 +288,7 @@ one credential in its environment is the workflow's `github.token`, carried in
 this repo's `contents`/`pull-requests`.
 
 The one group it is in beyond its own is `deptui-agent`'s
-(`github-runner.extraGroups`), for the kick in `cachix.yml`. That socket is
+(`github-runner.extraGroups`), for the kick in `ci.yml`. That socket is
 the agent's full control surface — pause, cancel, approve as well as kick —
 but none of it names a ref: the worst a job can do is deploy, or hold back,
 whatever `latest` already points at, and moving `latest` needs the same
@@ -354,7 +354,7 @@ unchanging and always listed as switch-only.
 
 ### cache and pr
 
-The cache push is the same reusable workflow `cachix.yml` uses, so the
+The cache push is the same reusable workflow `ci.yml` uses, so the
 closure is already in `attic` and `cachix` before anyone reads the PR — a
 switch on the other machines pulls rather than builds. The PR job waits for
 it but does not require it; a cache hiccup should not cost the week its pull
@@ -375,7 +375,7 @@ omitted when it has nothing to say, so a clean week reads clean.
 The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull
 request
 opened with the default `GITHUB_TOKEN` does not trigger other workflows —
-GitHub suppresses that to avoid recursive runs — so `cachix.yml` would never
+GitHub suppresses that to avoid recursive runs — so `ci.yml` would never
 post a status on it. The builds in the update job already proved the tree;
 the PAT is so the PR visibly shows it.
 

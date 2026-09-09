@@ -400,7 +400,7 @@ jobs:
         env:
           # A PR opened with the default GITHUB_TOKEN does NOT trigger other
           # workflows -- GitHub suppresses that to avoid recursive runs -- so
-          # cachix.yml would never post a status on it. The builds in the
+          # ci.yml would never post a status on it. The builds in the
           # update job already proved the tree; this is so the PR shows it.
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
           HOSTS: ${{ needs.update.outputs.hosts }}
