@@ -1,0 +1,31 @@
+{
+  "updated": "2026-09-09",
+  "holds": {
+    "dms": {
+      "first_seen": "2026-09-09",
+      "last_seen": "2026-09-09",
+      "weeks": 1,
+      "origin": "scan",
+      "reason": "DMS bumped core/go.sum on stable at rev aa4b99d without updating the hardcoded vendorHash in their own flake.nix:114, so the dms-shell go-modules derivation fails with a fixed-output hash mismatch (specified sha256-nswS/... vs got sha256-Ls6Dquwt0...).",
+      "upstream": [],
+      "stalled_weeks": 1
+    },
+    "niri": {
+      "first_seen": "2026-09-09",
+      "last_seen": "2026-09-09",
+      "weeks": 1,
+      "origin": "scan",
+      "reason": "The current HEAD has a broken build because the flake selects the wrong libdisplay-info version for each niri source's Cargo.lock, and the fix is still an unmerged open PR.",
+      "upstream": [
+        {
+          "url": "https://github.com/sodiboo/niri-flake/pull/1853",
+          "state": "open",
+          "updated_at": "2026-08-28T02:52:21Z",
+          "comments": 4
+        }
+      ],
+      "stalled_weeks": 0
+    }
+  },
+  "released": []
+}
