@@ -90,10 +90,12 @@ in
             url = "https://unifi-os.cyberfighter.space:11443";
             auth = "none";
           };
-          # Hand-run container on this host (8090, allowed in the firewall
-          # below); upSnapp has its own login, so no basic auth.
+          # Hand-run container on this host, so a file fragment against the
+          # published port (8090, allowed in the firewall below) rather than
+          # labels; upSnapp has its own login, so no basic auth.
           upsnap = {
             host = "upsnap.cyberfighter.space";
+            backend = "host";
             port = 8090;
             auth = "none";
           };
