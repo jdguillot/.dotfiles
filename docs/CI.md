@@ -35,7 +35,7 @@ Triggered by pushes to `main`, by pull requests, and weekly on Sundays.
 
 ```
                ┌─> build (matrix, one per host) ─┬─> deploy-checks ─┐
-list-hosts ────┤                                 ├─> flake-check ───┼─> release ─> deploy
+list-hosts ────┤                                 ├─> flake-check ───┼─> record ──> deploy
                └─> home  (matrix, one per home) ─┴─> push ──────────┘
 ```
 
@@ -67,17 +67,24 @@ list-hosts ────┤                                 ├─> flake-check �
 - **push** calls the reusable `push-cache.yml` with whatever artifacts exist.
   Hosts that failed simply have no artifact, so a partial run pushes the
   hosts that worked and names the ones it skipped in the job summary.
-- **release** force-moves the `latest` tag to the commit and creates or
-  updates the GitHub release of the same name. Pushes to `main` only, and
-  only once **flake-check**, **deploy-checks** and **push** all succeeded —
-  a plain `needs` already skips the job when any of them failed or was
-  skipped. The tag is the ref `deptui-agent` watches (see
-  `docs/DEPLOYMENT.md`), which is why it may only ever point at a tree that
-  built, checked and reached the caches: a host switching to an uncached
-  closure would rebuild it locally. The ref is force-moved rather than
-  deleted and recreated because the agent resolves it with `git ls-remote`,
-  and a poll landing in the gap would find nothing. A tag push matches no
-  `branches` filter, so it does not re-trigger the workflow.
+- **record** does three related things for the commit. It force-moves the
+  `latest` tag, and keeps the `latest` *release* pointed at that commit —
+  the release object follows the tag and is edited in place with the same
+  short, static content. Then it records the commit itself: an immutable
+  new release and annotated tag named after the commit's short SHA, created
+  once and never touched again, so the Releases page grows by one entry per
+  push to `main` and history is browsable instead of being overwritten.
+  (An edited record would rewrite history the page exists to hold, so this
+  is the one `gh release create` that never becomes an `edit`.) Pushes to
+  `main` only, and only once **flake-check**, **deploy-checks** and
+  **push** all succeeded — a plain `needs` already skips the job when any of
+  them failed or was skipped. The tag is the ref `deptui-agent` watches
+  (see `docs/DEPLOYMENT.md`), which is why it may only ever point at a tree
+  that built, checked and reached the caches: a host switching to an
+  uncached closure would rebuild it locally. The ref is force-moved rather
+  than deleted and recreated because the agent resolves it with
+  `git ls-remote`, and a poll landing in the gap would find nothing. A tag
+  push matches no `branches` filter, so it does not re-trigger the workflow.
 - **deploy** runs `deptui-agent kick --watch fleet` then `--watch self`
   over the agent's control socket — the runners are the agent's host, so
   the TCP listener and its token are not involved. The CLI is on the job

@@ -196,14 +196,17 @@ jobs:
       reset-record: ${{ github.event_name == 'schedule' }}
     secrets: inherit
 
-  # The tag is what the deploy agent watches (hosts/ryzn-server,
+  # record maintains the deployable ref (the `latest` tag plus the release
+  # of the same name) and the release history (one immutable release per
+  # commit, so the Releases page grows instead of being overwritten). The
+  # moving tag is what the deploy agent watches (hosts/ryzn-server,
   # features.deptui-agent), so it must only ever point at a tree that built,
   # checked and reached the caches -- a host switching to an uncached closure
   # would rebuild it locally. A plain `needs` skips this job whenever any of
   # the three failed or was skipped; no explicit result check needed. Push
   # events only: the weekly reconcile builds the same commit, and pull
   # requests are not main.
-  release:
+  record:
     needs: [flake-check, deploy-checks, push]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: [self-hosted, nixos]
@@ -219,20 +222,50 @@ jobs:
         # two would find no tag and skip. A tag push matches no `branches`
         # filter, so this does not re-trigger the workflow.
         run: git push --force origin "$GITHUB_SHA:refs/tags/latest"
-      - name: Update the latest release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Write the release notes
+        # Shared by the two steps below: the moving `latest` release and the
+        # immutable per-commit record both carry this same short body.
         run: |
           {
             echo "Built, checked and cached by [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
             echo ""
             echo "\`${GITHUB_SHA::7}\` $(git log -1 --format=%s "$GITHUB_SHA")"
           } > notes.md
+      - name: Keep the latest release on the commit
+        # The `latest` release object follows the `latest` tag: same body
+        # every run, edited in place. History of past commits lives in the
+        # immutable per-commit records created next, one per push.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
           if gh release view latest >/dev/null 2>&1; then
             gh release edit latest --title latest --notes-file notes.md --latest
           else
             gh release create latest --title latest --notes-file notes.md --latest
           fi
+      - name: Record a release for this commit
+        # One immutable release per commit: created fresh, never edited (an
+        # edited record would rewrite history the page exists to hold). The
+        # tag is the commit's short SHA -- unique for this repo's push pace,
+        # and human-unique across forks, unlike a run- or date-derived name.
+        # GitHub auto-promotes the newest non-prerelease to its "Latest",
+        # which the `latest` tag does not own; re-assert it so the moving
+        # release stays that and these stay history.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          short=${GITHUB_SHA:0:12}
+          # A duplicate push of the same commit (a force-push re-tip) would
+          # otherwise fail on the existing release; record it once and stop.
+          if gh release view "$short" >/dev/null 2>&1; then
+            echo "Release ${short} already exists; nothing new to record."
+            exit 0
+          fi
+          git tag -a "$short" "$GITHUB_SHA" -m "$short"
+          git push origin "refs/tags/$short"
+          gh release create "$short" --title "$short" --notes-file notes.md
+          # Only the newest record is `latest`; the rest stay as history.
+          gh release edit latest --latest
 
   # A kick is "check now", nothing more: the watches name the tag. The
   # runners are the agent's host, so this goes over the control socket --
@@ -242,7 +275,7 @@ jobs:
   # sequence and the self-deploy (which restarts the agent) waits for the
   # fleet run.
   deploy:
-    needs: release
+    needs: record
     runs-on: [self-hosted, nixos]
     steps:
       - uses: actions/checkout@v7
