@@ -90,7 +90,7 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
   `kdeconnect`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
 - Services and infrastructure: `docker`, `attic`, `github-runner`,
-  `security`, `sops`, `proxmox`
+  `security`, `sops`, `proxmox`, `autoReboot`
 - Gaming and hosting: `gaming`, `gameserver`,
   `gameserver.astroneer`, `gameserver.playit`
 - AI agents: `ai.hermes`

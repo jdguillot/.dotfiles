@@ -13,6 +13,7 @@
 
     ./features/ai/default.nix
     ./features/attic/default.nix
+    ./features/auto-reboot/default.nix
     ./features/cloudflared/default.nix
     ./features/compose/default.nix
     ./features/deptui-agent/default.nix
