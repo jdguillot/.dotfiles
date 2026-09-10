@@ -78,21 +78,21 @@ rows=$(jq -r --arg rev "$rev" '
         else "last deployed " + ((.deployed_rev // "never")[0:12]) end )
     ] | @tsv' <<<"$status")
 
+behind=""
 {
   echo "## Did the fleet take \`$short\`?"
   echo ""
   echo "| Host | Watch | State | Detail |"
   echo "|---|---|---|---|"
+  # A brace group and a here-string, not a pipe, so `behind` survives the loop.
   while IFS=$'\t' read -r host watch state detail; do
     icon=$([ "$state" = switched ] && echo "✅" || echo "⚠️")
     echo "| \`$host\` | \`$watch\` | $icon $state | $detail |"
+    [ "$state" = switched ] || behind+="${behind:+, }$host ($state)"
   done <<<"$rows"
   echo ""
 } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 
-# paste -s cycles through a multi-char delimiter list one char at a time, so
-# the join is done here instead.
-behind=$(awk -F'\t' '$3 != "switched" { printf "%s%s (%s)", sep, $1, $3; sep = ", " }' <<<"$rows")
 if [ -n "$behind" ]; then
   echo "::warning::did not take ${short}: ${behind}"
 else
