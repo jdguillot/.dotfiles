@@ -421,24 +421,35 @@ is the opposite case: it truncates its own trace by default and tells you to
 pass the flag, and its errors reach you through a module chain that the
 untraced output never names.
 
-`.github/scripts/boot-requirement.sh` records `kernel`, `initrd` and the
-modules tree for every host before the bump and again after it, and names the
-hosts a plain `switch` cannot fully apply. It is pure evaluation — no
-building — and the result goes in the pull request body.
+`.github/scripts/boot-requirement.sh` records `kernel`, `initrd`, the modules
+tree and the out-of-tree driver versions for every host before the bump and
+again after it. It is pure evaluation — no building — and the result goes in
+the pull request body. This is a deterministic check on purpose, not
+something the triage model is asked to judge.
 
-This is a deterministic check on purpose, not something the triage model is
-asked to judge: it is the same comparison `nixos-rebuild` makes to decide
-whether a reboot is pending, only across the bump rather than against the
-running system.
+It reports two different things, and keeping them apart matters because
+conflating them makes almost every week look like it needs manual work:
 
-The modules tree is the entry that earns its place. It is built from
-`boot.extraModulePackages` as well as the kernel, so an out-of-tree driver
-bump — nvidia, here — shows up even when the kernel is unchanged. That case
-is worse than under-applying: new NVML userspace cannot initialise against
-the still-loaded old module, so
-`nvidia-container-toolkit-cdi-generator` fails activation and takes docker,
-traefik, litellm, comfyui and odysseus with it. deploy-rs then rolls the
-whole thing back. Use `deploy .#<host> --boot` and reboot for those hosts.
+- **Reboot when convenient.** `kernel`, `initrd` or the modules tree moved.
+  The new kernel is installed and the bootloader points at it; the machine
+  keeps running the old one until it reboots. `switch` is right here, and
+  `--boot` would not help — both install the kernel, and only the reboot
+  runs it. This is an ordinary NixOS pending reboot and needs no
+  deploy-time action. Nearly every nixpkgs bump lands here.
+- **Deploy with `--boot`, then reboot.** An out-of-tree module's *driver
+  version* moved. Only then does `switch` actively break: the new userspace
+  library and the still-loaded module disagree on version, NVML refuses to
+  initialise, and `nvidia-container-toolkit-cdi-generator` fails activation
+  and takes docker, traefik, litellm, comfyui and odysseus with it —
+  deploy-rs then rolls the whole thing back.
+
+The driver version is compared with the kernel suffix stripped. A
+kernel-module derivation is rebuilt and renamed for every kernel bump even
+when the driver is untouched, so `595.99.02-6.18.49` and `595.99.02-6.18.50`
+are the same driver: a module loaded from one works against userspace from
+the other. Without the strip, every kernel bump would be reported as a
+driver bump. `ryzn-server` (nvidia-open) is the only host in the fleet with
+an out-of-tree module at all.
 
 WSL hosts are skipped: they boot the Windows kernel, `boot.kernel.enable` is
 false, and `system.build.kernel` / `initialRamdisk` are never defined there —
