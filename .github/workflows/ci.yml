@@ -261,9 +261,10 @@ jobs:
             echo "Release ${short} already exists; nothing new to record."
             exit 0
           fi
-          git tag -a "$short" "$GITHUB_SHA" -m "$short"
-          git push origin "refs/tags/$short"
-          gh release create "$short" --title "$short" --notes-file notes.md
+          # --target creates the tag server-side. A local `git tag -a` would
+          # need a committer identity the runner does not have.
+          gh release create "$short" --target "$GITHUB_SHA" \
+            --title "$short" --notes-file notes.md
           # Only the newest record is `latest`; the rest stay as history.
           gh release edit latest --latest
 
