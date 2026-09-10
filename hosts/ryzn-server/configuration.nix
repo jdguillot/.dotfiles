@@ -360,6 +360,10 @@
           };
         };
 
+        # Odysseus' labels land on ai.odysseus.labels above; nothing else
+        # observes that read, so the docker route says so here.
+        claimedRoutes = [ "odysseus" ];
+
         # No raw ollama route: it has no auth. Team access goes through the
         # litellm container's labels; tailscale serve is the personal path.
       };

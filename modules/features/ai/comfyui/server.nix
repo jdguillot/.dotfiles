@@ -156,6 +156,7 @@ in
       host = cfg.publicHost;
       port = 8188;
     };
+    cyberfighter.features.traefik.claimedRoutes = [ "comfyui" ];
 
     # Boot-start only. Everything else (logs, pull, exec) is `comfyui-compose`.
     cyberfighter.features.compose.projects.comfyui = {

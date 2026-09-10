@@ -65,6 +65,12 @@ let
   backendUrlOf =
     r: if r.backend == "url" then r.url else "http://host.docker.internal:${toString r.port}";
 
+  # A docker route reaches traefik only once some module attaches its labels
+  # to a compose service, and Nix cannot see that read -- so `claimedRoutes`
+  # states it and the assertions below catch a route nobody wired up.
+  unclaimedRoutes = lib.subtractLists cfg.claimedRoutes (lib.attrNames dockerRoutes);
+  staleClaims = lib.subtractLists (lib.attrNames dockerRoutes) (lib.unique cfg.claimedRoutes);
+
   labelsOf = name: r: {
     "traefik.enable" = "true";
     # Explicit even with one network: a container on several networks makes
@@ -325,6 +331,22 @@ in
       description = "Rendered compose override files (labels only) for docker-backend routes; append to a compose project's `files`.";
     };
 
+    claimedRoutes = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = lib.literalExpression ''[ "litellm" ]'';
+      description = ''
+        Names of docker-backend routes whose labels this configuration
+        actually attaches to a compose service. Set it in the same module
+        that reads `routeLabels`/`routeLabelFiles`: nothing else observes
+        that read, and an unclaimed docker route is a silent no-op -- the
+        rendered labels go nowhere, no fragment lands in ${dynamicDir}, and
+        the closure comes out identical to one without the route. The
+        assertion pairs names, not references, so it catches a forgotten
+        consumer and a stale claim but not a claim naming the wrong route.
+      '';
+    };
+
     dynamicFiles = lib.mkOption {
       type = lib.types.attrsOf lib.types.path;
       default = { };
@@ -409,6 +431,14 @@ in
           lib.attrValues cfg.routes
         );
         message = "cyberfighter.features.traefik.routes: docker and host backends need `port`, url backends need `url`";
+      }
+      {
+        assertion = unclaimedRoutes == [ ];
+        message = "cyberfighter.features.traefik: docker-backend routes nothing consumes: ${lib.concatStringsSep ", " unclaimedRoutes}. Attach routeLabels/routeLabelFiles to the compose service and name each in claimedRoutes, or set `backend = \"host\"` for a service this host runs outside a Nix-managed compose project.";
+      }
+      {
+        assertion = staleClaims == [ ];
+        message = "cyberfighter.features.traefik.claimedRoutes names no docker-backend route on this host: ${lib.concatStringsSep ", " staleClaims} (removed, renamed, or switched to a host/url backend)";
       }
       {
         assertion = lib.all (r: r.rateLimit || r.auth == "none") (lib.attrValues cfg.routes);

@@ -250,6 +250,7 @@ in
           port = 4000;
           auth = "none";
         };
+        cyberfighter.features.traefik.claimedRoutes = [ "litellm" ];
 
         cyberfighter.features.compose.projects.litellm = {
           description = "LiteLLM team gateway (docker compose)";
