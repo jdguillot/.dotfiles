@@ -281,8 +281,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Preflight
-        run: .github/scripts/preflight.sh deptui-agent
+        run: .github/scripts/preflight.sh deptui-agent jq
       - name: Kick deptui-agent
         run: |
           deptui-agent kick --watch fleet
           deptui-agent kick --watch self
+      - name: Report what the fleet took
+        # Same control socket as the kick, so no ssh to the fleet and no
+        # secret. A host that did not take the commit is a warning: the tree
+        # built, checked and cached fine, and a held or offline host is an
+        # operational matter that a later kick clears on its own.
+        run: .github/scripts/verify-deploy.sh

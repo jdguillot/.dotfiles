@@ -94,6 +94,19 @@ list-hosts ────┤                                 ├─> flake-check �
   are queued, so `fleet` runs first and the self-deploy of `ryzn-server`,
   which restarts the agent, waits for it.
 
+  It then runs `.github/scripts/verify-deploy.sh`, which reports whether the
+  commit actually reached each host. The agent already knows —
+  `deptui-agent status --json` carries the revision each host last deployed —
+  so this reads the same socket the kick used and needs no ssh to the fleet
+  and no secret. A kick only queues a poll, so the script cannot watch for a
+  run to start and end without racing it; it waits on per-host state instead,
+  treating a host as settled once it has deployed the revision or reached a
+  state that will not change on its own (failed or held at this revision,
+  paused, offline). The result is a table in the job summary. A host that did
+  not take the commit is a `::warning::`, never a failure: the build, the
+  checks and the cache push all succeeded, and a held or offline host is an
+  operational matter that the next kick clears by itself.
+
 ### Why the gate keeps `--no-build`
 
 This was tried the other way and measured, so it is worth writing down.
