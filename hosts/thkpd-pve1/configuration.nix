@@ -64,9 +64,6 @@ in
       # Shared traefik module, replacing the hand-run copy under
       # /home/cyberfighter/docker/traefik (same credentials via SOPS, same
       # `web` network and resolver, so existing labels keep resolving).
-      # Cutover: copy its acme.json to /var/lib/traefik, port its dynamic
-      # routes (upsnap) into dynamicFiles, and add DNS for
-      # thkpd-pve1-traefik.cyberfighter.space -> 192.168.101.39.
       traefik = {
         enable = true;
         dnsDomain = "cyberfighter.space";
@@ -91,6 +88,13 @@ in
             host = "unifi.cyberfighter.space";
             backend = "url";
             url = "https://unifi-os.cyberfighter.space:11443";
+            auth = "none";
+          };
+          # Hand-run container on this host (8090, allowed in the firewall
+          # below); upSnapp has its own login, so no basic auth.
+          upsnap = {
+            host = "upsnap.cyberfighter.space";
+            port = 8090;
             auth = "none";
           };
         };
