@@ -169,6 +169,18 @@ only has to match `path-*`; its contents are flattened on download, so a
 single bundle artifact containing one file per host works as well as one
 artifact per host.
 
+cachix is public and attic is LAN-only, so the two do not get the same
+set. `.github/scripts/public-paths.sh` withholds from cachix every store
+path holding a git-crypt file and everything whose closure contains one —
+the sops files, their manifests, `activate`, each toplevel and home
+generation, about a dozen small paths per host. The secret files are read
+from `.gitattributes` (`filter=git-crypt`), so encrypting a new file covers
+it with no workflow edit, and matched in the store by name, which works
+whether or not the build checkout was unlocked. `cachix push` uploads each
+path's whole closure, so the script finally re-checks the closure of what it
+lets through and fails the job rather than push a secret. A host fetching
+from cachix off the LAN builds those few paths itself in seconds.
+
 ## `weekly-update.yml` — the weekly bump
 
 Tuesdays at 05:00 UTC, or on manual dispatch. Dependabot cannot do this:

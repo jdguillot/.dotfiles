@@ -31,6 +31,9 @@ jobs:
   push:
     runs-on: [self-hosted, nixos]
     steps:
+      # For .gitattributes and the filter script. First: checkout cleans the
+      # workspace, which would take the downloads and the record with it.
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         continue-on-error: true
         with:
@@ -68,7 +71,12 @@ jobs:
           if [ -s new.txt ]; then
             attic login local https://attic.cyberfighter.space/ "$ATTIC_TOKEN"
             xargs attic push main < new.txt
-            cachix push jdguillot < new.txt
+            # cachix is public: git-crypt files and everything referencing
+            # them stay on the LAN-only attic.
+            .github/scripts/public-paths.sh < new.txt > public.txt
+            if [ -s public.txt ]; then
+              cachix push jdguillot < public.txt
+            fi
           fi
           # Only reached after successful pushes; a failed run keeps the old
           # record so nothing is skipped by mistake next time.
@@ -105,6 +113,9 @@ jobs:
             echo "| **union (deduplicated)** | **$(numfmt --to=iec "$union")B** | **$(wc -l < closure.txt)** | pushed once |"
             echo ""
             echo "**New paths pushed this run:** $(wc -l < new.txt) of $(wc -l < closure.txt) &mdash; the rest were already recorded as pushed. Targets: \`attic:main\`, \`cachix:jdguillot\`."
+            if [ -f public.txt ]; then
+              echo "**Kept off cachix** (git-crypt files and what references them): $(( $(wc -l < new.txt) - $(wc -l < public.txt) ))"
+            fi
             # `if`, not `[ ... ] && echo`: this is the last command in the
             # block, so a false test would make the whole step exit 1 on
             # every run where nothing failed.
