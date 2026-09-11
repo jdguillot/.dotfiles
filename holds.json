@@ -1,28 +1,12 @@
 {
-  "updated": "2026-09-09",
+  "updated": "2026-09-11",
   "holds": {
-    "dms": {
-      "first_seen": "2026-09-09",
-      "last_seen": "2026-09-09",
-      "weeks": 2,
-      "origin": "scan",
-      "reason": "DMS stable (aa4b99d) ships a go-modules vendorHash for dms-shell that mismatches the actual module set: 'hash mismatch in fixed-output derivation ... dms-shell-...go-modules.drv'. The vendorHash was bumped on master (f16fc1d) but stable still pins the old one; upstream issue #3370 reports exactly this and is open.",
-      "upstream": [
-        {
-          "url": "https://github.com/AvengeMedia/DankMaterialShell/issues/3370",
-          "state": "open",
-          "updated_at": "2026-09-08T23:19:47Z",
-          "comments": 0
-        }
-      ],
-      "stalled_weeks": 0
-    },
     "niri": {
       "first_seen": "2026-09-09",
-      "last_seen": "2026-09-09",
-      "weeks": 2,
+      "last_seen": "2026-09-11",
+      "weeks": 3,
       "origin": "scan",
-      "reason": "The flake selects the wrong libdisplay-info version for each niri source's Cargo.lock, causing a broken build, and the fix (PR #1853) is still open and unmerged.",
+      "reason": "The flake selects the wrong libdisplay-info version for each niri source's Cargo.lock, causing a broken build, and the fix (PR #1853) is still open and unmerged with zero new commits upstream this week.",
       "upstream": [
         {
           "url": "https://github.com/sodiboo/niri-flake/pull/1853",
@@ -31,8 +15,14 @@
           "comments": 4
         }
       ],
-      "stalled_weeks": 1
+      "stalled_weeks": 2
     }
   },
-  "released": []
+  "released": [
+    {
+      "name": "dms",
+      "weeks": 2,
+      "released": "2026-09-11"
+    }
+  ]
 }
