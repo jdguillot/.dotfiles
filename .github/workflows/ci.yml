@@ -223,34 +223,21 @@ jobs:
         # filter, so this does not re-trigger the workflow.
         run: git push --force origin "$GITHUB_SHA:refs/tags/latest"
       - name: Write the release notes
-        # Shared by the two steps below: the moving `latest` release and the
-        # immutable per-commit record both carry this same short body.
         run: |
           {
             echo "Built, checked and cached by [run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
             echo ""
             echo "\`${GITHUB_SHA::7}\` $(git log -1 --format=%s "$GITHUB_SHA")"
           } > notes.md
-      - name: Keep the latest release on the commit
-        # The `latest` release object follows the `latest` tag: same body
-        # every run, edited in place. History of past commits lives in the
-        # immutable per-commit records created next, one per push.
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh release view latest >/dev/null 2>&1; then
-            gh release edit latest --title latest --notes-file notes.md --latest
-          else
-            gh release create latest --title latest --notes-file notes.md --latest
-          fi
       - name: Record a release for this commit
-        # One immutable release per commit: created fresh, never edited (an
+        # One immutable release per push: created fresh, never edited (an
         # edited record would rewrite history the page exists to hold). The
         # tag is the commit's short SHA -- unique for this repo's push pace,
         # and human-unique across forks, unlike a run- or date-derived name.
-        # GitHub auto-promotes the newest non-prerelease to its "Latest",
-        # which the `latest` tag does not own; re-assert it so the moving
-        # release stays that and these stay history.
+        # --latest gives the newest record GitHub's Latest badge. There is no
+        # separate `latest` release: editing one in place keeps its first
+        # publish date forever. The `latest` tag above is a different thing
+        # and stays -- it is what the deploy agent watches.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -264,9 +251,7 @@ jobs:
           # --target creates the tag server-side. A local `git tag -a` would
           # need a committer identity the runner does not have.
           gh release create "$short" --target "$GITHUB_SHA" \
-            --title "$short" --notes-file notes.md
-          # Only the newest record is `latest`; the rest stay as history.
-          gh release edit latest --latest
+            --title "$short" --notes-file notes.md --latest
 
   # A kick is "check now", nothing more: the watches name the tag. The
   # runners are the agent's host, so this goes over the control socket --

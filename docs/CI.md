@@ -67,15 +67,16 @@ list-hosts ────┤                                 ├─> flake-check �
 - **push** calls the reusable `push-cache.yml` with whatever artifacts exist.
   Hosts that failed simply have no artifact, so a partial run pushes the
   hosts that worked and names the ones it skipped in the job summary.
-- **record** does three related things for the commit. It force-moves the
-  `latest` tag, and keeps the `latest` *release* pointed at that commit —
-  the release object follows the tag and is edited in place with the same
-  short, static content. Then it records the commit itself: an immutable
-  new release and lightweight tag named after the commit's short SHA, created
-  once and never touched again, so the Releases page grows by one entry per
-  push to `main` and history is browsable instead of being overwritten.
-  (An edited record would rewrite history the page exists to hold, so this
-  is the one `gh release create` that never becomes an `edit`.) Pushes to
+- **record** does two things for the commit. It force-moves the `latest`
+  tag, and it records the commit itself: an immutable new release and
+  lightweight tag named after the commit's short SHA, created once, never
+  touched again, and given GitHub's Latest badge, so the Releases page grows
+  by one entry per push to `main` and history is browsable instead of being
+  overwritten. There is deliberately no `latest` *release*: an edited
+  release keeps its first publish date, so a moving one read "released 4
+  days ago" on every run while its notes were current. After a history
+  rewrite these per-commit tags still pin the old commits — see "If a secret
+  reaches the public repo" in `docs/SOPS.md`. Pushes to
   `main` only, and only once **flake-check**, **deploy-checks** and
   **push** all succeeded — a plain `needs` already skips the job when any of
   them failed or was skipped. The tag is the ref `deptui-agent` watches
