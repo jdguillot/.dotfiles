@@ -18,6 +18,14 @@ There are three main secret flows:
 | `home/modules/features/ssh/ssh-hosts.yaml` | encrypted SSH host snippets for Home Manager |
 | `hosts/work-nix-wsl/100-PKROOTCA290-CA.yaml` | host-local work CA secret used by `work-nix-wsl` |
 
+Everything under `secrets/` is also git-crypt encrypted (`.gitattributes`),
+so the public repo does not show even the sops key names. Hosts and CI
+build from unlocked checkouts, so the decrypted files reach the store and
+the LAN-only attic cache, but never the public cachix; see "git-crypt in
+CI" in [CI.md](CI.md). Rotating the git-crypt key means updating the
+`GIT_CRYPT_KEY` Actions secret and the deptui-agent `git-crypt-key` sops
+secret with it.
+
 ## System-side SOPS module
 
 The NixOS wrapper lives at `modules/features/sops/`.

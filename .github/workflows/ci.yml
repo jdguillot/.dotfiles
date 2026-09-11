@@ -84,6 +84,12 @@ jobs:
       fail-fast: false # Continue other builds if one fails
     steps:
       - uses: actions/checkout@v7
+      - name: Unlock git-crypt
+        # Hosts build with their secret files decrypted; so must CI, or its
+        # toplevels never match theirs. Before anything evaluates the flake.
+        env:
+          GIT_CRYPT_KEY: ${{ secrets.GIT_CRYPT_KEY }}
+        run: .github/scripts/git-crypt-unlock.sh
       - name: Build system
         run: nix build --fallback .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
       - name: Record store path
@@ -118,6 +124,10 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v7
+      - name: Unlock git-crypt
+        env:
+          GIT_CRYPT_KEY: ${{ secrets.GIT_CRYPT_KEY }}
+        run: .github/scripts/git-crypt-unlock.sh
       - name: Build home configuration
         env:
           HOME_CFG: ${{ matrix.home }}
@@ -167,6 +177,12 @@ jobs:
     runs-on: [self-hosted, nixos]
     steps:
       - uses: actions/checkout@v7
+      # deploy-activate depends on every toplevel; locked, it would build
+      # the ciphertext variants next to the ones the matrix just built.
+      - name: Unlock git-crypt
+        env:
+          GIT_CRYPT_KEY: ${{ secrets.GIT_CRYPT_KEY }}
+        run: .github/scripts/git-crypt-unlock.sh
       - name: Build the deploy-rs checks
         # Validates deploy.nodes against deploy-rs's schema and assembles
         # each node's activation script. `nix flake check` only evaluates

@@ -15,8 +15,8 @@ running on the server.
 
 The runner's job PATH is nearly empty by design; anything a workflow calls
 has to be listed in `github-runner.extraPackages` on `ryzn-server`. Today
-that is `cachix`, `attic-client`, `findutils`, `gh`, `jq`, `npins`,
-`opencode`, `curl` and `deptui-agent`.
+that is `cachix`, `attic-client`, `findutils`, `git-crypt`, `gh`, `jq`,
+`npins`, `opencode`, `curl` and `deptui-agent`.
 
 Adding a tool there does nothing until `ryzn-server` is rebuilt, and even
 then each runner takes the new PATH only after it next finishes a job. A
@@ -154,6 +154,27 @@ Two gates are worth understanding:
 - The weekly run passes `reset-record: true`, which ignores the pushed-paths
   record and re-offers the whole closure, so anything garbage-collected or
   evicted upstream comes back.
+
+### git-crypt in CI
+
+`secrets/**` is git-crypt encrypted on top of sops. A locked checkout puts
+the git-crypt ciphertext into the store where a host puts the decrypted
+file, and that one difference changes every sops manifest, `activate`,
+toplevel and home generation: CI cached a dozen small paths per host that
+no host ever asks for. So the build, home and deploy-checks jobs run
+`.github/scripts/git-crypt-unlock.sh` right after checkout, before anything
+evaluates the flake.
+
+- The key stays in `.git` for the rest of the job — git's clean filter needs
+  it — and goes when the ephemeral runner wipes its work dir on restart.
+- No `GIT_CRYPT_KEY` (fork pull requests get no secrets) or no `git-crypt`
+  on the PATH falls back to a locked build with a warning. Nothing leaks
+  either way; `push-cache.yml` keeps git-crypt files off cachix regardless.
+- `flake-check` only evaluates, so it stays locked.
+- `weekly-update.yml` also stays locked on purpose: its fix agent works in
+  that checkout after reading upstream release notes and issue threads, and
+  the key must not be within reach of a prompt-injected agent. The bump's
+  merge to `main` is built unlocked by this workflow anyway.
 
 ## `push-cache.yml` — reusable cache push
 
@@ -590,6 +611,7 @@ lock bump and vice-versa.
 | `ATTIC_TOKEN` | `push-cache.yml` | push token for `attic.cyberfighter.space`, cache `main` |
 | `CACHIX_AUTH_TOKEN` | `push-cache.yml` | push token for the `jdguillot` cachix cache |
 | `PERSONAL_ACCESS_TOKEN` | `weekly-update.yml`, `docs-refresh.yml` | fine-grained PAT, contents + pull-requests write, so the weekly PRs trigger CI |
+| `GIT_CRYPT_KEY` | `ci.yml` (build, home, deploy-checks) | the repo's git-crypt key, base64 (`git-crypt export-key - \| base64 -w0`); see "git-crypt in CI" |
 
 The triage and fix models need no secret at all: Ollama is on the runner
 host's loopback and is unauthenticated there.

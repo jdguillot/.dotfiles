@@ -119,11 +119,12 @@
         # agent for the docs refresh (see .github/opencode/opencode.json;
         # mcp-nixos backs its `nixos` server). markdownlint is the advisory
         # gate on the docs refresh. deptui-agent is the kick after a green
-        # build (ci.yml).
+        # build (ci.yml). git-crypt unlocks the build checkouts (ci.yml).
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
           pkgs.findutils
+          pkgs.git-crypt
           pkgs.gh
           pkgs.jq
           pkgs.markdownlint-cli
