@@ -420,6 +420,41 @@ A probe that fails is recorded as `unknown` and leaves the stall counter
 alone, rather than counting as a quiet week. Silence is what escalates, so
 it has to be silence that was actually observed and not a rate limit.
 
+#### The workaround register
+
+`workarounds.nix` at the repo root lists the temporary fixes the tree
+carries while waiting on something upstream — the other kind of hold, the
+one that lives in code rather than in the lock file. `docs/WORKAROUNDS.md`
+has the schema. After the bump and before the build,
+`.github/scripts/check-workarounds.sh` asks upstream, per entry, whether the
+fix it is waiting on has shipped: a stable release at or past a version, a
+merged pull request, a closed issue, a commit now contained in the revision
+an input was just bumped to, or a package version as the new nixpkgs
+evaluates it. Deterministic, like the rest of the evidence gathering — a
+GitHub API call or a `nix eval`, never a judgement — and a probe that
+cannot answer is reported as unknown rather than read as "still waiting".
+
+A resolved entry marked `retire = "auto"` is removed by
+`.github/scripts/retire-workaround.sh`: every `WORKAROUND(<id>)` ..
+`END WORKAROUND(<id>)` block in the files it lists, then its own block in
+the register. Deleting a line range is something `awk` gets right every
+time, which is more than a model editing Nix can claim, so no agent is
+involved. The result is evaluated for the hosts the entry names and put
+back untouched if that fails; what survives is built by the same gate as
+the bump. A resolved entry marked `manual` — a fix woven through a module,
+or one that lives outside the repo, such as a WSL channel on the Windows
+host — is reported instead, with its removal notes, every week until
+someone deletes the entry. Both reach the job summary, the pull request
+body (through `sanitize-refs.sh`, since entries carry upstream URLs) and a
+warning annotation on the run.
+
+It runs in the update job rather than the scan because the `commit` probe
+has to read the lock after the bump, and because a retirement changes the
+tree: the "did anything change" gate that decides whether a pull request
+opens comes after it, so a week whose only change is a retired workaround
+still opens one. A `manual` entry that resolves on a no-change week shows
+only in the job summary and the run's warning.
+
 #### Upstream references never leave a link behind
 
 This repo is public. A full issue URL, or an `owner/repo#123`, inside an

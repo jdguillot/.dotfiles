@@ -6,3 +6,7 @@ result/*
 
 ## Generated Nixd config
 .nixd-hosts.json
+
+## Weekly workaround probe scratch output
+/workarounds-report.md
+/workarounds.json

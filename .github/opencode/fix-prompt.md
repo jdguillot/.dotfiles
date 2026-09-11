@@ -148,6 +148,15 @@ the human reading the run sees your error instead of the real one.
   requires. Following one rename across four hosts is a small diff repeated
   four times, not a big change; a diff that grows past what the failure
   named is a sign you are fixing something else.
+- `workarounds-report.md`, when present, says whether this run retired a
+  workaround before the build: a marker-fenced block deleted from the files
+  it names, verified by evaluation but not yet by a build. If the failure
+  points at one of those files, `git checkout origin/main -- <file>
+  workarounds.nix` puts the workaround back; say so in `fix-notes.md`.
+- If an adaptation you make is itself temporary — it works around an
+  upstream bug that is reported or being fixed and should go when that
+  lands — record it in `workarounds.nix` with the marker pair, as
+  `docs/WORKAROUNDS.md` describes, so a later run can retire it.
 
 ## fix-notes.md
 

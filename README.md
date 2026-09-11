@@ -28,6 +28,8 @@ Use the README for the quick map, then jump into the focused docs:
   build and cache, and the weekly dependency bump
 - [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) - repo
   recommendations and why they are worth following
+- [`docs/WORKAROUNDS.md`](docs/WORKAROUNDS.md) - the register of
+  temporary fixes waiting on upstream, probed and retired by the weekly bump
 - [`AGENTS.md`](AGENTS.md) - working conventions for coding agents
   (`CLAUDE.md`, `GEMINI.md`, and the Copilot instructions point here)
 

@@ -19,6 +19,8 @@ instead of guessing, and keep them current (see "Documentation"):
 - `docs/SOPS.md` — secrets workflows
 - `docs/CI.md` — the self-hosted Actions workflows and the weekly bump
 - `docs/RECOMMENDATIONS.md` — repo conventions and their rationale
+- `docs/WORKAROUNDS.md` — the register of temporary fixes waiting on
+  upstream, and how the weekly bump retires them
 
 ## Build, test, deploy
 
@@ -136,6 +138,18 @@ deviates.
 
 Core modules (`modules/core/`) are for things every host needs
 (profiles, system identity, users, nix settings); features are opt-in.
+
+## Pattern: recording a temporary workaround
+
+A fix that only exists because upstream is broken — an override, a patch,
+a mount, a version pinned in code, a setting on a machine outside this
+repo — gets an entry in `workarounds.nix` with a `resolved` probe naming
+the upstream event that ends it, and every block of code it adds is fenced
+by `# WORKAROUND(<id>)` / `# END WORKAROUND(<id>)`. The weekly bump probes
+each entry and retires `auto` entries by deleting those blocks; `manual`
+entries are reported until a person removes them. See
+`docs/WORKAROUNDS.md`. Held *inputs* are a different mechanism (the hold
+ledger in `docs/CI.md`); the register is for code.
 
 ## Configuration style
 

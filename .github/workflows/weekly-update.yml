@@ -225,6 +225,8 @@ jobs:
           /late-holds.json
           /holds.json
           /hold-report.md
+          /workarounds-report.md
+          /workarounds.json
           EOF
 
       # Re-run the merge here, not on the `scan` job's tree: the scan's
@@ -247,10 +249,26 @@ jobs:
         run: |
           .github/scripts/apply-updates.sh
 
+      # After the bump and before the build: a `commit` probe has to read
+      # the revision the lock just moved to, and a retirement is then proved
+      # by the same build gate as the bump. Fails open -- the register is
+      # advice about upstream, and a probe that cannot answer must not cost
+      # the week its bump.
+      - name: Check the workaround register
+        id: workarounds
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          .github/scripts/check-workarounds.sh
+          if [ -s workarounds-report.md ]; then
+            cat workarounds-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       # 'changed' means: the tree this job will push is different from
-      # main. That includes the staged merges (committed) and the flake bump
-      # (still uncommitted at this point). This is the gate for opening a
-      # pull request at all.
+      # main. That includes the staged merges (committed), the flake bump
+      # and any retired workaround (both still uncommitted at this point).
+      # This is the gate for opening a pull request at all.
       #
       # Diff against `origin/main` WITHOUT a second commit on purpose: that
       # compares the working tree (with the uncommitted lock/npins changes)
@@ -452,6 +470,8 @@ jobs:
             late-holds.json
             hold-report.md
             reboot-notes.md
+            workarounds-report.md
+            workarounds.json
             upstream-signal/threads/
           if-no-files-found: ignore
           retention-days: 14
@@ -576,6 +596,13 @@ jobs:
               echo "## Applying this bump"
               echo ""
               cat update-report/reboot-notes.md
+              echo ""
+            fi
+
+            # Carries upstream URLs by design; the sanitizer below wraps
+            # them like everything else in this body.
+            if [ -s update-report/workarounds-report.md ]; then
+              cat update-report/workarounds-report.md
               echo ""
             fi
 
