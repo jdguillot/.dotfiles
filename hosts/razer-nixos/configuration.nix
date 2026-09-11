@@ -43,7 +43,9 @@
           hostName = "ryzn-server";
           sshUser = "cyberfighter";
           systems = [ "x86_64-linux" ];
-          maxJobs = 2;
+          # Separate from the local maxJobs above. Not higher: its 6 cores
+          # also carry the four CI runners.
+          maxJobs = 4;
           speedFactor = 2;
           supportedFeatures = [
             "big-parallel"

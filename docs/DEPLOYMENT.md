@@ -96,6 +96,15 @@ Behavior to know:
   binary caches itself rather than over the SSH pipe from the laptop.
 - `sshUser` is `cyberfighter`, which is in `trusted-users` on ryzn-server —
   required so locally-built (unsigned) inputs can be uploaded.
+- The builder entry's `maxJobs` (4) and the local `cyberfighter.nix.maxJobs`
+  (2) are separate slot pools. Each ready derivation is offered to
+  ryzn-server first; the laptop only takes it when every remote slot is busy.
+- `preferLocalBuild` derivations — systemd units, `buildEnv` trees, fish
+  completions, most trivial builders — never leave the laptop, and those that
+  also set `allowSubstitutes = false` are never fetched from a cache either.
+  A rebuild that "builds hundreds of things" with a warm attic is usually
+  these. `nix path-info --json <path>` tells where a path came from:
+  `ultimate: true` was built here, `false` was copied in.
 
 ## `deploy-rs`
 
