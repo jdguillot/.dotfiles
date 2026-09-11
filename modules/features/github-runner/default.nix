@@ -16,6 +16,13 @@ let
   usesSopsToken = cfg.tokenFile == null;
   effectiveTokenFile =
     if usesSopsToken then config.sops.secrets.${cfg.secrets.token}.path else cfg.tokenFile;
+
+  # count > 1 fans out into suffixed units.
+  unitNames =
+    if cfg.count == 1 then
+      [ "github-runner-${cfg.name}" ]
+    else
+      map (n: "github-runner-${cfg.name}-${toString n}") (lib.range 1 cfg.count);
 in
 {
   options.cyberfighter.features.github-runner = {
@@ -102,12 +109,7 @@ in
     sops.secrets = lib.optionalAttrs usesSopsToken {
       ${cfg.secrets.token} = {
         mode = "0400";
-        # count > 1 fans out into suffixed units.
-        restartUnits =
-          if cfg.count == 1 then
-            [ "github-runner-${cfg.name}.service" ]
-          else
-            map (n: "github-runner-${cfg.name}-${toString n}.service") (lib.range 1 cfg.count);
+        restartUnits = map (u: "${u}.service") unitNames;
       };
     };
 
@@ -137,5 +139,14 @@ in
         SupplementaryGroups = cfg.extraGroups;
       };
     };
+
+    # Never stopped by a switch: that cancels the job in flight (SIGINT, exit
+    # 130), and CI's deploy job waits through this host's own switch. An
+    # ephemeral runner restarts after every job and picks up the new unit then.
+    systemd.services = lib.mkIf cfg.ephemeral (
+      lib.genAttrs unitNames (_: {
+        restartIfChanged = false;
+      })
+    );
   };
 }

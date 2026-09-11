@@ -52,6 +52,9 @@ if [ ${#missing[@]} -gt 0 ]; then
     echo '```'
     echo "deploy .#ryzn-server.system --remote-build"
     echo '```'
+    echo ""
+    echo "If it was rebuilt just now, rerun the job: a switch does not restart the"
+    echo "runners, so each takes the new PATH only after finishing a job -- this one counts."
   } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
   echo "::error::runner is missing ${missing[*]} -- see the job summary"
   exit 1
