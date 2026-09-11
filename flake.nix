@@ -38,7 +38,6 @@
     #    tasmotizer.url = "path:./programs/tasmotizer";
     deploy-rs.url = "github:serokell/deploy-rs";
     deptui.url = "github:jdguillot/deptui";
-    niri.url = "github:sodiboo/niri-flake";
     noctalia = {
       url = "github:noctalia-dev/noctalia/legacy-v4";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -95,7 +94,6 @@
       catppuccin,
       proxmox-nixos,
       deploy-rs,
-      niri,
       noctalia,
       dms,
       dank-greeter,
@@ -159,9 +157,6 @@
             proxmox-nixos.nixosModules.proxmox-ve
             dank-greeter.nixosModules.default
             {
-              nixpkgs.overlays = [
-                niri.overlays.niri
-              ];
               # Themed per-user via home-manager; explicit opt-out silences
               # the auto-enroll eval warning.
               catppuccin.autoEnable = false;
@@ -180,7 +175,6 @@
             nix-flatpak.homeManagerModules.nix-flatpak
             catppuccin.homeModules.catppuccin
             sops-nix.homeManagerModules.sops
-            niri.homeModules.config
             noctalia.homeModules.default
             dms.homeModules.dank-material-shell
             danksearch.homeModules.dsearch
