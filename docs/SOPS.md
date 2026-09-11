@@ -225,6 +225,38 @@ Current hosts use SOPS for things like:
 - shared personal identity values for Home Manager
 - encrypted SSH host aliases consumed by the Home Manager SSH module
 
+## If a secret reaches the public repo
+
+Treat it as leaked the moment it is pushed. Public pushes are scanned by bots
+within minutes, and a rewritten commit stays reachable by SHA on GitHub — and
+in every clone and fork — until GitHub Support purges it. In order:
+
+1. **Rotate or revoke the secret.** This is the fix; everything after it is
+   cleanup. Put the new value in with `sops secrets/secrets.yaml` and deploy.
+2. **Rewrite history without it** — `git filter-repo --invert-paths --path
+   <file>`, or `--replace-text` for a value inside a tracked file — and
+   force-push `main`.
+3. **Prune the releases that pin the old history.** CI records a release per
+   push, tagged with the commit's short SHA, and a force-push moves none of
+   them: every one from the leak onward keeps serving the old tree through
+   its "Source code" links.
+
+   ```bash
+   scripts/prune-orphan-releases.sh          # dry run: lists what would go
+   scripts/prune-orphan-releases.sh --apply
+   ```
+
+   `latest` is reported but never deleted — `deptui-agent` watches it — and
+   the force-push's own CI run moves it onto the new `main` once it builds.
+   Deleting needs a `gh` account with push access to this repo; with several
+   logged in, `gh auth status` shows which one is active.
+4. **Ask GitHub Support to purge** cached views and dangling commits. They
+   only act when rotation alone does not mitigate the risk.
+
+GitHub secret-scanning push protection (repository Settings → Code security)
+rejects a push containing a recognised credential before it lands, which is
+far cheaper than all of the above.
+
 ## Troubleshooting
 
 If a secret-backed setting is not appearing where expected, check:
