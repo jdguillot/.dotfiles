@@ -103,18 +103,6 @@
     search cyberfighter.space
   '';
 
-  # Workaround for WSL 2.7.3: /mnt/shared_memory is missing at boot, so WSLg
-  # falls back to RAIL copy mode ("[WARN: COPY MODE]" in window titles) and
-  # windows never render. https://github.com/microsoft/WSL/issues/40618
-  fileSystems."/mnt/shared_memory" = {
-    device = "tmpfs";
-    fsType = "tmpfs";
-    options = [
-      "defaults"
-      "nofail"
-    ];
-  };
-
   sops.secrets."work-ca" = {
     sopsFile = ./100-PKROOTCA290-CA.yaml;
     key = "data";
