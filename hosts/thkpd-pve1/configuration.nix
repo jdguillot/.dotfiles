@@ -116,6 +116,27 @@ in
         retentionPeriod = "6 months";
       };
 
+      # Photo library. Originals land in each person's own TrueNAS home
+      # (mounted below, one export per user so the NAS maps the writes to
+      # that user's uid); DB dumps and upload staging go to the apps-owned
+      # export. ML runs on ryzn-server's GPU first, the local Iris Xe
+      # (OpenVINO) container is the fallback. Needs the `immich-env` sops
+      # secret and DNS for immich.cyberfighter.space -> 192.168.101.39.
+      immich = {
+        enable = true;
+        publicHost = "immich.cyberfighter.space";
+        dataDir = "/mnt/immich/data";
+        libraries = {
+          jonny = "/mnt/immich/library/jonny";
+          porscha = "/mnt/immich/library/porscha";
+        };
+        transcoding = "quicksync";
+        machineLearning = {
+          urls = [ "http://192.168.101.94:3003" ];
+          local.device = "openvino";
+        };
+      };
+
       sops = {
         enable = true;
         defaultSopsFile = ../../secrets/secrets.yaml;
@@ -128,23 +149,38 @@ in
     "L+ /bin/true - - - - ${pkgs.coreutils}/bin/true"
   ];
 
-  # Attic chunk store (TrueNAS NFS export, dataset owned apps:apps 568).
-  # By IP: a hostname mount races the resolvconf restart during activation.
-  fileSystems."/mnt/attic-storage" = {
-    device = "192.168.101.41:/mnt/Main/Data/object-storage/attic";
-    fsType = "nfs";
-    options = [
-      # The NAS serves NFSv3 only (NFSv4 off in TrueNAS's NFS service).
-      "nfsvers=3"
-      "hard"
-      "noatime"
-      "_netdev"
-      # Mount on first access, not during the switch; a dead NAS then fails
-      # atticd, not the activation.
-      "x-systemd.automount"
-      "nofail"
-    ];
-  };
+  # TrueNAS NFS exports. By IP: a hostname mount races the resolvconf
+  # restart during activation. Mount on first access, not during the
+  # switch; a dead NAS then fails the service, not the activation.
+  fileSystems =
+    let
+      nas = export: {
+        device = "192.168.101.41:${export}";
+        fsType = "nfs";
+        options = [
+          # The NAS serves NFSv3 only (NFSv4 off in TrueNAS's NFS service).
+          "nfsvers=3"
+          "hard"
+          "noatime"
+          "_netdev"
+          "x-systemd.automount"
+          "nofail"
+        ];
+      };
+    in
+    {
+      # Attic chunk store (dataset owned apps:apps 568).
+      "/mnt/attic-storage" = nas "/mnt/Main/Data/object-storage/attic";
+
+      # Immich. Each export is restricted to this host on the NAS and
+      # `mapall`ed: data -> apps (568), each library -> its owner (Jonny
+      # 3011, Porscha 3012, group HomeUsers 3005), so the container's
+      # root writes arrive as that user. sec=sys sends the client uid; the
+      # NAS-side mapall is what makes the ownership, not anything here.
+      "/mnt/immich/data" = nas "/mnt/Main/Data/object-storage/immich";
+      "/mnt/immich/library/jonny" = nas "/mnt/Main/Data/userData/Jonny/Photos";
+      "/mnt/immich/library/porscha" = nas "/mnt/Main/Data/userData/Porscha/Photos";
+    };
 
   services.proxmox-ve.bridges = [
     "vmbr0"

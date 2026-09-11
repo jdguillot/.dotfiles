@@ -1,0 +1,35 @@
+# Immich system settings (native config-file format, merged over upstream
+# defaults: https://docs.immich.app/install/config-file). Placeholders are
+# filled by the module. Anything not listed keeps its default; while this
+# file is in use the admin UI settings pages are read-only.
+
+server:
+  externalDomain: "https://@PUBLIC_HOST@"
+
+# The on-disk tree that outlives Immich: library/<storage label>/<template>.
+# Must be on before the first upload, or files stay under upload/<uuid>.
+storageTemplate:
+  enabled: true
+  hashVerificationEnabled: true
+  template: "@STORAGE_TEMPLATE@"
+
+machineLearning:
+  enabled: true
+  # Tried in order; the local container (if any) is last.
+  urls: @ML_URLS@
+
+ffmpeg:
+  accel: "@FFMPEG_ACCEL@"
+  accelDecode: @FFMPEG_ACCEL_DECODE@
+
+# Nightly dump into /data/backups (the NAS export); the restore path after
+# a host loss, since the DB itself is on local disk.
+backup:
+  database:
+    enabled: true
+    cronExpression: "0 2 * * *"
+    keepLastAmount: 14
+
+# The version is pinned in the module.
+newVersionCheck:
+  enabled: false

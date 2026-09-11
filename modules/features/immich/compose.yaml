@@ -1,0 +1,123 @@
+# Immich -- photo/video library: server, its Postgres (VectorChord) and
+# Valkey. Placeholders are filled by the module; ${VAR} interpolates from the
+# SOPS dotenv staged at /run/immich/env. The optional local ML container is
+# compose-ml.yaml, merged as a second -f file; per-user library mounts and
+# traefik labels arrive as rendered override files. Day-2 ops:
+# `immich-compose`. Docs: https://docs.immich.app/install/docker-compose
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:@VERSION@
+    container_name: immich-server
+    restart: unless-stopped
+
+    # One of [cpu, nvenc, quicksync, vaapi] from the vendored upstream file.
+    extends:
+      file: /etc/immich/hwaccel.transcoding.yml
+      service: "@TRANSCODE_DEVICE@"
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+
+    environment:
+      TZ: "@TZ@"
+      DB_HOSTNAME: database
+      DB_USERNAME: postgres
+      DB_DATABASE_NAME: immich
+      DB_PASSWORD: "${DB_PASSWORD}"
+      REDIS_HOSTNAME: redis
+      # System settings come from the rendered config file; the admin UI
+      # settings pages turn read-only.
+      IMMICH_CONFIG_FILE: /config/immich-config.yaml
+
+    volumes:
+      # /data is the NAS export: library/ (per-user mounts below it come
+      # from the module's override file), upload/, profile/, backups/.
+      - "@DATA_DIR@:/data"
+      # Regenerable and latency-sensitive: local disk, not the NAS.
+      - "@STATE_DIR@/thumbs:/data/thumbs"
+      - "@STATE_DIR@/encoded-video:/data/encoded-video"
+      - /etc/immich/immich-config.yaml:/config/immich-config.yaml:ro
+      - /etc/localtime:/etc/localtime:ro
+
+    deploy:
+      resources:
+        limits:
+          memory: "@SERVER_MEM@"
+
+    healthcheck:
+      disable: false
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Routing labels come from the traefik module's rendered override file
+    # (cyberfighter.features.traefik.routes.immich), merged by compose.
+    networks:
+      - default
+      - "@NETWORK@"
+
+  redis:
+    image: docker.io/valkey/valkey:9
+    container_name: immich-redis
+    restart: unless-stopped
+
+    healthcheck:
+      test: redis-cli ping | grep -q PONG || exit 1
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - default
+
+  database:
+    # Immich's own build: Postgres + VectorChord. The server checks the
+    # extension versions at start, so bump this together with @VERSION@.
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+    container_name: immich-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: immich
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+
+    volumes:
+      # Local disk on purpose: upstream does not support Postgres on NFS.
+      - "@STATE_DIR@/postgres:/var/lib/postgresql/data"
+
+    shm_size: 128mb
+
+    deploy:
+      resources:
+        limits:
+          memory: "@DB_MEM@"
+
+    healthcheck:
+      disable: false
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - default
+
+networks:
+  default:
+  # Traefik's network, created on boot by the docker module.
+  "@NETWORK@":
+    external: true

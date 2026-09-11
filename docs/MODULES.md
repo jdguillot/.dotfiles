@@ -273,12 +273,109 @@ Example:
 | `compose` | `projects.<name>` (`files`, `networks`, `envFile`, `prepare`, `runtimeDirectory`, `timeout`, `extraUpFlags`, `restartTriggers`) | shared scaffolding for compose projects as boot-time systemd oneshots — owns the unit ordering/lifecycle invariants and a `<name>-compose` day-2 wrapper; traefik, litellm, comfyui, and odysseus declare their projects through it | <https://docs.docker.com/compose/> |
 | `traefik` | `enable`, `dnsDomain`, `email`, `network`, `routes.<name>` (`host`, `port`, `url`, `auth`, `rateLimit`, `backend`, `extraHosts`, `network`), `claimedRoutes`, `dnsResolvers`, `rateLimit`, `dynamicFiles`, `secrets.*` | TLS-terminating reverse proxy as a compose project; declares its own sops secrets (name-style, `*File` escape hatches); `routes` declares a routed service once and the module renders it as docker labels (`routeLabels`/`routeLabelFiles`) or a file-provider fragment (`backend = "host"` for a host port, `"url"` for a service on another machine), owning the entrypoint/cert-resolver/middleware-chain spelling; `dynamicFiles` stays as the escape hatch for routing `routes` cannot express; `backend` defaults to `"docker"`, whose labels reach traefik only if a module attaches them, so whichever module reads `routeLabels`/`routeLabelFiles` must also name the route in `claimedRoutes` — an unclaimed docker route is a build-time assertion rather than a route that silently never appears | <https://doc.traefik.io/traefik/> |
 | `attic` | `enable`, `port`, `apiEndpoint`, `storage`, `localPath`, `s3.endpoint`, `s3.bucket`, `s3.region`, `retentionPeriod`, `openFirewall`, `secrets.environment`, `environmentFile` | self-hosted Nix binary cache server (`services.atticd`, monolithic); chunks go to a local path — typically an NFS mount from TrueNAS, with atticd pinned to uid 568 (`apps`) for stable NFS ownership — or an S3 bucket; one sops env file carries the RS256 JWT secret (plus `AWS_*` keys for s3); pair with a traefik `routes` entry (`backend = "host"`, `auth = "none"`) for TLS | <https://docs.attic.rs/> |
+| `immich` | `enable`, `version`, `publicHost`, `dataDir`, `libraries.<label>`, `stateDir`, `storageTemplate`, `transcoding`, `machineLearning.{urls,modelTtl,local.{enable,device,memory}}`, `memory.{server,database}`, `secrets.envSecret`, `mlServer.{enable,device,port,bind,allowedClients,memory,stateDir}` | self-hosted photo/video library as a compose project (server + VectorChord Postgres + Valkey, optional local ML container) behind a traefik `routes` entry; `/data` is a NAS export, each user's originals are a separate mount bound at `/data/library/<label>` so the NAS can `mapall` writes to that user's uid, and Postgres/thumbnails stay on local disk; system settings come from a native `immich-config.yaml` (admin settings pages turn read-only); `mlServer` is the standalone GPU role for a server elsewhere, with a `DOCKER-USER` client allowlist since the ML API has no auth; see [Immich](#immich-immich) below | <https://docs.immich.app/> |
 | `autoReboot` | `enable`, `schedule`, `randomizedDelay`, `warningMinutes`, `postpone.{duration,max}` | takes the pending reboot a kernel bump leaves behind: a timer compares `initrd`/`kernel`/`kernel-modules` between `/run/booted-system` and the system *profile* (the same test nixpkgs' `system.autoUpgrade` makes, and the profile rather than `/run/current-system` because `--boot` moves the profile without activating) and reboots only when they differ; with sessions open it warns first via `shutdown -r +N` (which wall-broadcasts) plus a `notify-send` per graphical session, and `reboot-postpone` defers it a bounded number of times; asserts `boot.kernel.enable`, so not for WSL hosts. Does not verify the host came back — a machine cannot report its own failure to return | <https://www.freedesktop.org/software/systemd/man/systemd.timer.html> |
 | `github-runner` | `enable`, `url`, `name`, `count`, `ephemeral`, `extraLabels`, `extraPackages`, `extraGroups`, `secrets.token`, `tokenFile` | native self-hosted GitHub Actions runner (`services.github-runners`); jobs share the host's `/nix/store` and nix-daemon, so there is no per-job disk budget; ephemeral by default since the repo is public — pair with "Require approval for all outside collaborators"; ephemeral runners are exempt from restart-on-switch (`restartIfChanged = false`), since a switch would cancel the job in flight — each picks up a changed unit, including a new `extraPackages` PATH, when its current job ends | <https://mynixos.com/search?q=services.github-runners> |
 | `deptui-agent` | `enable`, `watches.<name>` (`repo`, `branch`/`tag`, `interval`/`cron`, `hosts.<node>` flag sets), `settings`, `listen.{enable,address,port}`, `openFirewall`, `gitCryptKeyFile`, `secrets.{listenToken,gitCryptKey}`, `groupMembers`, `addToSystemPackages` | unattended deploy-rs runner (wraps `inputs.deptui.nixosModules.deptui-agent`); polls watched repos with `git ls-remote` and deploys from a private clone; runs as its own system user whose self-generated ssh public key sits in `ssh.authorizedKeys`; a watch that sets `git_crypt_key_file = gitCryptKeyFile` gets the base64 `secrets.gitCryptKey` sops secret decoded there at activation; the optional TCP listener exposes only bearer-token-gated kick/status for CI; control socket is group-gated — `groupMembers` grants `deptui-agent status`/`kick` without sudo | <https://github.com/jdguillot/deptui> |
 | `security` | `firejail` | lightweight sandboxing toggle | <https://mynixos.com/search?q=programs.firejail.enable> |
 | `sops` | `enable`, `defaultSopsFile`, `sshKeyPath`, `deployUserAgeKey` | wraps `sops-nix`; can derive a user age key from the host SSH key | <https://github.com/Mic92/sops-nix> |
 | `proxmox` | `enable`, `ipAddress` | Proxmox VE integration via `proxmox-nixos` | <https://github.com/SaumonNet/proxmox-nixos> |
+
+#### Immich (`immich`)
+
+Photo and video library. The design goal is that the NAS, not Immich, owns
+the photos: every original is an ordinary file in a human-readable tree, so
+another front-end can read it later. What only Immich knows (albums, faces,
+favourites, partner sharing) lives in Postgres and is covered by the nightly
+dump to `dataDir/backups`. Metadata edits (dates, descriptions, ratings, tags)
+are written to `.xmp` sidecars next to the originals by Immich's sidecar job.
+
+**Storage model.** Immich writes uploads into `upload/<uuid>` (staging) and
+then, with the storage template on, moves them to
+`library/<storage label>/<template>`. The module binds:
+
+| Container path | Source | Why |
+| --- | --- | --- |
+| `/data` | `dataDir` (NAS export) | staging, profile pictures, DB dumps, the `library/` root |
+| `/data/library/<label>` | `libraries.<label>` (one NAS export per user) | that user's originals, on their own export |
+| `/data/thumbs`, `/data/encoded-video` | `stateDir` (local disk) | regenerable, latency-sensitive |
+| Postgres data | `stateDir/postgres` (local disk) | upstream does not support Postgres on NFS |
+
+A per-user mount is a separate filesystem, so the staging-to-library move
+fails with `EXDEV` and Immich falls back to copy-verify-delete: every upload
+is written twice on the NAS. That is the price of per-user ownership.
+
+**TrueNAS side** (outside this repo). One NFS share per mount, each
+restricted to the Immich host's IP, `mapall` user/group set to the intended
+owner: the `dataDir` dataset to `apps`, each library share to that person's
+own uid and primary group. The container runs as root; the NAS-side `mapall`
+is what makes the files land as the right user. The host mounts them as
+plain `fileSystems` NFS automounts (`hosts/thkpd-pve1/configuration.nix` is
+the example) and the module orders the compose unit after them with
+`RequiresMountsFor`.
+
+**Rules the layout imposes.**
+
+- Set each user's *storage label* in the admin UI to the `libraries` key
+  before that user uploads anything. The label is a path component of every
+  stored file and cannot change later.
+- The storage template is on from the first start (the module's config
+  file). Change `storageTemplate` later only together with the "Storage
+  Template Migration" job.
+- Immich owns the files it writes: a delete in Immich deletes on the NAS
+  once the trash window (30 days) passes, and deleting a user deletes that
+  user's folder contents.
+- Immich never scans `library/` for files it did not write, so a staging
+  folder such as `library/<label>/_import/` is invisible to it.
+
+**First run.** Log in, create the admin (you), create the other users, set
+storage labels, enable partner sharing between them. The settings pages are
+read-only while `IMMICH_CONFIG_FILE` is in use; everything there is in
+`modules/features/immich/immich-config.yaml`.
+
+**Importing an existing archive.** `immich-go` is installed on the server
+host. On the NAS, move the current contents of each person's photo folder
+into `<folder>/_import/` (same dataset, so a rename), then on the server host,
+per user, with an API key made in that user's account settings:
+
+```bash
+# Google Takeout first: its JSON carries dates and albums EXIF often lacks.
+immich-go upload from-google-photos --server https://<publicHost> --api-key <key> \
+  /mnt/immich/library/<label>/_import/takeout-*.zip
+# Then loose folders. Duplicates (by checksum) within a user are skipped.
+immich-go upload from-folder --server https://<publicHost> --api-key <key> \
+  /mnt/immich/library/<label>/_import
+```
+
+Phones come last through the mobile app, which skips anything already
+uploaded. Duplicate detection is per user: the same photo in two people's
+archives becomes two assets. When both people have browsed the library for a
+while, snapshot the dataset and delete `_import`.
+
+**Machine learning.** `machineLearning.urls` lists remote ML servers in
+order; the local container (default on) is appended last as the fallback and
+capped by `machineLearning.local.memory`, with models unloading after
+`modelTtl` seconds idle. A GPU host runs the standalone role:
+`immich.mlServer.enable` with `device = "cuda"` and `allowedClients` set to
+the server's IP. Published container ports bypass the NixOS INPUT chain, so
+the allowlist is an iptables chain hooked into `DOCKER-USER`. Remote ML does
+smart search, face detection and OCR; face *recognition* (clustering) always
+runs in the server. The ML image must match the server version, which is why
+`version` is one option shared by both roles.
+
+**Hardware acceleration.** `transcoding` and `machineLearning.local.device`
+pick a service from the vendored upstream `hwaccel.*.yml` fragments via
+compose `extends`; the only local edit is CDI instead of `driver: nvidia` for
+the NVIDIA entries.
+
+**Updates.** `version` is an exact tag. Immich ships breaking changes on
+minor versions and the mobile app follows the server, so bump with the
+release notes; the Postgres image tag in `compose.yaml` moves with it when
+upstream says so. The DB dump before the bump is the rollback.
+
+**Recovery.** `stateDir/postgres` is the only state a rebuild cannot
+recreate. Restore per <https://docs.immich.app/administration/backup-and-restore>
+from the newest dump in `dataDir/backups`, with the same `version`.
 
 ### AI agents
 

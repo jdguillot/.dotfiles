@@ -437,6 +437,14 @@
 
       graphics.nvidia.containerToolkit = true;
 
+      # CLIP/face/OCR inference for thkpd-pve1's Immich, on the 5090; only
+      # that host may reach the (unauthenticated) port.
+      immich.mlServer = {
+        enable = true;
+        device = "cuda";
+        allowedClients = [ "192.168.101.39" ];
+      };
+
     };
   };
 

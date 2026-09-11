@@ -57,10 +57,10 @@ Use the README for the quick map, then jump into the focused docs:
 | `razer-nixos` | `desktop` | `dev` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
 | `sys-galp-nix` | `desktop` | — | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
 | `work-nix-wsl` | `wsl` | `dev` | `hosts/work-nix-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
-| `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
+| `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, traefik, attic, Immich (originals on TrueNAS NFS), Tailscale, and SOPS |
 | `simple-vm` | `minimal` | — | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
 | `vm-gameserver-nix` | `minimal` | — | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
-| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | NVIDIA desktop/server with gaming, Waydroid, Docker, Tailscale, SOPS, and the Hermes Agent gateway |
+| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | NVIDIA desktop/server with gaming, Waydroid, Docker, Tailscale, SOPS, the Hermes Agent gateway, and Immich's GPU machine-learning server |
 
 For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
 
@@ -91,8 +91,8 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
 - Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`,
   `kdeconnect`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
-- Services and infrastructure: `docker`, `attic`, `github-runner`,
-  `security`, `sops`, `proxmox`, `autoReboot`
+- Services and infrastructure: `docker`, `compose`, `traefik`, `attic`,
+  `immich`, `github-runner`, `security`, `sops`, `proxmox`, `autoReboot`
 - Gaming and hosting: `gaming`, `gameserver`,
   `gameserver.astroneer`, `gameserver.playit`
 - AI agents: `ai.hermes`
