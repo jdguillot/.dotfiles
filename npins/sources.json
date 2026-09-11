@@ -9,9 +9,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f",
-      "url": "https://github.com/anthropics/skills/archive/41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f.tar.gz",
-      "hash": "sha256-sjgPv9tZZVTXPxZWaCOc7JwFceNn3C1ghy8mSHqgqB8="
+      "revision": "34040c9c568585f6929bedeaad110ad08f079624",
+      "url": "https://github.com/anthropics/skills/archive/34040c9c568585f6929bedeaad110ad08f079624.tar.gz",
+      "hash": "sha256-tI4bTTBfI1ylltklGyiyA7pLoKXEWtrT6lrmwrpLbCw="
     },
     "astrotuxlauncher": {
       "type": "GitRelease",
@@ -142,9 +142,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "665e1c323745a31ede300fc9773c1eee44f3fce7",
-      "url": "https://github.com/hthienloc/dms-quick-capture/archive/665e1c323745a31ede300fc9773c1eee44f3fce7.tar.gz",
-      "hash": "sha256-nAnSHyv03P4Fe5msNmWQ6YlQ49baaOs2MyOZdIIezkM="
+      "revision": "f908845cb949be182257f77d88f21c53c3c38bce",
+      "url": "https://github.com/hthienloc/dms-quick-capture/archive/f908845cb949be182257f77d88f21c53c3c38bce.tar.gz",
+      "hash": "sha256-iN7V9XfLXK/AsQzapuH07zWgBm3HZ1x0fDe3KWJqrEY="
     },
     "dms-plugin-tailscale": {
       "type": "Git",
