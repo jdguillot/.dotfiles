@@ -348,6 +348,33 @@ carried over automatically: the prompt asks for a fresh decision each week,
 and "it was held last week" is explicitly not evidence. The tracked issue
 is re-probed each run, so a merged fix releases the hold on its own.
 
+Each run also records what the people in those threads recommend doing
+about the hold, printed under "What upstream recommends".
+`collect-thread-signal.sh` gathers the evidence deterministically: every
+comment with its author's `author_association` and its reactions, the
+review verdicts, each issue or PR those comments link to (one hop, no
+further), and the maintenance status of any repository they point at,
+flake refs included. `recommend-hold.sh` then makes one schema-constrained
+call to the local model over that bounded document, failing open like the
+scan. The prompt ranks the evidence: a maintainer's statement or approving
+review first — maintainers of a project reached through a linked thread
+count too — then the outcome of a linked PR or issue, then community
+consensus shown by reactions, then single suggestions, labelled as such.
+
+Reactions never outrank the first two because they mislead. When
+`sodiboo/niri-flake` stalled, the open fix PR's author offered their own
+fork and collected more thumbs-up than a quieter comment pointing at
+another fork — but that comment linked a merged niri PR in which the
+original flake's maintainer approved the switch. Following one hop is what
+finds that.
+
+It is asked every week because a thread keeps moving after the hold
+starts; a week the model cannot answer keeps the previous recommendation.
+The scan sees it too, and when the recommendation needs a change here —
+switching the input's source, say — the summary says the next move is the
+reader's. The evidence each run used is in the `update-report` artifact
+under `upstream-signal/threads/`.
+
 When a hold reaches `ESCALATE_WEEKS` (three) with nothing having moved
 upstream, the report adds a block saying so and listing what a maintainer
 would ask for — both revisions, the failure from the run that first held it,

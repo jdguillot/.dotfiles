@@ -112,6 +112,16 @@ cmd_record() {
       upstream=$(jq --argjson e "$(probe_ref "$u")" '. += [$e]' <<<"$upstream")
     done <<<"$urls"
 
+    # What the people in those threads recommend doing about it. Asked every
+    # week because the discussion keeps moving after the hold starts; a week
+    # with no answer keeps the last one rather than dropping it.
+    local rec='null' url_args=()
+    if [ -n "$urls" ]; then
+      mapfile -t url_args <<<"$urls"
+      rec=$(.github/scripts/recommend-hold.sh "$name" "$reason" "${url_args[@]}" || true)
+      [ -n "$rec" ] || rec='null'
+    fi
+
     # Three outcomes, not two. "moved" resets the stall counter; "still"
     # advances it; "unknown" -- every probe failed, so a rate limit rather
     # than a quiet week -- leaves it alone and keeps last week's snapshot.
@@ -122,7 +132,7 @@ cmd_record() {
     # likely to sit there forgotten.
     out=$(jq \
       --arg n "$name" --arg r "$reason" --arg o "$origin" --arg d "$today" \
-      --argjson up "$upstream" '
+      --argjson up "$upstream" --argjson rec "$rec" '
       (.holds[$n] // null) as $old
       | ($old.upstream // []) as $before
       | ($up | map(select(.state != "unknown"))) as $now
@@ -137,6 +147,8 @@ cmd_record() {
           origin: ($old.origin // $o),
           reason: $r,
           upstream: (if $movement == "unknown" then $before else $up end),
+          recommendation: (if $rec != null then $rec + { as_of: $d }
+                           else ($old.recommendation // null) end),
           stalled_weeks: (if $movement == "moved" then 0
                           elif $movement == "unknown" then ($old.stalled_weeks // 0)
                           else (($old.stalled_weeks // 0) + 1) end)
@@ -186,6 +198,23 @@ write_report() {
        else ([$v.upstream[] | "\(.url) (\(.state))"] | join("<br>")) end) + " |"' <<<"$out"
     echo ""
   } >> "$REPORT"
+
+  # Model-written (recommend-hold.sh), so it reaches the pull request only
+  # through sanitize-refs.sh with the rest of the body. `none` means the
+  # discussion recommends nothing yet, which is not worth a line.
+  if jq -e 'any(.holds[]; (.recommendation.standing // "none") != "none")' >/dev/null <<<"$out"; then
+    {
+      echo "#### What upstream recommends"
+      echo ""
+      jq -r '
+        .holds | to_entries[]
+        | select((.value.recommendation.standing // "none") != "none")
+        | .value.recommendation as $r
+        | "- `\(.key)`: \($r.recommendation) _(\($r.standing | gsub("-"; " ")), as of \($r.as_of))_",
+          "  \($r.basis)"' <<<"$out"
+      echo ""
+    } >> "$REPORT"
+  fi
 
   # The escalation. Deliberately a prompt to the human rather than anything
   # automatic: filing on someone else's tracker is their call, and the thing

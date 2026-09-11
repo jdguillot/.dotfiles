@@ -59,6 +59,12 @@ week, the same as any other source, and the default is still to bump:
 "It was held last week" is not evidence. If you cannot restate what breaks
 from *this* week's digest, let it bump.
 
+A standing hold may carry what upstream recommends doing about it. When
+that recommendation needs a change in this repository — switching the
+input to another source, adding an override — waiting will not resolve
+the hold on its own; say so in `summary`, so the person reading the pull
+request knows the next move is theirs.
+
 For each hold give:
 
 - `name`: the source name exactly as it appears in the digest heading

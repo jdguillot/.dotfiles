@@ -202,8 +202,9 @@ jobs:
       - name: Preflight
         # opencode included: it is only reached on the failure path, but
         # finding out it is absent there means finding out after a build has
-        # already failed, with the fix step silently skipped.
-        run: .github/scripts/preflight.sh jq nix npins git gh opencode -- mcp-nixos
+        # already failed, with the fix step silently skipped. curl is only
+        # the ledger's advisory recommendation pass, which fails open.
+        run: .github/scripts/preflight.sh jq nix npins git gh opencode -- mcp-nixos curl
 
       - name: Keep the run's scratch files out of the commit
         # The commit below has to stage whatever the fix agent touched, so it
@@ -451,6 +452,7 @@ jobs:
             late-holds.json
             hold-report.md
             reboot-notes.md
+            upstream-signal/threads/
           if-no-files-found: ignore
           retention-days: 14
 

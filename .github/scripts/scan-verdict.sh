@@ -61,6 +61,9 @@ standing=$(jq -r '
        else " Nothing is being tracked upstream for it." end)
     + (if $v.stalled_weeks >= 2
        then " Nothing has moved upstream on it for \($v.stalled_weeks) week(s)."
+       else "" end)
+    + (if ($v.recommendation.standing // "none") != "none"
+       then " Upstream recommends (\($v.recommendation.standing)): \($v.recommendation.recommendation)"
        else "" end) )
   end' "$ledger")
 
