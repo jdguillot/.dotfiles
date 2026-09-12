@@ -147,6 +147,12 @@ in
 
   systemd.tmpfiles.rules = [
     "L+ /bin/true - - - - ${pkgs.coreutils}/bin/true"
+    # PVE distributes cluster host keys through pmxcfs; stock nodes symlink
+    # /etc/ssh/ssh_known_hosts at it, which NixOS owns. Link root's instead --
+    # PVE's cross-node SSH (console, migration) runs as root. Not
+    # programs.ssh.knownHostsFiles: that type copies the path into the store at
+    # eval time, which a runtime FUSE path cannot satisfy.
+    "L+ /root/.ssh/known_hosts - - - - /etc/pve/priv/known_hosts"
   ];
 
   # TrueNAS NFS exports. By IP: a hostname mount races the resolvconf
