@@ -17,6 +17,8 @@ machineLearning:
   enabled: true
   # Tried in order; the local container (if any) is last.
   urls: @ML_URLS@
+  ocr:
+    enabled: @OCR_ENABLED@
 
 ffmpeg:
   accel: "@FFMPEG_ACCEL@"

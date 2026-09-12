@@ -81,6 +81,7 @@ let
     PUBLIC_HOST = cfg.publicHost;
     STORAGE_TEMPLATE = cfg.storageTemplate;
     ML_URLS = builtins.toJSON mlUrls;
+    OCR_ENABLED = lib.boolToString cfg.machineLearning.ocr;
     FFMPEG_ACCEL = ffmpegAccel;
     FFMPEG_ACCEL_DECODE = lib.boolToString (cfg.transcoding != "cpu");
     FFMPEG_HW_DEVICE = if cfg.transcodingDevice == null then "auto" else cfg.transcodingDevice;
@@ -229,6 +230,12 @@ in
         type = lib.types.int;
         default = 300;
         description = "Seconds an idle ML model stays in memory before unloading (MACHINE_LEARNING_MODEL_TTL), for every ML container this module runs.";
+      };
+
+      ocr = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Queue OCR (text-in-image search) jobs to the ML servers. Off skips the queue entirely; existing OCR results stay searchable.";
       };
 
       local = {

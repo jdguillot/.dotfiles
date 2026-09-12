@@ -145,6 +145,9 @@ in
         machineLearning = {
           urls = [ "http://192.168.101.94:3003" ];
           local.device = "openvino";
+          # WORKAROUND(immich-ocr-vram)
+          ocr = false;
+          # END WORKAROUND(immich-ocr-vram)
         };
       };
 
