@@ -37,7 +37,7 @@ general_settings:
   # config.yaml is the source of truth; the DB holds keys and spend only.
   store_model_in_db: false
 
-  # An authed /health otherwise fires real requests, loading every model
-  # onto the GPU; background checks serve a cached result.
-  background_health_checks: true
-  health_check_interval: 300
+  # Off: a background check is a real completion per routed model every
+  # interval, which resets Ollama's keep-alive and pins both models on the
+  # GPU forever. Nothing polls /health; a probe should use /health/readiness.
+  background_health_checks: false
