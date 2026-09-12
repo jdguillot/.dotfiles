@@ -21,6 +21,10 @@ machineLearning:
 ffmpeg:
   accel: "@FFMPEG_ACCEL@"
   accelDecode: @FFMPEG_ACCEL_DECODE@
+  preferredHwDevice: "@FFMPEG_HW_DEVICE@"
+
+# Worker counts per queue; empty keeps upstream defaults.
+job: @JOB_CONCURRENCY@
 
 # Nightly dump into /data/backups (the NAS export); the restore path after
 # a host loss, since the DB itself is on local disk.

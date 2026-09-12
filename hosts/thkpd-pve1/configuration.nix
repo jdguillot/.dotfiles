@@ -131,6 +131,17 @@ in
           porscha = "/mnt/immich/library/porscha";
         };
         transcoding = "quicksync";
+        # renderD128 is the Iris Xe; renderD129 is the Quadro on nouveau,
+        # which iHD rejects and Immich would pick on its own.
+        transcodingDevice = "renderD128";
+        # Server, API and the job workers (exiftool x5, ffmpeg) do not fit
+        # in 2g while a library import runs; the cgroup OOM-killer looped it.
+        memory.server = "4g";
+        # Eight cores shared with three VMs: throttle the import-time queues.
+        jobConcurrency = {
+          metadataExtraction = 2;
+          thumbnailGeneration = 2;
+        };
         machineLearning = {
           urls = [ "http://192.168.101.94:3003" ];
           local.device = "openvino";

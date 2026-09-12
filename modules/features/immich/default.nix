@@ -83,6 +83,10 @@ let
     ML_URLS = builtins.toJSON mlUrls;
     FFMPEG_ACCEL = ffmpegAccel;
     FFMPEG_ACCEL_DECODE = lib.boolToString (cfg.transcoding != "cpu");
+    FFMPEG_HW_DEVICE = if cfg.transcodingDevice == null then "auto" else cfg.transcodingDevice;
+    JOB_CONCURRENCY = builtins.toJSON (
+      lib.mapAttrs (_: concurrency: { inherit concurrency; }) cfg.jobConcurrency
+    );
   };
 
   # Compose override adding the per-user library binds; compose merges the
@@ -189,6 +193,28 @@ in
       ];
       default = "cpu";
       description = "Hardware transcoding backend: a service name from the vendored hwaccel.transcoding.yml. quicksync/vaapi pass /dev/dri; nvenc needs graphics.nvidia.containerToolkit.";
+    };
+
+    transcodingDevice = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "renderD128";
+      description = ''
+        Render node under /dev/dri handed to ffmpeg for quicksync/vaapi.
+        Null lets Immich pick, which on a host with more than one GPU is
+        the highest-numbered node, not the one with the video driver;
+        `ls -l /dev/dri/by-path` maps nodes to PCI devices.
+      '';
+    };
+
+    jobConcurrency = lib.mkOption {
+      type = lib.types.attrsOf lib.types.ints.positive;
+      default = { };
+      example = {
+        metadataExtraction = 2;
+        thumbnailGeneration = 2;
+      };
+      description = "Per-queue worker counts (Immich `job.<queue>.concurrency`) overriding upstream defaults; queues not listed keep theirs. videoConversion above 1 is not supported upstream.";
     };
 
     machineLearning = {
