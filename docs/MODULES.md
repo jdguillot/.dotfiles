@@ -279,7 +279,7 @@ Example:
 | `deptui-agent` | `enable`, `watches.<name>` (`repo`, `branch`/`tag`, `interval`/`cron`, `hosts.<node>` flag sets), `settings`, `listen.{enable,address,port}`, `openFirewall`, `gitCryptKeyFile`, `secrets.{listenToken,gitCryptKey}`, `groupMembers`, `addToSystemPackages` | unattended deploy-rs runner (wraps `inputs.deptui.nixosModules.deptui-agent`); polls watched repos with `git ls-remote` and deploys from a private clone; runs as its own system user whose self-generated ssh public key sits in `ssh.authorizedKeys`; a watch that sets `git_crypt_key_file = gitCryptKeyFile` gets the base64 `secrets.gitCryptKey` sops secret decoded there at activation; the optional TCP listener exposes only bearer-token-gated kick/status for CI; control socket is group-gated — `groupMembers` grants `deptui-agent status`/`kick` without sudo | <https://github.com/jdguillot/deptui> |
 | `security` | `firejail` | lightweight sandboxing toggle | <https://mynixos.com/search?q=programs.firejail.enable> |
 | `sops` | `enable`, `defaultSopsFile`, `sshKeyPath`, `deployUserAgeKey` | wraps `sops-nix`; can derive a user age key from the host SSH key | <https://github.com/Mic92/sops-nix> |
-| `proxmox` | `enable`, `ipAddress` | Proxmox VE integration via `proxmox-nixos` | <https://github.com/SaumonNet/proxmox-nixos> |
+| `proxmox` | `enable`, `ipAddress`, `publishHostKeys.{enable,knownHostsFile,timeout}` | Proxmox VE via `proxmox-nixos`, plus the wiring a stock Debian node gets from its postinst and a NixOS node does not: root's `known_hosts` linked at the cluster file, and a boot-time oneshot that publishes this node's host keys into it under both hostname and IP; see [Proxmox](#proxmox-proxmox) below | <https://github.com/SaumonNet/proxmox-nixos> |
 
 #### Immich (`immich`)
 
@@ -376,6 +376,59 @@ upstream says so. The DB dump before the bump is the rollback.
 **Recovery.** `stateDir/postgres` is the only state a rebuild cannot
 recreate. Restore per <https://docs.immich.app/administration/backup-and-restore>
 from the newest dump in `dataDir/backups`, with the same `version`.
+
+#### Proxmox (`proxmox`)
+
+Proxmox VE on NixOS. Most of the module is ordinary service enablement; the
+part worth reading is the SSH host-key handling, because a NixOS node does
+not inherit what a Debian PVE node's postinst sets up, and the failure is
+both delayed and misleading.
+
+**How PVE shares host keys.** Cluster nodes resolve each other through
+`/etc/pve/priv/known_hosts`, replicated by pmxcfs. Stock nodes reach it by
+symlinking `/etc/ssh/ssh_known_hosts` at it. NixOS owns that path (it points
+into `/etc/static`), so the module links `/root/.ssh/known_hosts` instead —
+PVE's cross-node SSH runs as root.
+
+> Do not reach for `programs.ssh.knownHostsFiles`. It is typed `absolute
+> path`, so Nix copies the file into the store at eval time and a runtime
+> FUSE path fails the whole host evaluation with `access to absolute path
+> '/etc/pve/priv/known_hosts' is forbidden in pure evaluation mode`.
+
+**Why the oneshot exists.** Nothing populates that file *for* a node joined
+outside `pvecm add` — PVE 9 writes only `/etc/pve/nodes/<node>/ssh_known_hosts`,
+and `pvecm updatecerts` touches just that newer path. A node whose keys are
+missing is reachable by no peer: cross-node API calls fail with `proxy handler
+failed: Host key verification failed`, which the web UI surfaces as a generic
+ticket error rather than anything about SSH.
+
+`pve-publish-known-hosts` appends this node's ed25519 and RSA host keys on
+boot, keyed under **both** the hostname and `ipAddress`. Both forms matter:
+SSH by IP fails independently of SSH by name, so a name-only entry works
+until something dials the IP — a partial failure that looks intermittent.
+The unit is idempotent (field comparison, not `grep`, since an IP's dots are
+regex wildcards), waits up to `publishHostKeys.timeout` for pmxcfs to mount
+and the node to become quorate, and exits 0 rather than failing a boot that
+never reaches quorum.
+
+**Bringing a new NixOS node into an existing cluster.** The module covers the
+host-key side; these steps stay manual:
+
+1. Add the host to `hosts/default.nix` and set `cyberfighter.features.proxmox`
+   (`enable`, `ipAddress`) plus `features.ssh.additionalRootKeys` with the
+   other nodes' root keys.
+2. Deploy, then fill in `system.hostKey` from the generated
+   `/etc/ssh/ssh_host_ed25519_key.pub` — chicken-and-egg, the key has to exist
+   first. `modules/core/known-hosts` then pins it fleet-wide.
+3. Add this node's root key to the other hosts' `additionalRootKeys`.
+4. `pvecm add` to join. Check quorum has margin first: the threshold is
+   `floor(N/2)+1`, so confirm the cluster stays quorate with this node down.
+5. After the join, confirm every path both ways — each node to each other, by
+   name *and* by IP. A name-only pass is the failure mode above.
+
+Cluster-wide rebuilds are one node at a time for the same reason: two nodes
+down at once drops a four-node cluster below quorum and `/etc/pve` goes
+read-only everywhere, not just on the nodes that left.
 
 ### AI agents
 
