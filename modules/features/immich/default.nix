@@ -176,7 +176,7 @@ in
     stateDir = lib.mkOption {
       type = lib.types.str;
       default = "/var/lib/immich";
-      description = "Local disk for postgres/ (unsupported on NFS upstream), thumbs/, encoded-video/ and the ML model cache. Only postgres/ is state a rebuild cannot recreate; the nightly dump in dataDir/backups covers it.";
+      description = "Local disk for postgres/ (unsupported on NFS upstream), redis/ (the job queue, so a container recreate keeps pending jobs), thumbs/, encoded-video/ and the ML model cache. Only postgres/ is state a rebuild cannot recreate; the nightly dump in dataDir/backups covers it.";
     };
 
     storageTemplate = lib.mkOption {
@@ -391,6 +391,7 @@ in
         "d ${cfg.stateDir} 0750 root root -"
         "d ${cfg.stateDir}/postgres 0700 root root -"
         "h ${cfg.stateDir}/postgres - - - - +C"
+        "d ${cfg.stateDir}/redis 0755 root root -"
         "d ${cfg.stateDir}/thumbs 0755 root root -"
         "d ${cfg.stateDir}/encoded-video 0755 root root -"
         "d ${cfg.stateDir}/model-cache 0755 root root -"

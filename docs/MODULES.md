@@ -300,6 +300,7 @@ then, with the storage template on, moves them to
 | `/data/library/<label>` | `libraries.<label>` (one NAS export per user) | that user's originals, on their own export |
 | `/data/thumbs`, `/data/encoded-video` | `stateDir` (local disk) | regenerable, latency-sensitive |
 | Postgres data | `stateDir/postgres` (local disk) | upstream does not support Postgres on NFS |
+| Job queue (Valkey) | `stateDir/redis` (local disk) | pending jobs survive a container recreate; upstream's compose has no volume here and loses the queue on every `down`/deploy |
 
 A per-user mount is a separate filesystem, so the staging-to-library move
 fails with `EXDEV` and Immich falls back to copy-verify-delete: every upload

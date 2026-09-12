@@ -68,6 +68,12 @@ services:
     container_name: immich-redis
     restart: unless-stopped
 
+    # The job queue (BullMQ) lives here; without a volume a container
+    # recreate drops every queued job. Valkey snapshots on its default save
+    # points and again on a graceful stop.
+    volumes:
+      - "@STATE_DIR@/redis:/data"
+
     healthcheck:
       test: redis-cli ping | grep -q PONG || exit 1
 
