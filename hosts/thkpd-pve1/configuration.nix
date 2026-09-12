@@ -182,6 +182,11 @@ in
       "/mnt/immich/library/porscha" = nas "/mnt/Main/Data/userData/Porscha/Photos";
     };
 
+  # Swap is an NVMe btrfs file here, not zram: paging out an idle pve daemon
+  # costs a disk round-trip and stalls the web UI on next use. Prefer
+  # reclaiming page cache, which refills cheaply from the same NVMe.
+  boot.kernel.sysctl."vm.swappiness" = 10;
+
   services.proxmox-ve.bridges = [
     "vmbr0"
   ];
