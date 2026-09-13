@@ -136,11 +136,16 @@ in
         transcodingDevice = "renderD128";
         # Server, API and the job workers (exiftool x5, ffmpeg) do not fit
         # in 2g while a library import runs; the cgroup OOM-killer looped it.
-        memory.server = "4g";
+        # 4g was still short once the library passed ~15k assets: the working
+        # set is ~6g, so the cgroup swapped ~2.4g out and then OOM-killed.
+        memory.server = "8g";
         # Eight cores shared with three VMs: throttle the import-time queues.
+        # smartSearch is the exception -- it only POSTs thumbnails to the GPU
+        # host, so it is bound by round-trip latency, not by this host's CPU.
         jobConcurrency = {
           metadataExtraction = 2;
           thumbnailGeneration = 2;
+          smartSearch = 6;
         };
         machineLearning = {
           urls = [ "http://192.168.101.94:3003" ];
