@@ -376,9 +376,19 @@ transcode over to software ffmpeg.
 the job workers and every child they spawn (exiftool, ffmpeg, sharp). The
 2g default is enough for a settled library; an import runs the queues at
 full width and needs 4g or more, otherwise the cgroup OOM-killer restarts
-the container in a loop and each restart re-queues the same jobs.
+the container in a loop and each restart re-queues the same jobs. The
+requirement scales with library size, not just with import activity: past
+~15k assets the working set reaches ~6g, and a 4g cap pages the difference
+into swap before the OOM-killer takes it anyway, so budget 8g there.
+
 `jobConcurrency` trims the per-queue worker counts on hosts that share
-their cores with other work.
+their cores with other work. Trim only the queues that actually burn local
+CPU (`metadataExtraction`, `thumbnailGeneration`): `smartSearch` just POSTs
+thumbnails to `machineLearning.urls` and waits, so on a host with remote ML
+it wants a *higher* count than the default, and the ceiling is round-trip
+latency rather than cores. Check `vmstat` before tuning — a host doing
+everything over NFS shows a load average near its core count while user CPU
+sits at ~0%, which reads as saturation but is I/O wait.
 
 **Updates.** `version` is an exact tag. Immich ships breaking changes on
 minor versions and the mobile app follows the server, so bump with the
