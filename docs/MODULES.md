@@ -390,6 +390,12 @@ latency rather than cores. Check `vmstat` before tuning — a host doing
 everything over NFS shows a load average near its core count while user CPU
 sits at ~0%, which reads as saturation but is I/O wait.
 
+Memory that climbs with every asset during smart search, face detection or
+OCR, and only drops on a restart, is not a sizing problem: v3.2.0 leaks a
+preview's worth per request to a remote ML server. Raising `memory.server`
+only delays the OOM kill. thkpd-pve1 carries a restart watchdog for it until
+the fix ships — see `immich-ml-memory-leak` in `workarounds.nix`.
+
 **Updates.** `version` is an exact tag. Immich ships breaking changes on
 minor versions and the mobile app follows the server, so bump with the
 release notes; the Postgres image tag in `compose.yaml` moves with it when

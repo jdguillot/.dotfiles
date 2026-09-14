@@ -84,4 +84,49 @@
     '';
   };
   # END WORKAROUND(immich-ocr-vram)
+
+  # WORKAROUND(immich-ml-memory-leak)
+  immich-ml-memory-leak = {
+    title = "Restart immich-server before its remote-ML memory leak OOMs it";
+    added = "2026-09-14";
+    hosts = [ "thkpd-pve1" ];
+    problem = ''
+      Immich v3.2.0 never cancels the response body of its fetch calls to a
+      remote machine-learning server, so the server's node process keeps
+      roughly one preview image (300-600 KB) per asset sent to ML and only a
+      restart frees it. Smart search, face detection and OCR all leak.
+      thkpd-pve1 sends ML to ryzn-server, and after a library import ~57k
+      smart-search and face-detection jobs would grow the process well past
+      its 8g cgroup: the kernel SIGKILLs it mid-job, several times over.
+    '';
+    workaround = ''
+      A minutely systemd timer on thkpd-pve1 runs immich-memory-watchdog.sh,
+      which `docker restart`s immich-server (SIGTERM, 60s grace) once the
+      `immich` process passes 6.5G RSS and has been up at least 10 minutes.
+      The job queue lives in Valkey on disk, so work resumes after the
+      restart; only the in-flight jobs are retried.
+    '';
+    files = [
+      "hosts/thkpd-pve1/configuration.nix"
+      "hosts/thkpd-pve1/immich-memory-watchdog.sh"
+    ];
+    upstream = {
+      issue = "https://github.com/immich-app/immich/issues/31488";
+      fix = "https://github.com/immich-app/immich/pull/31523";
+    };
+    resolved = {
+      kind = "pr";
+      url = "https://github.com/immich-app/immich/pull/31523";
+    };
+    retire = "manual";
+    removal = ''
+      A merged PR is not enough: `cyberfighter.features.immich.version` is an
+      exact tag. Bump it to the first release that carries the fix and deploy,
+      then delete the fenced watchdog block in thkpd-pve1's configuration.nix,
+      delete hosts/thkpd-pve1/immich-memory-watchdog.sh and this entry. Before
+      trusting it, run Smart Search for "All" and confirm `immich` RSS on
+      thkpd-pve1 levels off instead of climbing per asset.
+    '';
+  };
+  # END WORKAROUND(immich-ml-memory-leak)
 }

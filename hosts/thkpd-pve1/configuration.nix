@@ -211,6 +211,38 @@ in
   networking.useNetworkd = true;
 
   systemd = {
+    # WORKAROUND(immich-ml-memory-leak)
+    # 6.5G leaves ~1.5G under the 8g cgroup for a restart to finish; the
+    # uptime guard stops a slow shutdown from chaining restarts.
+    services.immich-memory-watchdog = {
+      description = "Restart immich-server before its ML memory leak OOMs it";
+      path = [
+        pkgs.coreutils
+        pkgs.gawk
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = pkgs.replaceVarsWith {
+          name = "immich-memory-watchdog";
+          src = ./immich-memory-watchdog.sh;
+          isExecutable = true;
+          replacements = {
+            DOCKER = lib.getExe' config.virtualisation.docker.package "docker";
+            LIMIT_MB = "6656";
+            MIN_UPTIME = "600";
+          };
+        };
+      };
+    };
+    timers.immich-memory-watchdog = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "minutely";
+        AccuracySec = "10s";
+      };
+    };
+    # END WORKAROUND(immich-ml-memory-leak)
+
     network = {
 
       networks."10-lan" = {
