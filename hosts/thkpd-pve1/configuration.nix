@@ -142,8 +142,10 @@ in
         # Eight cores shared with three VMs: throttle the import-time queues.
         # smartSearch is the exception -- it only POSTs thumbnails to the GPU
         # host, so it is bound by round-trip latency, not by this host's CPU.
+        # metadataExtraction is exiftool (~12% of a core, ~100M each) plus DB
+        # writes; 2 left CPU ~50% idle while a 110k-job backlog drained.
         jobConcurrency = {
-          metadataExtraction = 2;
+          metadataExtraction = 4;
           thumbnailGeneration = 2;
           smartSearch = 6;
         };
