@@ -106,10 +106,15 @@ list-hosts ────┤                                 ├─> flake-check �
   run to start and end without racing it; it waits on per-host state instead,
   treating a host as settled once it has deployed the revision or reached a
   state that will not change on its own (failed or held at this revision,
-  paused, offline). The result is a table in the job summary. A host that did
-  not take the commit is a `::warning::`, never a failure: the build, the
-  checks and the cache push all succeeded, and a held or offline host is an
-  operational matter that the next kick clears by itself.
+  paused, offline). The result is a table in the job summary.
+
+  A host whose deploy **failed** fails the job with an `::error::`. The
+  agent records `failed` only when the deploy itself broke, and a failure
+  during activation means deploy-rs rolled the host back: the tree built, but
+  it does not run there, which is a broken deploy and not something to scroll
+  past on a green run. A held, paused or offline host, or one the agent had
+  not reached before the timeout, is a `::warning::` instead — nothing broke,
+  and an approval or the next kick clears it.
 
 ### Why the gate keeps `--no-build`
 

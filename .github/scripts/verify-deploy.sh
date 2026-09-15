@@ -12,10 +12,10 @@
 # revision, or reached a state that will not change without a human (failed
 # or held at this revision, paused).
 #
-# Not reaching a host is a warning, never a failure. The build, the checks
-# and the cache push all succeeded; a held or offline host is an operational
-# matter, not a broken tree, and failing here would make the run red for
-# something a later kick fixes on its own.
+# A host whose deploy failed fails the job: the agent only records `failed`
+# when the deploy itself broke, and on activation that means deploy-rs rolled
+# the host back. Held, paused, offline and not-yet-reached hosts stay
+# warnings -- nothing broke, and a later kick or approval clears them.
 #
 # Usage: verify-deploy.sh [rev]        # default: $GITHUB_SHA
 #   VERIFY_TIMEOUT   seconds to wait for stragglers (default 900)
@@ -79,22 +79,27 @@ rows=$(jq -r --arg rev "$rev" '
     ] | @tsv' <<<"$status")
 
 behind=""
+failed=""
 {
   echo "## Did the fleet take \`$short\`?"
   echo ""
   echo "| Host | Watch | State | Detail |"
   echo "|---|---|---|---|"
-  # A brace group and a here-string, not a pipe, so `behind` survives the loop.
+  # A brace group and a here-string, not a pipe, so the lists survive the loop.
   while IFS=$'\t' read -r host watch state detail; do
-    icon=$([ "$state" = switched ] && echo "✅" || echo "⚠️")
+    case "$state" in
+      switched) icon="✅" ;;
+      failed) icon="❌"; failed+="${failed:+, }$host" ;;
+      *) icon="⚠️"; behind+="${behind:+, }$host ($state)" ;;
+    esac
     echo "| \`$host\` | \`$watch\` | $icon $state | $detail |"
-    [ "$state" = switched ] || behind+="${behind:+, }$host ($state)"
   done <<<"$rows"
   echo ""
 } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 
-if [ -n "$behind" ]; then
-  echo "::warning::did not take ${short}: ${behind}"
-else
-  echo "every host is on ${short}"
+[ -z "$behind" ] || echo "::warning::did not take ${short}: ${behind}"
+if [ -n "$failed" ]; then
+  echo "::error::deploy of ${short} failed on: ${failed}"
+  exit 1
 fi
+[ -n "$behind" ] || echo "every host is on ${short}"
