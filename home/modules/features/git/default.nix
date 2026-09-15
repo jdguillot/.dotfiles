@@ -63,6 +63,13 @@ in
         };
       }
       // cfg.extraSettings;
+      # The public dotfiles repo's tracked hooks (.githooks/commit-msg).
+      includes = [
+        {
+          condition = "gitdir:~/.dotfiles/";
+          contents.core.hooksPath = ".githooks";
+        }
+      ];
     };
   };
 }

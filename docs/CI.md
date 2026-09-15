@@ -474,9 +474,19 @@ GitHub does not link and does not raise an event for, leaving the text
 readable and copy-pasteable. One filter over the finished body rather than
 each writer being trusted to have remembered.
 
+Commit messages need the same care, and they are where it has actually
+leaked: a workaround's commit message named its upstream issue, and the push
+put a "referenced" event on that issue. A commit message is plain text, not
+markdown, so a code span is no protection there. `sanitize-refs.sh --commit`
+spells references out in words instead (`owner/repo issue 123`), and the
+tracked `.githooks/commit-msg` hook runs it on every commit made in a clone
+whose `core.hooksPath` is `.githooks` — the Home Manager git module sets that
+for `~/.dotfiles`. A hook is client-side, so a clone without it (or a commit
+made with `--no-verify`) is not covered.
+
 Job summaries, artifacts and the ledger file are not issue bodies and raise
-no events, so those keep their real URLs. Ledger commit messages carry none
-by design.
+no events, so those keep their real URLs. The workflow's own commit
+messages (`chore: weekly update`, the ledger's) are fixed strings with none.
 
 #### What the agent can reach
 

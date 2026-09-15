@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Rewrites upstream issue/PR references in the commit message into words, so
+# pushing it does not post "jdguillot/.dotfiles referenced this issue" on
+# someone else's tracker. See .github/scripts/sanitize-refs.sh.
+#
+# Fails closed: a commit whose message could not be checked is not made.
+set -euo pipefail
+
+msg="$1"
+sanitize="$(git rev-parse --show-toplevel)/.github/scripts/sanitize-refs.sh"
+
+if ! out=$("$sanitize" --commit < "$msg"); then
+  echo "commit-msg: sanitize-refs.sh failed; commit aborted (--no-verify to bypass)" >&2
+  exit 1
+fi
+
+# $(...) drops trailing newlines; git's cleanup normalises them anyway.
+if [ "$out" != "$(cat "$msg")" ]; then
+  printf '%s\n' "$out" > "$msg"
+  echo "commit-msg: upstream issue/PR references rewritten so they do not link back" >&2
+fi

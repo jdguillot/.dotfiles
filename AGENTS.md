@@ -204,6 +204,13 @@ come from Nix packages, not ad-hoc installs.
   dotenv interpolation at activation time, never at eval time.
 - Before every commit, do a quick security pass over the diff: staged
   secrets, keys, internal URLs/hostnames, anything identifying.
+- No upstream issue/PR references in commit messages: a URL or
+  `owner/repo#N` posts a "referenced" event on the other project's
+  tracker when pushed. Write them out (`owner/repo issue N`); the tracked
+  `.githooks/commit-msg` hook rewrites any that slip through via
+  `.github/scripts/sanitize-refs.sh --commit`. It is active when
+  `core.hooksPath` is `.githooks` (set by the Home Manager git module) —
+  don't commit with `--no-verify`. URLs in files are fine.
 
 ## Documentation
 

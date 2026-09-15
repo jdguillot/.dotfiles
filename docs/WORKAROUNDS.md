@@ -70,6 +70,11 @@ re-deriving what the fix touched.
    `sanitize-refs.sh` before those URLs reach it.
 
 3. `git add` the register and the files, as with any new tracked content.
+   The commit message is the one place the upstream reference must not
+   go as a link: a URL or `owner/repo#N` there puts a "referenced" event on
+   the upstream issue when pushed. Write `owner/repo issue N`, or point at
+   the entry id. The `.githooks/commit-msg` hook rewrites any that slip
+   through (`docs/CI.md`, "Upstream references never leave a link behind").
 
 The id is a short kebab-case slug, used in the markers and the reports.
 Prose fields are for the person reading the weekly report months later and

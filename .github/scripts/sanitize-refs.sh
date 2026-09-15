@@ -10,11 +10,16 @@
 # else's tracker. A bare `#123` is a different bug with the same shape: it
 # links to *this* repo's PR 123 and cross-references that instead.
 #
-# References inside a code span are not linked and raise no event, so the
-# fix is to wrap rather than to strip: the reference stays readable and
-# copy-pasteable, it just stops being a link.
+# Markdown (the default), for issue and PR bodies: references inside a code
+# span are not linked and raise no event, so the fix is to wrap rather than
+# to strip -- the reference stays readable and copy-pasteable. Fenced blocks
+# are left alone, since backticks inside a fence render literally.
 #
-# Fenced blocks are left alone -- backticks inside a fence render literally.
+# --commit, for commit messages (.githooks/commit-msg): a commit message is
+# plain text, not markdown, so a code span is not markup there and cannot be
+# trusted to suppress the link. References are spelled out in words instead,
+# and fences get no exemption.
+#
 # Job summaries and files on a branch are not issue bodies and raise no
 # events, so they do not need this.
 #
@@ -24,7 +29,14 @@
 # that sed does not have. Oniguruma provides both.
 set -euo pipefail
 
-exec jq -R -s -j '
+mode=markdown
+case "${1:-}" in
+  "") ;;
+  --commit) mode=commit ;;
+  *) echo "usage: sanitize-refs.sh [--commit] < text" >&2; exit 2 ;;
+esac
+
+exec jq -R -s -j --arg mode "$mode" '
   def wrap:
     # A link to a specific issue or PR carries the whole reference; keep it
     # readable as owner/repo#N rather than a URL nobody reads anyway.
@@ -40,14 +52,26 @@ exec jq -R -s -j '
     # HTML entities (&#8212;) intact.
     | gsub("(?<![`\\w&/.-])(?<y>#[0-9]+)(?![`\\w])"; "`\(.y)`");
 
+  # The same three shapes, with the `#` or the URL gone. The URL is the one
+  # place the kind is known; longhand and bare refs could be either.
+  def spell:
+    gsub("https?://github\\.com/(?<o>[\\w.-]+)/(?<r>[\\w.-]+)/(?<k>issues|pull)/(?<n>[0-9]+)[^\\s<>()\\[\\]`]*";
+         "\(.o)/\(.r) \(if .k == "pull" then "PR" else "issue" end) \(.n)")
+    | gsub("(?<![\\w/.-])(?<o>[\\w.-]+)/(?<r>[\\w.-]+)#(?<n>[0-9]+)(?!\\w)"; "\(.o)/\(.r) issue/PR \(.n)")
+    | gsub("(?<![\\w&/.-])#(?<n>[0-9]+)(?!\\w)"; "issue/PR \(.n)");
+
   split("\n")
-  | reduce .[] as $line ({ fence: false, out: [] };
-      if ($line | test("^[[:space:]]*```")) then
-        .fence = (.fence | not) | .out += [$line]
-      elif .fence then
-        .out += [$line]
-      else
-        .out += [$line | wrap]
-      end)
-  | .out | join("\n")
+  | if $mode == "commit" then map(spell)
+    else
+      reduce .[] as $line ({ fence: false, out: [] };
+        if ($line | test("^[[:space:]]*```")) then
+          .fence = (.fence | not) | .out += [$line]
+        elif .fence then
+          .out += [$line]
+        else
+          .out += [$line | wrap]
+        end)
+      | .out
+    end
+  | join("\n")
 '
