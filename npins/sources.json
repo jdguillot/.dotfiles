@@ -142,9 +142,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "f908845cb949be182257f77d88f21c53c3c38bce",
-      "url": "https://github.com/hthienloc/dms-quick-capture/archive/f908845cb949be182257f77d88f21c53c3c38bce.tar.gz",
-      "hash": "sha256-iN7V9XfLXK/AsQzapuH07zWgBm3HZ1x0fDe3KWJqrEY="
+      "revision": "c48ba0cc72c1d7690c76dcb9bcc5ae3e262ecf8f",
+      "url": "https://github.com/hthienloc/dms-quick-capture/archive/c48ba0cc72c1d7690c76dcb9bcc5ae3e262ecf8f.tar.gz",
+      "hash": "sha256-QZfX0k9C+G4RXcLS0JJ+JdcaPpCUXcdmHGseaCGwjLc="
     },
     "dms-plugin-tailscale": {
       "type": "Git",
@@ -246,9 +246,9 @@
       },
       "branch": "dev",
       "submodules": false,
-      "revision": "934d23c0be29c9721385f34565c0ae2cbd60da04",
-      "url": "https://github.com/odysseus-dev/odysseus/archive/934d23c0be29c9721385f34565c0ae2cbd60da04.tar.gz",
-      "hash": "sha256-/kGtXHIP9XTMqxK7aP5BotnCKY1Zc9MVUFVd5w0HdMg="
+      "revision": "3b6c169162330cd35c4ce6d14949ef15fd3208a2",
+      "url": "https://github.com/odysseus-dev/odysseus/archive/3b6c169162330cd35c4ce6d14949ef15fd3208a2.tar.gz",
+      "hash": "sha256-iHjcuZbstrHTWUfPxpMrbjLA+zYl3f2zsfILkagCGGE="
     },
     "tmux-sessionx": {
       "type": "Git",
