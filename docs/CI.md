@@ -379,7 +379,10 @@ The scan reads it before the triage runs, and the model is given the
 standing holds as a document alongside the digest. A standing hold is not
 carried over automatically: the prompt asks for a fresh decision each week,
 and "it was held last week" is explicitly not evidence. The tracked issue
-is re-probed each run, so a merged fix releases the hold on its own.
+is re-probed each run, so a merged fix releases the hold on its own. A
+standing hold on a source that is no longer an input or pin is left out of
+that document: the verdict's name enum gives the model nowhere valid to put
+it, so it would re-file the hold under some other source's name.
 
 Each run also records what the people in those threads recommend doing
 about the hold, printed under "What upstream recommends".

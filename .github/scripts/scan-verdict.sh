@@ -52,8 +52,12 @@ names=$(jq -c '[.[].name]' "$sources")
 # nobody re-reads, or lapses silently because this week's evidence window
 # starts after the breakage.
 [ -s "$ledger" ] || echo '{"holds":{}}' > "$ledger"
-standing=$(jq -r '
-  if (.holds | length) == 0 then "None. Nothing is currently held."
+# A hold on a source that is no longer an input is dropped, not shown: the
+# enum leaves the model no valid name for it, so it re-files the hold under
+# whichever name it can -- a dropped niri-flake hold came back as nixpkgs.
+standing=$(jq -r --argjson names "$names" '
+  .holds |= with_entries(select(.key as $k | $names | index($k)))
+  | if (.holds | length) == 0 then "None. Nothing is currently held."
   else ( .holds | to_entries[] | .value as $v |
     "- `\(.key)`: held \($v.weeks) week(s), since \($v.first_seen). Reason on record: \($v.reason)."
     + (if ($v.upstream | length) > 0
