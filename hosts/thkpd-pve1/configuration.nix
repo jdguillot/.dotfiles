@@ -116,6 +116,48 @@ in
         retentionPeriod = "6 months";
       };
 
+      # Photo library. Originals land in each person's own TrueNAS home
+      # (mounted below, one export per user so the NAS maps the writes to
+      # that user's uid); DB dumps and upload staging go to the apps-owned
+      # export. ML runs on ryzn-server's GPU first, the local Iris Xe
+      # (OpenVINO) container is the fallback. Needs the `immich-env` sops
+      # secret and DNS for immich.cyberfighter.space -> 192.168.101.39.
+      immich = {
+        enable = true;
+        publicHost = "immich.cyberfighter.space";
+        dataDir = "/mnt/immich/data";
+        libraries = {
+          jonny = "/mnt/immich/library/jonny";
+          porscha = "/mnt/immich/library/porscha";
+        };
+        transcoding = "quicksync";
+        # renderD128 is the Iris Xe; renderD129 is the Quadro on nouveau,
+        # which iHD rejects and Immich would pick on its own.
+        transcodingDevice = "renderD128";
+        # Server, API and the job workers (exiftool x5, ffmpeg) do not fit
+        # in 2g while a library import runs; the cgroup OOM-killer looped it.
+        # 4g was still short once the library passed ~15k assets: the working
+        # set is ~6g, so the cgroup swapped ~2.4g out and then OOM-killed.
+        memory.server = "8g";
+        # Eight cores shared with three VMs: throttle the import-time queues.
+        # smartSearch is the exception -- it only POSTs thumbnails to the GPU
+        # host, so it is bound by round-trip latency, not by this host's CPU.
+        # metadataExtraction is exiftool (~12% of a core, ~100M each) plus DB
+        # writes; 2 left CPU ~50% idle while a 110k-job backlog drained.
+        jobConcurrency = {
+          metadataExtraction = 4;
+          thumbnailGeneration = 2;
+          smartSearch = 6;
+        };
+        machineLearning = {
+          urls = [ "http://192.168.101.94:3003" ];
+          local.device = "openvino";
+          # WORKAROUND(immich-ocr-vram)
+          ocr = false;
+          # END WORKAROUND(immich-ocr-vram)
+        };
+      };
+
       sops = {
         enable = true;
         defaultSopsFile = ../../secrets/secrets.yaml;
@@ -128,23 +170,38 @@ in
     "L+ /bin/true - - - - ${pkgs.coreutils}/bin/true"
   ];
 
-  # Attic chunk store (TrueNAS NFS export, dataset owned apps:apps 568).
-  # By IP: a hostname mount races the resolvconf restart during activation.
-  fileSystems."/mnt/attic-storage" = {
-    device = "192.168.101.41:/mnt/Main/Data/object-storage/attic";
-    fsType = "nfs";
-    options = [
-      # The NAS serves NFSv3 only (NFSv4 off in TrueNAS's NFS service).
-      "nfsvers=3"
-      "hard"
-      "noatime"
-      "_netdev"
-      # Mount on first access, not during the switch; a dead NAS then fails
-      # atticd, not the activation.
-      "x-systemd.automount"
-      "nofail"
-    ];
-  };
+  # TrueNAS NFS exports. By IP: a hostname mount races the resolvconf
+  # restart during activation. Mount on first access, not during the
+  # switch; a dead NAS then fails the service, not the activation.
+  fileSystems =
+    let
+      nas = export: {
+        device = "192.168.101.41:${export}";
+        fsType = "nfs";
+        options = [
+          # The NAS serves NFSv3 only (NFSv4 off in TrueNAS's NFS service).
+          "nfsvers=3"
+          "hard"
+          "noatime"
+          "_netdev"
+          "x-systemd.automount"
+          "nofail"
+        ];
+      };
+    in
+    {
+      # Attic chunk store (dataset owned apps:apps 568).
+      "/mnt/attic-storage" = nas "/mnt/Main/Data/object-storage/attic";
+
+      # Immich. Each export is restricted to this host on the NAS and
+      # `mapall`ed: data -> apps (568), each library -> its owner (Jonny
+      # 3011, Porscha 3012, group HomeUsers 3005), so the container's
+      # root writes arrive as that user. sec=sys sends the client uid; the
+      # NAS-side mapall is what makes the ownership, not anything here.
+      "/mnt/immich/data" = nas "/mnt/Main/Data/object-storage/immich";
+      "/mnt/immich/library/jonny" = nas "/mnt/Main/Data/userData/Jonny/Photos";
+      "/mnt/immich/library/porscha" = nas "/mnt/Main/Data/userData/Porscha/Photos";
+    };
 
   services.proxmox-ve.bridges = [
     "vmbr0"
@@ -154,6 +211,38 @@ in
   networking.useNetworkd = true;
 
   systemd = {
+    # WORKAROUND(immich-ml-memory-leak)
+    # 6.5G leaves ~1.5G under the 8g cgroup for a restart to finish; the
+    # uptime guard stops a slow shutdown from chaining restarts.
+    services.immich-memory-watchdog = {
+      description = "Restart immich-server before its ML memory leak OOMs it";
+      path = [
+        pkgs.coreutils
+        pkgs.gawk
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = pkgs.replaceVarsWith {
+          name = "immich-memory-watchdog";
+          src = ./immich-memory-watchdog.sh;
+          isExecutable = true;
+          replacements = {
+            DOCKER = lib.getExe' config.virtualisation.docker.package "docker";
+            LIMIT_MB = "6656";
+            MIN_UPTIME = "600";
+          };
+        };
+      };
+    };
+    timers.immich-memory-watchdog = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "minutely";
+        AccuracySec = "10s";
+      };
+    };
+    # END WORKAROUND(immich-ml-memory-leak)
+
     network = {
 
       networks."10-lan" = {

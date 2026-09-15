@@ -1,0 +1,42 @@
+# Immich machine learning (CLIP search, face detection, OCR). One file, two
+# roles: merged into the server project as a second -f file for the local
+# fallback container, or the whole project on a host that only serves ML
+# to another Immich. The server reaches it by service name in the first
+# case; the module's override file publishes the port in the second.
+# Docs: https://docs.immich.app/guides/remote-machine-learning
+
+services:
+  immich-machine-learning:
+    # Tag suffix selects the accelerated build (-openvino, -cuda, ...).
+    image: ghcr.io/immich-app/immich-machine-learning:@ML_IMAGE_TAG@
+    container_name: immich-machine-learning
+    restart: unless-stopped
+
+    # One of [cpu, openvino, cuda, rocm, ...] from the vendored upstream file.
+    extends:
+      file: /etc/immich/hwaccel.ml.yml
+      service: "@ML_DEVICE@"
+
+    environment:
+      # Seconds an idle model stays loaded; the memory returns after that.
+      MACHINE_LEARNING_MODEL_TTL: "@ML_MODEL_TTL@"
+
+    volumes:
+      - "@ML_CACHE_DIR@:/cache"
+
+    deploy:
+      resources:
+        limits:
+          memory: "@ML_MEM@"
+
+    healthcheck:
+      disable: false
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - default

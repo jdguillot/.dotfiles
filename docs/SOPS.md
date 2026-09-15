@@ -232,6 +232,7 @@ Current hosts use SOPS for things like:
 - Playit and Astroneer secrets on `vm-gameserver-nix`
 - shared personal identity values for Home Manager
 - encrypted SSH host aliases consumed by the Home Manager SSH module
+- dotenv blobs for compose projects (`litellm-env`, `immich-env`, `attic-env`), staged into the unit's runtime directory and interpolated by compose
 
 ## If a secret reaches the public repo
 

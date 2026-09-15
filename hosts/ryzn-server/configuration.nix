@@ -203,6 +203,11 @@
         exposeToContainers = true;
 
         groupMembers = [ "cyberfighter" ];
+
+        # 2GiB left unallocated for Immich's ML container (~1.5GiB with its
+        # CUDA context). Ollama fixes a model's GPU/CPU split at load time,
+        # so without this the 27B gets offloaded whenever ML is resident.
+        environmentVariables.OLLAMA_GPU_OVERHEAD = "2147483648";
       };
 
       # Team gateway for Ollama: per-user keys and model allowlist
@@ -436,6 +441,14 @@
       };
 
       graphics.nvidia.containerToolkit = true;
+
+      # CLIP/face/OCR inference for thkpd-pve1's Immich, on the 5090; only
+      # that host may reach the (unauthenticated) port.
+      immich.mlServer = {
+        enable = true;
+        device = "cuda";
+        allowedClients = [ "192.168.101.39" ];
+      };
 
     };
   };

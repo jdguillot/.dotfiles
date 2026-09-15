@@ -32,7 +32,7 @@
       "gothCornerRadiusValue": 12,
       "gothCornersEnabled": false,
       "hoverPopoutDelay": 85,
-      "hoverPopouts": true,
+      "hoverPopouts": false,
       "iconScale": 0.87,
       "id": "default",
       "innerPadding": 0,
@@ -185,6 +185,7 @@
       "allowWithoutTrigger": false
     }
   },
+  "lockPamExternallyManaged": true,
   "osdPowerProfileEnabled": true,
   "screenPreferences": {
     "wallpaper": [

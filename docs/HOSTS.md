@@ -8,9 +8,9 @@ This page summarizes the current flake outputs, the folders they come from, the 
 | --- | --- | --- | --- | --- | --- | --- |
 | `razer-nixos` | `desktop` | `dev` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
 | `sys-galp-nix` | `desktop` | — | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
-| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | Plasma 6 workstation on an RTX 5090: local inference (Ollama + Hermes), ComfyUI container, gaming, lanzaboote Secure Boot, SOPS |
+| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | Plasma 6 workstation on an RTX 5090: local inference (Ollama + Hermes), ComfyUI container, Immich ML server for `thkpd-pve1`, gaming, lanzaboote Secure Boot, SOPS |
 | `work-nix-wsl` | `wsl` | `dev` | `hosts/work-nix-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
-| `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, Tailscale, and SOPS |
+| `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, traefik, attic, Immich (originals on TrueNAS NFS, ML on `ryzn-server`), Tailscale, and SOPS |
 | `simple-vm` | `minimal` | — | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
 | `vm-gameserver-nix` | `minimal` | — | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer server VM with Ludusavi, Playit, Tailscale, and SOPS |
 
