@@ -1,12 +1,12 @@
 {
-  "updated": "2026-09-11",
+  "updated": "2026-09-15",
   "holds": {
-    "niri": {
-      "first_seen": "2026-09-09",
-      "last_seen": "2026-09-11",
-      "weeks": 3,
+    "nixpkgs": {
+      "first_seen": "2026-09-15",
+      "last_seen": "2026-09-15",
+      "weeks": 1,
       "origin": "scan",
-      "reason": "The flake selects the wrong libdisplay-info version for each niri source's Cargo.lock, causing a broken build, and the fix (PR #1853) is still open and unmerged with zero new commits upstream this week.",
+      "reason": "The niri flake selects the wrong libdisplay-info version for each niri source's Cargo.lock, causing a broken build, and the fix (PR #1853) remains open with no new upstream movement.",
       "upstream": [
         {
           "url": "https://github.com/sodiboo/niri-flake/pull/1853",
@@ -15,10 +15,21 @@
           "comments": 4
         }
       ],
-      "stalled_weeks": 2
+      "recommendation": {
+        "recommendation": "Switch the niri flake input from `sodiboo/niri-flake` to `epireyn/niri-flake`, which the upstream niri maintainers endorsed and merged into the project's Getting Started guide.",
+        "standing": "maintainer-endorsed",
+        "basis": "sodiboo (maintainer of `sodiboo/niri-flake`) APPROVED niri-wm/niri#4404 and explicitly stated he is no longer keeping his flake up to date and is fine with pointing users to an actively-maintained alternative (17 hearts on that comment); YaLTeR (maintainer of `niri-wm/niri`) co-managed the PR, which was merged 2026-08-13. A competing suggestion by bugeats (no role, PR author on the tracked issue) to use their own fork `bugeats/niri-flake` collected 3 +1 reactions but ranks lower because it is a single unendorsed fork (0 stars, no maintainer involvement) versus the maintainer-approved, merged upstream recommendation. Caveat from the endorsed party: epireyn (no role) confirmed they will only update the flake after a niri release is published and based solely on its changelog, so the delay between a release and the flake update may be longer than with the original.",
+        "as_of": "2026-09-15"
+      },
+      "stalled_weeks": 0
     }
   },
   "released": [
+    {
+      "name": "niri",
+      "weeks": 3,
+      "released": "2026-09-15"
+    },
     {
       "name": "dms",
       "weeks": 2,
