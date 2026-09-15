@@ -29,6 +29,9 @@ let
     name = "auto-reboot";
     src = ./auto-reboot.sh;
     isExecutable = true;
+    # replaceVarsWith is strictDeps: patchShebangs only finds interpreters in
+    # buildInputs, and a unit's PATH has no bash for `env` to find.
+    buildInputs = [ pkgs.bash ];
     replacements = shared // {
       WARNING = toString cfg.warningMinutes;
       READLINK = lib.getExe' pkgs.coreutils "readlink";
@@ -43,6 +46,7 @@ let
     src = ./reboot-postpone.sh;
     dir = "bin";
     isExecutable = true;
+    buildInputs = [ pkgs.bash ];
     replacements = shared // {
       DEFAULT = cfg.postpone.duration;
       MAX = toString cfg.postpone.max;

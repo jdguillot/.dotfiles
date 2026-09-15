@@ -231,6 +231,9 @@ in
           name = "immich-memory-watchdog";
           src = ./immich-memory-watchdog.sh;
           isExecutable = true;
+          # replaceVarsWith is strictDeps: patchShebangs only finds interpreters
+          # in buildInputs, and a unit's PATH has no bash for `env` to find.
+          buildInputs = [ pkgs.bash ];
           replacements = {
             DOCKER = lib.getExe' config.virtualisation.docker.package "docker";
             LIMIT_MB = "6656";
