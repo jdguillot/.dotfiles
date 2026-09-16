@@ -228,6 +228,10 @@ Useful aliases from the Home Manager shell module:
 - `np` - update npins pins (all, or `np <name>` for one)
 - `nb` - build for next boot and switch Home Manager
 
+All five run through the `cf-nix` wrapper, which prints a banner at the top
+of each stage (`ns` and `nb` print one for the system rebuild and one for
+the Home Manager switch).
+
 ## Deployment
 
 ### `deploy-rs`

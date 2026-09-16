@@ -54,7 +54,12 @@ Useful aliases defined by the Home Manager shell module:
 - `ns` - system rebuild plus matching Home Manager switch
 - `hs` - Home Manager switch only
 - `nu` - `nix flake update`
-- `nb` - build without switching
+- `np` - `npins update` (all pins, or `np <name>` for one)
+- `nb` - build for next boot plus Home Manager switch
+
+Each alias runs through the `cf-nix` wrapper, which banners every stage;
+`ns` and `nb` therefore print one banner for the system rebuild and another
+when the Home Manager switch starts.
 
 ### Rate-limited GitHub fetches (work network)
 

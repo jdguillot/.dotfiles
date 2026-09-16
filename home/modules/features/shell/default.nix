@@ -1,12 +1,24 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
 let
   cfg = config.cyberfighter.features.shell;
   inherit (config.cyberfighter) profile;
+
+  # Wrapper behind the rebuild/update aliases: one banner per stage, so the
+  # two-stage runs (system, then home) are easy to find in scrollback.
+  cfNix = pkgs.writeShellApplication {
+    name = "cf-nix";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.ncurses
+    ];
+    text = builtins.readFile ./cf-nix.sh;
+  };
 in
 {
   imports = [
@@ -94,6 +106,8 @@ in
 
     (lib.mkIf cfg.enable {
       home = {
+        packages = [ cfNix ];
+
         sessionVariables = {
           ## Editor
           EDITOR = "nvim";
@@ -115,12 +129,13 @@ in
           pysrc = ". .venv/bin/activate";
           pynew = "python -m venv .venv && pysrc && pip install -r requirements";
 
-          ns = "sudo nixos-rebuild switch --flake ~/.dotfiles && home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
-          hs = "home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
-          nu = "nix flake update --flake ~/.dotfiles";
+          # cf-nix banners each stage; $CF_DOTFILES overrides the flake path.
+          ns = "cf-nix switch";
+          hs = "cf-nix home";
+          nu = "cf-nix update";
           # `np` updates all pins, `np <name>` just one.
-          np = "npins -d ~/.dotfiles/npins update";
-          nb = "sudo nixos-rebuild boot --flake ~/.dotfiles && home-manager switch --flake ~/.dotfiles#$USER@$(hostname -s)";
+          np = "cf-nix pins";
+          nb = "cf-nix boot";
 
           myip = "curl http://ip-api.com/json/ -s | jq";
 

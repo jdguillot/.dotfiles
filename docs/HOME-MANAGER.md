@@ -108,7 +108,12 @@ Notes:
 
 Notes:
 
-- The shell module defines shared aliases such as `ns`, `hs`, `nu`, and `nb`.
+- The shell module defines shared aliases such as `ns`, `hs`, `nu`, `np` and
+  `nb`. They all call the `cf-nix` wrapper
+  (`home/modules/features/shell/cf-nix.sh`), which prints a banner ahead of
+  each stage — two for `ns`/`nb`, one for the system rebuild and one for the
+  Home Manager switch. Extra args pass through to the underlying commands,
+  and `$CF_DOTFILES` overrides the flake path (default `~/.dotfiles`).
 - WSL-specific shell path setup is layered in through `cyberfighter.wsl.*`, not through the shell module directly.
 
 ## Terminal submodules
