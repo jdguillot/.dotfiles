@@ -129,4 +129,64 @@
     '';
   };
   # END WORKAROUND(immich-ml-memory-leak)
+
+  # WORKAROUND(opencode-1-18-30-prompt-crash)
+  opencode-1-18-30-prompt-crash = {
+    title = "opencode held at 1.18.21: 1.18.30+ crashes before every prompt";
+    added = "2026-09-15";
+    hosts = [
+      "razer-nixos"
+      "ryzn-server"
+      "work-nix-wsl"
+    ];
+    problem = ''
+      opencode 1.18.30 throws `TypeError: undefined is not an object
+      (evaluating 'a.name')` inside SystemPrompt.environment, on every
+      prompt, before any request reaches the model provider. Reporters trace
+      it to an undefined node in an Effect layer graph assembled while
+      booting the session directory's location service. The TUI and `run`
+      both surface it as `UnknownError: Unexpected server error`, which reads
+      like the model endpoint failed -- it is opencode's own local server
+      reporting its crash, and it sent the operator here chasing a healthy
+      Ollama on ryzn-server. Reproduces on an empty project with a stub
+      config, an isolated HOME, and any provider. 1.18.31 does not fix it.
+    '';
+    workaround = ''
+      modules/features/packages/default.nix overlays `opencode` from the
+      `nixpkgs-opencode` flake input, pinned to nixpkgs c27cdad4 (opencode
+      1.18.21, the last packaged version before the regression). Verified by
+      running `opencode run -m ollama/qwen3.8:27b-q4_K_M` against
+      ryzn-server. The pin is system-wide; the home-manager module sets
+      `package = null` and only writes config, so it needs no change.
+    '';
+    files = [
+      "flake.nix"
+      "modules/features/packages/default.nix"
+    ];
+    upstream = {
+      issue = "https://github.com/anomalyco/opencode/issues/48372";
+    };
+    resolved = {
+      kind = "release";
+      repo = "anomalyco/opencode";
+      minVersion = "1.18.32";
+      prerelease = false;
+    };
+    retire = "manual";
+    removal = ''
+      The probe only says upstream cut a release past the two known-broken
+      ones -- it cannot say the crash is gone, and the issue reports are
+      scattered across half a dozen duplicates with no canonical one to
+      close, so no probe can. When it fires, re-test by hand: build the
+      candidate (`nix build nixpkgs#opencode`) and run `opencode run -m
+      <any model> "Reply with exactly: PONG"` in an empty directory. A PONG
+      means the fix shipped. Then delete the fenced overlay in
+      modules/features/packages/default.nix, the now-unused `inputs` argument
+      in that file's header if nothing else uses it, the fenced input in
+      flake.nix, `nixpkgs-opencode` from flake.lock (`nix flake update`), and
+      this entry. A crash instead means the release is another broken one:
+      leave the pin and note the version here.
+    '';
+  };
+  # END WORKAROUND(opencode-1-18-30-prompt-crash)
 }

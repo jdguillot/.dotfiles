@@ -7,6 +7,13 @@
 
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
 
+    # WORKAROUND(opencode-1-18-30-prompt-crash)
+    # Last nixpkgs revision carrying an opencode before the 1.18.30
+    # SystemPrompt.environment regression. Pinned by revision, not a
+    # channel: any newer channel has the broken build.
+    nixpkgs-opencode.url = "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410";
+    # END WORKAROUND(opencode-1-18-30-prompt-crash)
+
     # Home-manager using the same nixpkgs
     home-manager = {
       url = "github:nix-community/home-manager";
