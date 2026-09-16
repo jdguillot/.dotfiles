@@ -299,6 +299,18 @@ Watching all several hundred installed packages would defeat the purpose:
 the API traffic aside, the digest would swamp the model's context with
 noise and bury the one thing the section was added to surface.
 
+Each entry also reports what this flake *installs*, read through a host's
+`pkgs` so overlays apply. When that differs from what the pinned nixpkgs
+ships, the package is pinned here and the digest says so. Without it the
+section reports a version nothing on these machines runs — and invites the
+model to recommend a fix that is already in the tree. `opencode` is exactly
+that case today: nixpkgs ships 1.18.30, these machines run 1.18.21.
+
+The long form goes into `digest.md` for the model; a compact table goes to
+`packages.md`, which the scan's job summary and the pull request body both
+print. The digest is an artifact nobody downloads, and a check whose result
+is only in an artifact is not a check anyone reads.
+
 `.github/scripts/scan-verdict.sh` hands the digest and the list of staged
 commits to the local model on this host's loopback Ollama and gets back a
 list of inputs to hold at their current revision, plus a short paragraph

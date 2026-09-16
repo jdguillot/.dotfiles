@@ -28,7 +28,10 @@
 # people are currently shouting about -- the answer to which may be to hold
 # nixpkgs, or to pin that one package (docs/WORKAROUNDS.md).
 #
-# Appends to $OUT_DIR/digest.md and writes $OUT_DIR/packages.json.
+# Appends the long form to $OUT_DIR/digest.md for the model, and writes
+# $OUT_DIR/packages.json plus $OUT_DIR/packages.md -- a compact table for
+# the job summary and the pull request body, because the digest is an
+# artifact nobody downloads and a section nobody reads is not a check.
 set -uo pipefail
 
 OUT_DIR="${OUT_DIR:-upstream-signal}"
@@ -43,6 +46,7 @@ FALLBACK_DAYS="${PACKAGE_FALLBACK_DAYS:-21}"
 mkdir -p "$OUT_DIR"
 digest="$OUT_DIR/digest.md"
 out="$OUT_DIR/packages.json"
+table="$OUT_DIR/packages.md"
 
 echo '[]' > "$out"
 [ -s "$WATCHED" ] || { echo "package-signal: no $WATCHED, nothing watched" >&2; exit 0; }
@@ -66,6 +70,20 @@ fi
 # moving past the breakage that pinned it.
 version_at() {
   nix eval --raw "github:NixOS/nixpkgs/$1#$2.version" 2>/dev/null || true
+}
+
+# ...which leaves the opposite question unanswered: what does this flake
+# actually install? Read through a host's pkgs, so any overlay in the tree
+# is applied. When the two disagree the package is pinned here, and saying
+# so is the difference between "upstream shipped a bad version" and "we
+# already dealt with it" -- without this the digest reports a version
+# nothing on these machines runs, and the model is invited to recommend a
+# fix that is already in the tree.
+first_host=$(nix eval .#nixosConfigurations --apply builtins.attrNames --json 2>/dev/null \
+  | tr -d '[]" ' | tr ',' '\n' | grep . | head -1)
+installed_version() {
+  [ -n "$first_host" ] || return 0
+  nix eval --raw ".#nixosConfigurations.$first_host.pkgs.$1.version" 2>/dev/null || true
 }
 
 VER='def ver: ltrimstr("v") | split(".") | map(tonumber? // 0);'
@@ -104,6 +122,7 @@ while read -r attr repo why; do
 
   have=$(version_at "$rev" "$attr")
   want=$(version_at "$ref" "$attr")
+  installed=$(installed_version "$attr")
 
   if [ -z "$have" ] || [ -z "$want" ]; then
     {
@@ -126,6 +145,11 @@ while read -r attr repo why; do
     echo "- upstream repo: \`$repo\`"
     echo "- pinned nixpkgs (${rev:0:12}) has: **$have**"
     echo "- \`$ref\` would bring: **$want**"
+    if [ -n "$installed" ] && [ "$installed" != "$have" ]; then
+      echo "- **this flake overrides it to $installed** — it is pinned here"
+      echo "  (see \`workarounds.nix\`), so what nixpkgs ships does not reach"
+      echo "  these machines until that pin is removed."
+    fi
     echo ""
   } >> "$digest"
 
@@ -133,7 +157,9 @@ while read -r attr repo why; do
     echo "_No version change this week._" >> "$digest"
     echo "" >> "$digest"
     results=$(jq --arg a "$attr" --arg s "$repo" --arg h "$have" \
-      '. + [{attr: $a, repo: $s, state: "unchanged", have: $h, want: $h}]' <<<"$results")
+      --arg i "$installed" \
+      '. + [{attr: $a, repo: $s, state: "unchanged", have: $h, want: $h,
+             installed: (if $i == "" then null else $i end)}]' <<<"$results")
     echo "::endgroup::"
     continue
   fi
@@ -203,11 +229,40 @@ while read -r attr repo why; do
   results=$(jq --arg a "$attr" --arg s "$repo" --arg h "$have" --arg w "$want" \
     --argjson issues "$(jq 'length' <<<"$issues")" \
     --argjson loud "$(jq '[.items[]? | select(.comments >= 5)] | length' <<<"$loud")" \
+    --arg i "$installed" \
     '. + [{attr: $a, repo: $s, state: "changed", have: $h, want: $w,
-           issues: $issues, busy_threads: $loud}]' \
+           issues: $issues, busy_threads: $loud,
+           installed: (if $i == "" then null else $i end)}]' \
     <<<"$results")
   echo "::endgroup::"
 done < <(jq -r '.[] | [.attr, .repo, .why] | @tsv' "$WATCHED")
 
 printf '%s\n' "$results" > "$out"
-echo "Collected $(jq 'length' "$out") watched package(s) into $digest."
+
+# The compact form. `installed` is only worth a column when it differs from
+# what nixpkgs ships, which is exactly the pinned case.
+{
+  echo "### Watched packages"
+  echo ""
+  echo "| Package | pinned nixpkgs | incoming | installed here |"
+  echo "|---|---|---|---|"
+  jq -r '.[]
+    | "| `\(.attr)` "
+    + "| \(.have // "?") "
+    + "| " + (if .state == "unchanged" then "_unchanged_"
+              elif .state == "changed" then (.want // "?")
+              else "_" + .state + "_" end) + " "
+    + "| " + (if (.installed // null) == null then "—"
+              elif .installed == .have then "—"
+              else .installed + " ⚠ pinned" end)
+    + " |"' "$out"
+  echo ""
+  if jq -e 'any(.[]; (.installed // null) != null and .installed != .have)' "$out" >/dev/null; then
+    echo "A pinned package does not take what nixpkgs ships until the pin in"
+    echo "\`workarounds.nix\` is removed, so its version columns are upstream"
+    echo "news, not a change to these machines."
+    echo ""
+  fi
+} > "$table"
+
+echo "Collected $(jq 'length' "$out") watched package(s) into $digest and $table."

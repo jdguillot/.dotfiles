@@ -175,6 +175,10 @@ jobs:
             else
               echo "Nothing held back."
             fi
+            if [ -s upstream-signal/packages.md ]; then
+              echo ""
+              cat upstream-signal/packages.md
+            fi
             if [ -s upstream-signal/release-notes.md ]; then
               echo ""
               echo "## Release notes preview"
@@ -681,6 +685,11 @@ jobs:
               echo "## What landed upstream"
               echo ""
               cat upstream-signal/release-notes.md
+              echo ""
+            fi
+
+            if [ -s upstream-signal/packages.md ]; then
+              cat upstream-signal/packages.md
               echo ""
             fi
 
