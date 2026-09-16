@@ -186,6 +186,7 @@
     }
   },
   "lockPamExternallyManaged": true,
+  "networkPreference": "wifi",
   "osdPowerProfileEnabled": true,
   "screenPreferences": {
     "wallpaper": [
