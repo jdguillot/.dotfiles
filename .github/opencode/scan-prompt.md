@@ -7,6 +7,9 @@ before it is applied. You are given:
   requests touched in that window
 - the staged commits the user is working on in `staging/*` branches,
   which have already been merged into the tree being built this week
+- a short list of watched nixpkgs *packages*: what version the pinned
+  nixpkgs has, what the tracked branch would bring in, and what people
+  have filed upstream about the versions in between
 
 Decide, per source, whether to bump it this week or hold it at its current
 revision. Return holds only.
@@ -35,6 +38,27 @@ pull request opens unless they all pass. So a hold is for breakage that
 evidence predicts, not for risk in general. Holding everything is as wrong
 as holding nothing, and a false hold silently freezes a dependency for a
 week.
+
+## Watched packages
+
+The watched packages are not sources and cannot be held: they ship inside
+nixpkgs and move when it moves. They are there because a version being
+broken is cheap to see upstream and expensive to discover here — the list
+is short precisely because it is the handful where that is true.
+
+Treat them as evidence about `nixpkgs`, not as candidates:
+
+- a package whose version is unchanged this week needs no comment
+- filed reports that are ordinary for a busy project — feature requests,
+  provider outages, layout complaints, one person's configuration — mean
+  nothing
+- reports concentrated on the *incoming* version, saying it crashes on
+  startup or fails on every use, are worth acting on. Say so in `summary`,
+  name the version and the issue, and say that pinning that one package
+  (the workaround register) is the narrow fix. Recommend holding `nixpkgs`
+  for it only if the package is one the machines cannot go a week without;
+  holding all of nixpkgs to avoid one bad program is usually the worse
+  trade, and the summary is the right place to say which you think it is.
 
 ## Sources that are already held
 

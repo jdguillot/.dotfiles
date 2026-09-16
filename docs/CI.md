@@ -239,6 +239,66 @@ never `locked` — half these inputs pin one (`nixos-25.11`, `legacy-v4`,
 `stable`, `v1.1.0`), and comparing those against `HEAD` would diff them
 against master.
 
+#### Watched packages
+
+The script above only sees what this repo *pins*. A program that merely
+ships inside nixpkgs is not a source: it has no entry in either lockfile,
+its version moves when nixpkgs moves, and its own issue tracker belongs to
+a repository nothing in the scan reads. nixpkgs also moves thousands of
+commits a week, well past the digest's noise cap, so the one commit that
+bumps it is not in the digest either.
+
+That gap has a cost: opencode 1.18.30 — which throws before every prompt,
+and had been reported dozens of times — arrived in a bump that passed every
+gate, because nothing asked its tracker anything.
+
+`.github/scripts/collect-package-signal.sh` closes it for a short,
+hand-picked list in `.github/watched-packages.json` (`attr`, the upstream
+`repo`, and `why` it is watched). `repo` carries its forge —
+`github:anomalyco/opencode` — rather than assuming one: plenty of nixpkgs
+packages are developed on GitLab, Codeberg or a project's own forge, and a
+bare `owner/repo` would quietly ask GitHub about a repository that is not
+there. Only `github:` is implemented; another forge is named in the digest
+and skipped, and an entry with no prefix is refused, both of which beat an
+empty section that reads as "nothing was filed".
+
+Per entry it evaluates the version at the
+pinned nixpkgs revision and at the branch that revision tracks; when they
+differ it lists the releases in between and reads the tracker twice — the
+threads with the most comments since the current release (the search API's
+`sort=comments`, which is what "this release is on fire" actually looks
+like), then the most recently touched. Both go into the same `digest.md`
+the model reads.
+
+Two deliberate choices. Versions are read straight from a nixpkgs
+revision, never through this repo's `nixosConfigurations`: a package pinned
+by an overlay would otherwise report its pinned version forever and hide
+the upstream moving past the breakage that pinned it. And the root's
+nixpkgs is resolved through `.nodes[.root].inputs.nixpkgs` — `.nodes.nixpkgs`
+belongs to whichever transitive node claimed the name first, which on this
+lock is a months-old revision from another flake.
+
+A watched package cannot be held: holding it means holding `nixpkgs`
+entirely. The list is advice to the triage model and to whoever reads the
+pull request, and the narrow remedy for a bad release is a pin in the
+workaround register (`docs/WORKAROUNDS.md`), not a hold.
+
+What earns a slot is a program where a bad release is expensive *and* the
+breakage would not show up in a build. Most of this repo's fast-moving
+software does not qualify, because it comes from flake inputs — niri, DMS,
+dgop, dank-greeter, deploy-rs and gaze are all watched already by the
+script above. The list is therefore short by construction:
+
+| Package | Why |
+|---|---|
+| `opencode` | the fix stage runs on it; it ships several times a week |
+| `claude-code` | same class: an agent CLI that fails at runtime, not at build time |
+| `ollama` | serves the verdict, the release notes and the fix agent — and every one of those fails *open*, so a broken ollama degrades this workflow silently |
+
+Watching all several hundred installed packages would defeat the purpose:
+the API traffic aside, the digest would swamp the model's context with
+noise and bury the one thing the section was added to surface.
+
 `.github/scripts/scan-verdict.sh` hands the digest and the list of staged
 commits to the local model on this host's loopback Ollama and gets back a
 list of inputs to hold at their current revision, plus a short paragraph
@@ -293,6 +353,23 @@ fix step below needs the failing tree and the failing log in one workspace,
 and a matrix job cannot hand its working tree to the next job. It builds
 every host even after one fails, so a single run surfaces every breakage the
 bump caused.
+
+Before any of that, `.github/scripts/opencode-smoke.sh` asks the runner's
+opencode to answer one trivial prompt, in an empty directory, with `--pure`
+and no MCP, against the small model on the loopback Ollama. Preflight
+proves opencode is *installed*; this proves it *works*, and the two are not
+the same thing — opencode 1.18.30 builds perfectly and throws on every
+prompt. It exits 2 when the model server (or curl) is missing, so an
+outage there does not read as opencode being broken.
+
+It runs unconditionally, on green weeks too. That is the point: the fix
+stage is only reached after a build has already failed, so without this a
+broken opencode is discovered at the worst possible moment, and a week
+where nothing failed never finds out at all. A failure raises a warning
+annotation, writes the reason into the job summary, and **skips the fix
+step** — which would otherwise spend its whole budget producing nothing
+while holding the concurrency group and the GPU. The summary then says the
+breakage went unexamined, rather than blaming an agent that never ran.
 
 If that fails, `opencode run --auto` gets the failure log and
 `.github/opencode/fix-prompt.md`. The prompt gives it two legitimate

@@ -77,7 +77,9 @@ jobs:
           fetch-depth: 0
 
       - name: Preflight
-        run: .github/scripts/preflight.sh gh jq curl git
+        # nix: the watched-package step evaluates versions out of two nixpkgs
+        # revisions, which is the only thing in this job that needs it.
+        run: .github/scripts/preflight.sh gh jq curl git nix
 
       # Pull in the staging work first, before asking the LLM to reason
       # about anything. The LLM is looking at two documents: the upstream
@@ -93,6 +95,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/collect-upstream-signal.sh
+
+      # Packages, not pins. The step above only sees what this repo pins;
+      # nothing there reads the tracker of a program that merely ships inside
+      # nixpkgs, which is how a version broken on every prompt arrived in a
+      # green bump. Appends to the same digest the model reads.
+      - name: Collect watched package signal
+        if: ${{ !inputs.skip-scan }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/collect-package-signal.sh
 
       # Before the model, because a hold that has already stood for weeks is
       # the strongest thing the model can be told about a source -- and the
@@ -206,6 +219,45 @@ jobs:
         # the ledger's advisory recommendation pass, which fails open.
         run: .github/scripts/preflight.sh jq nix npins git gh opencode -- mcp-nixos curl
 
+      # Preflight proves opencode is installed; this proves it works. The
+      # difference is not academic: nixpkgs shipped a version that builds
+      # fine and throws on every prompt, and because the fix stage only runs
+      # after a build has already failed, a green week never found out.
+      # Unconditional, so a week that needs no fix still reports it.
+      - name: Smoke-test opencode
+        id: smoke
+        continue-on-error: true
+        env:
+          # The cache the fix step's HOME will use, so the round trip here
+          # fetches opencode's provider package once and the agent -- if it
+          # is needed at all -- starts against a warm cache.
+          OPENCODE_SMOKE_CACHE: ${{ runner.temp }}/agent-home/.cache
+        run: |
+          if .github/scripts/opencode-smoke.sh 2>smoke.log; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            rc=$?
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            if [ "$rc" = 2 ]; then
+              reason="no model server on the runner"
+            else
+              reason="opencode failed its smoke test"
+            fi
+            echo "reason=$reason" >> "$GITHUB_OUTPUT"
+            echo "::warning::$reason; the fix stage will be skipped"
+            {
+              echo "## The fix agent is unavailable this week"
+              echo ""
+              echo "$reason, so a build failure will be reported rather than"
+              echo "adapted to. The bump itself is unaffected."
+              echo ""
+              echo '```'
+              cat smoke.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          rm -f smoke.log
+
       - name: Keep the run's scratch files out of the commit
         # The commit below has to stage whatever the fix agent touched, so it
         # cannot enumerate paths and uses `git add -A`. These exclusions are
@@ -221,6 +273,7 @@ jobs:
           /boot-post.json
           /reboot-notes.md
           /build-failure.log
+          /smoke.log
           /fix-notes.md
           /late-holds.json
           /holds.json
@@ -296,7 +349,14 @@ jobs:
 
       - name: Let the agent try to adapt the repo
         id: fix
-        if: steps.changed.outputs.changed == 'true' && steps.verify.outcome == 'failure'
+        # Not attempted when opencode cannot answer a prompt: it would spend
+        # the whole budget producing nothing, holding the concurrency group
+        # and the GPU, and the run would report "the agent did not reach a
+        # green tree" for a reason that has nothing to do with the tree.
+        if: >-
+          steps.changed.outputs.changed == 'true' &&
+          steps.verify.outcome == 'failure' &&
+          steps.smoke.outputs.ok == 'true'
         continue-on-error: true
         env:
           # opencode keeps its session database and its provider packages
@@ -401,6 +461,7 @@ jobs:
           BUDGET_MINUTES: ${{ inputs.fix-timeout-minutes || 60 }}
           AGENT_ATTEMPTED: ${{ steps.fix.outputs.attempted }}
           AGENT_STOPPED: ${{ steps.fix.outputs.stopped }}
+          AGENT_BLOCKED: ${{ steps.smoke.outputs.reason }}
         run: .github/scripts/update-blocked-summary.sh
 
       # After the fix step, so the fix agent's own holds are in it, and on

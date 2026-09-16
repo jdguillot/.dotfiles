@@ -1,0 +1,17 @@
+[
+  {
+    "attr": "opencode",
+    "repo": "github:anomalyco/opencode",
+    "why": "the fix stage of this workflow runs on it, and it releases several times a week"
+  },
+  {
+    "attr": "claude-code",
+    "repo": "github:anthropics/claude-code",
+    "why": "same class as opencode: an agent CLI that ships fast and fails at runtime, not at build time"
+  },
+  {
+    "attr": "ollama",
+    "repo": "github:ollama/ollama",
+    "why": "serves the scan verdict, the release notes and the fix agent; every one of those fails open, so a broken ollama degrades this workflow silently"
+  }
+]

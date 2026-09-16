@@ -12,6 +12,10 @@ log=build-failure.log
 budget="${BUDGET_MINUTES:-}"
 attempted="${AGENT_ATTEMPTED:-}"
 stopped="${AGENT_STOPPED:-}"
+# Set when the fix stage was skipped on purpose rather than simply not
+# reached, so the summary does not report a tooling outage as the agent
+# declining to help.
+blocked="${AGENT_BLOCKED:-}"
 
 # check-and-build.sh writes this line for a build failure. A failure in
 # `nix flake check` or the deploy checks reaches here without one.
@@ -60,7 +64,12 @@ mapfile -t errors < <(grep -hoE '^ *error: .*' "$log" 2>/dev/null | sed 's/^ *//
       echo "and the tree still did not build."
       ;;
     *)
-      echo "The fix agent did not run."
+      if [ -n "$blocked" ]; then
+        echo "The fix agent did not run: $blocked. The breakage above is"
+        echo "unexamined &mdash; nothing tried to adapt the repo to it."
+      else
+        echo "The fix agent did not run."
+      fi
       ;;
   esac
   echo ""
