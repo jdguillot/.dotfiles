@@ -663,6 +663,41 @@ false, and `system.build.kernel` / `initialRamdisk` are never defined there —
 evaluating them is a hard error, not an empty result. They are recorded as
 unchanging and always listed as switch-only.
 
+### What the bump changes, package by package
+
+`.github/scripts/package-versions.sh` takes the same before/after shape and
+applies it to what the flake installs: `environment.systemPackages` for
+every host, `home.packages` for every standalone home configuration, each
+recorded as a `pname → version` map. The diff of the two snapshots is the
+exact set of version changes this bump puts on these machines, and it goes
+in the pull request body next to the reboot notes.
+
+It exists because the upstream digest cannot answer this. nixpkgs moves
+several thousand commits a week, past the digest's noise cap, so the scan
+sees a count and a handful of subjects — nearly all for packages nothing
+here installs. Inverting the question removes both problems at once: there
+is no list to maintain, because the set comes from the configurations, and
+no judgement about relevance, because everything in it is installed.
+
+`pname` and `version` when the derivation has them, `builtins.parseDrvName`
+on `name` when it does not — otherwise a package without `pname` records as
+`hello-1.0` with an empty version and reads as newly added every week. Only
+targets present in both snapshots are compared: the tree is the same either
+side of the bump, so a missing one means an evaluation failed, and reporting
+every package on that host as added would bury the real diff.
+
+The `Where` column reads `all` when a package moved everywhere it is
+installed, and names the targets otherwise — which is how a package held at
+a different version on one host shows up. The table is capped (80 rows by
+default, `PACKAGE_ROW_CAP`) with the remainder collapsed into a count; a
+toolchain-wide nixpkgs bump moves hundreds of versions and a pull request
+body has a size limit.
+
+Evaluation only, no building: measured at 2m15s across the fourteen targets,
+twice, against a job that already builds fourteen closures. Both steps are
+`continue-on-error` — this is a report, and a report must not cost the week
+its bump.
+
 ### cache and pr
 
 The cache push is the same reusable workflow `ci.yml` uses, so the
@@ -681,8 +716,9 @@ paragraph; the held-back table, if anything was held; a second table for
 anything the fix agent held *after* the build failed; the ledger's standing
 holds with how long each has stood; the release-notes
 overview of what landed upstream, grouped by this repo's own module
-families; the "how to apply" section from `boot-requirement.sh`; and the
-fix agent's note, if the bump needed an in-repo change. Each section is
+families; the "how to apply" section from `boot-requirement.sh`; the table
+of package versions this bump changes; and the fix agent's note, if the
+bump needed an in-repo change. Each section is
 omitted when it has nothing to say, so a clean week reads clean.
 
 The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull

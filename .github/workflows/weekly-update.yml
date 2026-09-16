@@ -271,6 +271,9 @@ jobs:
           /build-homes.json
           /boot-pre.json
           /boot-post.json
+          /packages-pre.json
+          /packages-post.json
+          /package-notes.md
           /reboot-notes.md
           /build-failure.log
           /smoke.log
@@ -296,6 +299,14 @@ jobs:
         # after the bump can say which hosts a plain `switch` cannot fully
         # apply. Has to run before apply-updates.sh moves the lock.
         run: .github/scripts/boot-requirement.sh record boot-pre.json
+
+      # Same before/after shape, for the packages this flake installs. The
+      # upstream digest can only show 40 of nixpkgs' several thousand weekly
+      # commits, nearly all for things these machines do not install; this is
+      # the exact set that does. Evaluation only; 2m15s over 14 targets.
+      - name: Record package versions before the bump
+        continue-on-error: true
+        run: .github/scripts/package-versions.sh record packages-pre.json
 
       - name: Apply the bump
         id: apply
@@ -487,6 +498,25 @@ jobs:
           .github/scripts/boot-requirement.sh compare boot-pre.json boot-post.json > reboot-notes.md
           cat reboot-notes.md >> "$GITHUB_STEP_SUMMARY"
 
+      # After the fix step, so the agent's own changes are in the diff: this
+      # reports what the pull request does to these machines, not what the
+      # lock move alone would have done. Only on a green week -- a bump that
+      # opens no pull request has nobody to read this.
+      - name: Diff the package versions this bump changes
+        continue-on-error: true
+        if: >-
+          (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true') &&
+          hashFiles('packages-pre.json') != ''
+        run: |
+          .github/scripts/package-versions.sh record packages-post.json
+          .github/scripts/package-versions.sh compare \
+            packages-pre.json packages-post.json > package-notes.md
+          {
+            echo "## Package versions"
+            echo ""
+            cat package-notes.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # Push the branch from here, not from the pr job: the agent's fix lives
       # in this working tree, and only this job has it. A branch push is not
       # a pull request, and it only happens when the tree is green AND it is
@@ -531,6 +561,7 @@ jobs:
             late-holds.json
             hold-report.md
             reboot-notes.md
+            package-notes.md
             workarounds-report.md
             workarounds.json
             upstream-signal/threads/
@@ -657,6 +688,16 @@ jobs:
               echo "## Applying this bump"
               echo ""
               cat update-report/reboot-notes.md
+              echo ""
+            fi
+
+            if [ -s update-report/package-notes.md ]; then
+              echo "## Package versions"
+              echo ""
+              echo "What this bump changes about the programs these machines"
+              echo "actually install."
+              echo ""
+              cat update-report/package-notes.md
               echo ""
             fi
 
