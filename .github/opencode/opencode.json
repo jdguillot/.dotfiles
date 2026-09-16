@@ -26,13 +26,6 @@
             "context": 262144,
             "output": 32768
           }
-        },
-        "team-small:latest": {
-          "name": "Qwen3.5 4B (team-small)",
-          "limit": {
-            "context": 8192,
-            "output": 2048
-          }
         }
       }
     }

@@ -366,22 +366,39 @@ and a matrix job cannot hand its working tree to the next job. It builds
 every host even after one fails, so a single run surfaces every breakage the
 bump caused.
 
-Before any of that, `.github/scripts/opencode-smoke.sh` asks the runner's
-opencode to answer one trivial prompt, in an empty directory, with `--pure`
-and no MCP, against the small model on the loopback Ollama. Preflight
-proves opencode is *installed*; this proves it *works*, and the two are not
-the same thing — opencode 1.18.30 builds perfectly and throws on every
-prompt. It exits 2 when the model server (or curl) is missing, so an
-outage there does not read as opencode being broken.
+Before any of that, `.github/scripts/opencode-smoke.sh` runs opencode the
+way the fix agent will: the same config, the 27B, the `build` agent with
+every tool, through to a reply. Preflight proves opencode is *installed*;
+this proves it *works*, and the two are not the same thing — opencode 1.18.30
+builds perfectly and throws on every prompt. The full round trip is the
+point: opencode can break before the request, while streaming, or while
+handling the reply, and only the whole path covers all of those.
+
+What it must not do is read a busy model as a broken opencode. The GPU is
+shared, and an earlier version of this check, on the small aux model, once
+waited seven minutes in its queue and timed out on a working build. So the
+script reads opencode's own logs and has three outcomes:
+
+| Exit | Meaning | Fix stage |
+|---|---|---|
+| 0 | a reply came back through opencode (8.7 s on an idle 27B) | runs |
+| 3 | the request went out cleanly and no reply arrived within 180 s | runs, with a warning: the reply path is unverified |
+| 1 | opencode errored, exited without replying, or never sent the request | **skipped** |
 
 It runs unconditionally, on green weeks too. That is the point: the fix
 stage is only reached after a build has already failed, so without this a
 broken opencode is discovered at the worst possible moment, and a week
-where nothing failed never finds out at all. A failure raises a warning
-annotation, writes the reason into the job summary, and **skips the fix
-step** — which would otherwise spend its whole budget producing nothing
-while holding the concurrency group and the GPU. The summary then says the
+where nothing failed never finds out at all. Exit 1 raises a warning
+annotation, writes the log tail into the job summary, and skips the fix
+step — which would otherwise spend its whole budget producing nothing while
+holding the concurrency group and the GPU. The summary then says the
 breakage went unexamined, rather than blaming an agent that never ran.
+
+The check tests the opencode on the *runner's* PATH, which comes from
+`github-runner.extraPackages` on `ryzn-server`, not from the tree being
+built. A pin or upgrade in this repo reaches it only after `ryzn-server` is
+rebuilt and each runner has restarted — until then the check is, correctly,
+still testing the old build.
 
 If that fails, `opencode run --auto` gets the failure log and
 `.github/opencode/fix-prompt.md`. The prompt gives it two legitimate

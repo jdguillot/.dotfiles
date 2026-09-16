@@ -223,11 +223,16 @@ jobs:
         # the ledger's advisory recommendation pass, which fails open.
         run: .github/scripts/preflight.sh jq nix npins git gh opencode -- mcp-nixos curl
 
-      # Preflight proves opencode is installed; this proves it works. The
-      # difference is not academic: nixpkgs shipped a version that builds
-      # fine and throws on every prompt, and because the fix stage only runs
-      # after a build has already failed, a green week never found out.
-      # Unconditional, so a week that needs no fix still reports it.
+      # Preflight proves opencode is installed; this proves it works: the fix
+      # agent's config, the 27B and every tool, through to a reply. nixpkgs
+      # once shipped a version that builds fine and throws on every prompt,
+      # and because the fix stage only runs after a build has failed, a green
+      # week never found out. Unconditional, so a week that needs no fix
+      # still reports it.
+      #
+      # A busy model is not a broken opencode: exit 3 means the request went
+      # out cleanly and the reply did not arrive in time, and the fix stage
+      # keeps its chance. Only exit 1 -- opencode itself failed -- skips it.
       - name: Smoke-test opencode
         id: smoke
         continue-on-error: true
@@ -237,29 +242,33 @@ jobs:
           # is needed at all -- starts against a warm cache.
           OPENCODE_SMOKE_CACHE: ${{ runner.temp }}/agent-home/.cache
         run: |
-          if .github/scripts/opencode-smoke.sh 2>smoke.log; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            rc=$?
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-            if [ "$rc" = 2 ]; then
-              reason="no model server on the runner"
-            else
-              reason="opencode failed its smoke test"
-            fi
-            echo "reason=$reason" >> "$GITHUB_OUTPUT"
-            echo "::warning::$reason; the fix stage will be skipped"
-            {
-              echo "## The fix agent is unavailable this week"
-              echo ""
-              echo "$reason, so a build failure will be reported rather than"
-              echo "adapted to. The bump itself is unaffected."
-              echo ""
-              echo '```'
-              cat smoke.log
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          rc=0
+          .github/scripts/opencode-smoke.sh > smoke.log 2>&1 || rc=$?
+          cat smoke.log
+          case "$rc" in
+            0)
+              echo "ok=true" >> "$GITHUB_OUTPUT"
+              ;;
+            3)
+              echo "ok=true" >> "$GITHUB_OUTPUT"
+              echo "::warning::opencode sent its request but the model did not reply in time; its reply path is unverified this week"
+              ;;
+            *)
+              echo "ok=false" >> "$GITHUB_OUTPUT"
+              echo "reason=opencode failed its smoke test" >> "$GITHUB_OUTPUT"
+              echo "::warning::opencode failed its smoke test; the fix stage will be skipped"
+              {
+                echo "## The fix agent is unavailable this week"
+                echo ""
+                echo "opencode failed its smoke test, so a build failure will be"
+                echo "reported rather than adapted to. The bump itself is unaffected."
+                echo ""
+                echo '```'
+                cat smoke.log
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              ;;
+          esac
           rm -f smoke.log
 
       - name: Keep the run's scratch files out of the commit
