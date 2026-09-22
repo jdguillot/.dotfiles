@@ -126,6 +126,10 @@ in
       in
       {
         inherit (p) description restartTriggers;
+        # Bounded: a project that is actually broken still lands in `failed`
+        # instead of rebuilding every 30s forever.
+        startLimitIntervalSec = 600;
+        startLimitBurst = 5;
         after = [
           "docker.service"
           "docker.socket"
@@ -139,6 +143,15 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
           TimeoutStartSec = p.timeout;
+
+          # A project that builds or pulls needs a registry, and no ordering
+          # edge can express "the internet is up" -- network-online.target
+          # only means links are configured. Boot loses that race routinely,
+          # and the containers then run under docker's own restart policy
+          # while the unit that owns them sits failed. Legal for oneshot:
+          # only `always` and `on-success` are rejected.
+          Restart = "on-failure";
+          RestartSec = "30s";
 
           ExecStart = "${compose} up -d --remove-orphans${
             lib.optionalString (p.extraUpFlags != [ ]) " ${lib.concatStringsSep " " p.extraUpFlags}"
