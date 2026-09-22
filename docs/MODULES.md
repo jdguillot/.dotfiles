@@ -249,7 +249,7 @@ Example:
 
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
-| `networking` | `networkmanager` | thin wrapper around NetworkManager enablement | <https://mynixos.com/search?q=networking.networkmanager.enable> |
+| `networking` | `networkmanager`, `resolved` | NetworkManager enablement, plus the DNS backend. `resolved` defaults to `networkmanager` and switches resolution to systemd-resolved instead of NetworkManager writing `/etc/resolv.conf` through openresolv (upstream's resolved module points NetworkManager at it and disables resolvconf on its own). Tailscale hosts need this: under openresolv tailscaled claims `resolv.conf` exclusively and forwards non-split queries to a snapshot of the real resolvers that nothing refreshes, so a link flap leaves every public lookup SERVFAILing until tailscaled restarts. `thkpd-pve1` opts out because its Pi-hole container publishes `0.0.0.0:53`, which collides with resolved's stub listener. | <https://mynixos.com/search?q=networking.networkmanager.enable>, <https://mynixos.com/search?q=services.resolved.enable> |
 | `ssh` | `enable`, `ports`, `passwordAuth`, `permitRootLogin`, `authorizedKeys` | OpenSSH server settings | <https://mynixos.com/search?q=services.openssh.enable> |
 | `tailscale` | `enable`, `useRoutingFeatures`, `acceptRoutes`, `extraUpFlags` | client and routing flags | <https://mynixos.com/search?q=services.tailscale.enable> |
 | `vpn.pia` | `enable`, `autoStart`, `server`, `port`, `credentialsFile` | PIA/OpenVPN workflow; expects SOPS when credentials are secret-backed | <https://mynixos.com/search?q=services.openvpn.servers> |

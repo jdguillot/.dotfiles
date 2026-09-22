@@ -211,7 +211,10 @@ in
   services.proxmox-ve.bridges = [
     "vmbr0"
   ];
-  services.resolved.enable = false;
+  # The Pi-hole container publishes 0.0.0.0:53, which cannot coexist with
+  # resolved's stub listener. networking.useNetworkd below would otherwise
+  # pull resolved in by default, so this has to be an explicit opt-out.
+  cyberfighter.features.networking.resolved = false;
 
   networking.useNetworkd = true;
 
