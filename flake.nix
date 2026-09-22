@@ -40,7 +40,11 @@
     vscode-server.url = "github:nix-community/nixos-vscode-server";
 
     catppuccin.url = "github:catppuccin/nix";
-    proxmox-nixos.url = "github:SaumonNet/proxmox-nixos";
+    # WORKAROUND(proxmox-ticket-signature-interop)
+    # Fork branch carrying the PVE ticket signature fix; upstream's default
+    # branch signs tickets no Debian Proxmox node in the cluster can verify.
+    proxmox-nixos.url = "github:booxter/proxmox-nixos/fix-tickets";
+    # END WORKAROUND(proxmox-ticket-signature-interop)
     #    pst-bin.url = "path:./programs/pst";
     #    tasmotizer.url = "path:./programs/tasmotizer";
     deploy-rs.url = "github:serokell/deploy-rs";

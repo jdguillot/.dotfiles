@@ -189,4 +189,51 @@
     '';
   };
   # END WORKAROUND(opencode-1-18-30-prompt-crash)
+
+  # WORKAROUND(proxmox-ticket-signature-interop)
+  proxmox-ticket-signature-interop = {
+    title = "proxmox-nixos pinned to a fork: PVE tickets fail across a mixed cluster";
+    added = "2026-09-21";
+    hosts = [ "thkpd-pve1" ];
+    problem = ''
+      Crypt::OpenSSL::RSA 0.41, which nixpkgs ships, changed the defaults the
+      module signs with; stock Proxmox on Debian 13 is still on 0.35-1.1,
+      where SHA-1 is the default and the padding was whatever the older
+      version did. PVE tickets are exactly that signature, so a proxmox-nixos
+      node and a Debian node sharing one authkey produce signatures neither
+      can verify: `pveproxy: authentication failure: 401 permission denied -
+      invalid PVE ticket`, in both directions, with PVE::Ticket and
+      PVE::AccessControl byte-identical on both nodes. It reproduces on two
+      hosts sharing a key, with no cluster involved.
+    '';
+    workaround = ''
+      flake.nix pins `proxmox-nixos` to booxter/proxmox-nixos `fix-tickets`,
+      the branch behind the upstream pull request, which names SHA-1 and
+      PKCS#1 v1.5 explicitly instead of taking whichever defaults the
+      installed ::RSA has. Only the flake input moves; the proxmox module and
+      thkpd-pve1's config are untouched.
+    '';
+    files = [ "flake.nix" ];
+    upstream = {
+      issue = "https://github.com/SaumonNet/proxmox-nixos/issues/256";
+      fix = "https://github.com/SaumonNet/proxmox-nixos/pull/258";
+    };
+    resolved = {
+      kind = "pr";
+      url = "https://github.com/SaumonNet/proxmox-nixos/pull/258";
+    };
+    retire = "manual";
+    removal = ''
+      A fenced URL cannot be deleted automatically -- removing the block
+      leaves the flake with no `proxmox-nixos` input at all -- so this is a
+      value to put back by hand. When the probe fires, set the input back to
+      `github:SaumonNet/proxmox-nixos`, run `nix flake update proxmox-nixos`,
+      and deploy thkpd-pve1. Confirm before deleting this entry: log in to
+      the web UI on a Debian node and on thkpd-pve1, and check `journalctl -u
+      pveproxy` on both for the 401 above. The merge only says the fix is on
+      the default branch; the pin is only safe to drop once the lock has
+      actually moved to a revision that has it.
+    '';
+  };
+  # END WORKAROUND(proxmox-ticket-signature-interop)
 }
