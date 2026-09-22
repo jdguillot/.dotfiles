@@ -142,9 +142,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "c48ba0cc72c1d7690c76dcb9bcc5ae3e262ecf8f",
-      "url": "https://github.com/hthienloc/dms-quick-capture/archive/c48ba0cc72c1d7690c76dcb9bcc5ae3e262ecf8f.tar.gz",
-      "hash": "sha256-QZfX0k9C+G4RXcLS0JJ+JdcaPpCUXcdmHGseaCGwjLc="
+      "revision": "d9e4475404e29223fd68d60feadf2eab810d098e",
+      "url": "https://github.com/hthienloc/dms-quick-capture/archive/d9e4475404e29223fd68d60feadf2eab810d098e.tar.gz",
+      "hash": "sha256-q1cuw1iCYIrgT7y46VEJGy77K2UIDnL7K+73aeDp+Nc="
     },
     "dms-plugin-tailscale": {
       "type": "Git",
@@ -181,9 +181,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "6fc7f25bfb24f93b6488fb8a36ed67b5f242abdb",
-      "url": "https://github.com/AvengeMedia/dms-plugins/archive/6fc7f25bfb24f93b6488fb8a36ed67b5f242abdb.tar.gz",
-      "hash": "sha256-KGpNgxN/zXiMjLLm4zLX+Wgnj1vx8bGGd6WwGBWo7Ds="
+      "revision": "bb90a1db7d540e64ae049c5906afba9b24baa865",
+      "url": "https://github.com/AvengeMedia/dms-plugins/archive/bb90a1db7d540e64ae049c5906afba9b24baa865.tar.gz",
+      "hash": "sha256-NYmw2wCZYAKNU1xcodKMDXs5wwtAguOUNazRxcLjsUE="
     },
     "hyperskills": {
       "type": "Git",
@@ -207,9 +207,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "3cca18b368ae95cdbdebbff572ccafa662551015",
-      "url": "https://github.com/mattpocock/skills/archive/3cca18b368ae95cdbdebbff572ccafa662551015.tar.gz",
-      "hash": "sha256-dF5i37jHnqfcXD1IRSVzSSm/pfCYSUmOsEhhs5Zx340="
+      "revision": "c55ee46073ed923f86ce59a5eb3b6d895095d1b7",
+      "url": "https://github.com/mattpocock/skills/archive/c55ee46073ed923f86ce59a5eb3b6d895095d1b7.tar.gz",
+      "hash": "sha256-L3CpIT2DeI+fUFl9fcygojtQo2DzEen69rMD1XqR1vM="
     },
     "nix-skills": {
       "type": "Git",
