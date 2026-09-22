@@ -221,6 +221,11 @@ let
   prepare = pkgs.writeShellScript "traefik-prepare" ''
     set -euo pipefail
     umask 077
+    # Docker creates a missing bind source as a directory, and `restart:
+    # unless-stopped` lets it win /run/traefik (tmpfs, empty at boot) before
+    # this runs. `install` would then copy *into* that directory and exit 0,
+    # leaving the container unstartable until the path is cleared by hand.
+    ${pkgs.coreutils}/bin/rm -rf ${tokenPath} ${usersPath}
     ${pkgs.coreutils}/bin/install -m 0400 ${effectiveTokenFile} ${tokenPath}
     ${pkgs.coreutils}/bin/install -m 0400 ${effectiveUsersFile} ${usersPath}
   '';
