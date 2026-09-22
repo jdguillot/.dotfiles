@@ -1,6 +1,29 @@
 {
   "updated": "2026-09-22",
-  "holds": {},
+  "holds": {
+    "home-manager": {
+      "first_seen": "2026-09-22",
+      "last_seen": "2026-09-22",
+      "weeks": 1,
+      "origin": "scan",
+      "reason": "The niri module commit removes the `extraConfigEarly` option entirely; if any host's home configuration references it, evaluation will fail with an undefined-option error.",
+      "upstream": [
+        {
+          "url": "https://github.com/nix-community/home-manager/pull/9914",
+          "state": "merged",
+          "updated_at": "2026-09-18T21:04:20Z",
+          "comments": 0
+        }
+      ],
+      "recommendation": {
+        "recommendation": "Update any host configuration that references `wayland.windowManager.niri.extraConfigEarly` to use `lib.mkBefore` (or `lib.mkOrder`) applied to `extraConfig` instead, then unhold the `home-manager` input, since the removal PR was approved by maintainers and merged.",
+        "standing": "maintainer-endorsed",
+        "basis": "Maintainer glmlm (MEMBER) opened PR #9914 to remove `extraConfigEarly` in favour of `mkOrder` on `extraConfig`; maintainer teto (COLLABORATOR) gave two APPROVED reviews, and maintainer khaneliman (COLLABORATOR) endorsed the `mkOrder` approach in linked issue #9738, stating that separate ordering options are \"unnecessarily complex\" when Nix eval handles ordering natively. The PR was merged 2026-09-18 and issue #9738 was closed as completed. The migration pattern endorsed by khaneliman is `extraConfig = lib.mkMerge [ (lib.mkBefore ''…'') ''…'' ];`, which preserves the before/after ordering that `extraConfigEarly` previously provided.",
+        "as_of": "2026-09-22"
+      },
+      "stalled_weeks": 0
+    }
+  },
   "released": [
     {
       "name": "niri",
