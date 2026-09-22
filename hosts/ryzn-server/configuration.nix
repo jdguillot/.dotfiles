@@ -467,6 +467,18 @@
 
   # Headless (HDMI dummy plug); Sunshine's user unit needs a graphical
   # session, so SDDM auto-logs-in whenever the session starts.
+  # This box is wired (enp13s0 carries the default route); the wifi radio is
+  # redundant and shares the same subnet, so it only added a second default
+  # route at a higher metric. Its DHCP lease took NM's full 45s timeout on
+  # every boot, which held startup-complete and timed out
+  # NetworkManager-wait-online -- and docker.service and cloudflared-tunnel
+  # order after network-online.target. Unmanaged, not blacklisted: the card
+  # stays available via `nmcli device set wlp12s0 managed yes`.
+  networking.networkmanager.settings."device-wifi" = {
+    match-device = "type:wifi";
+    managed = false;
+  };
+
   services.displayManager = {
     autoLogin = {
       enable = true;
