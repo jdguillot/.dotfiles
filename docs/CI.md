@@ -32,6 +32,25 @@ what to run:
 deploy .#ryzn-server.system --remote-build
 ```
 
+### `hashFiles()` is unavailable
+
+Do not use the `hashFiles()` expression function in these workflows. The
+runner evaluates it by shelling out to its own bundled Node, and
+`NodeUtil.GetInternalNodeVersion()` in actions/runner 2.337.0 can only ever
+return `node20` — the forced-version environment variable is validated
+against a list holding just that. Nixpkgs links only `externals/node24`,
+having dropped node20 when it reached EOL, so the process never starts.
+
+The failure is worth recognising because of how it lands: a template
+expression that throws is a *job* failure, not a step failure, so
+`continue-on-error: true` does not contain it and every later step is
+skipped. The annotation reads `The template is not valid` and names a
+working directory that does exist, which points away from the real cause.
+
+Test for a file with `[ -s <file> ]` inside the step's `run:` instead, and
+move the rest of the condition into `if:`. Where a real content hash is
+needed, `sha256sum` is on the PATH via `coreutils`.
+
 ## `ci.yml` — build, cache, release, deploy
 
 Triggered by pushes to `main`, by pull requests, and weekly on Sundays.

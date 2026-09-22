@@ -517,10 +517,15 @@ jobs:
       # opens no pull request has nobody to read this.
       - name: Diff the package versions this bump changes
         continue-on-error: true
-        if: >-
-          (steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true') &&
-          hashFiles('packages-pre.json') != ''
+        if: steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true'
         run: |
+          # The pre-bump record is continue-on-error, so it may be missing;
+          # test the file here rather than with hashFiles(), which cannot run
+          # on these runners at all (docs/CI.md, "hashFiles() is unavailable").
+          if [ ! -s packages-pre.json ]; then
+            echo "::notice::no pre-bump package record; skipping the version diff"
+            exit 0
+          fi
           .github/scripts/package-versions.sh record packages-post.json
           .github/scripts/package-versions.sh compare \
             packages-pre.json packages-post.json > package-notes.md
