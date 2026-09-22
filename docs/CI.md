@@ -228,7 +228,9 @@ from cachix off the LAN builds those few paths itself in seconds.
 
 ## `weekly-update.yml` — the weekly bump
 
-Tuesdays at 05:00 UTC, or on manual dispatch. Dependabot cannot do this:
+Tuesdays at 11:00 UTC, or on manual dispatch. That is 04:00 Pacific now
+and 03:00 over the winter — GitHub cron takes no timezone, so the hour is
+fixed in UTC and the local time moves with DST. Dependabot cannot do this:
 `.github/dependabot.yml` only understands `github-actions`, so without this
 workflow `flake.lock` and `npins/sources.json` move only by hand. The
 workflow also pulls in any `staging/*` branch that merges cleanly, so a
