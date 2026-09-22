@@ -80,9 +80,19 @@ let
   # (compose otherwise picks br-<random>, and the ollama firewall hole is
   # per-interface), and the service environment (--env-file only feeds
   # interpolation; re-declaring here is what reaches the container).
+  # Upstream ships `restart: unless-stopped` on all four services; docker
+  # would then restore them at boot before the unit's ExecStartPre stages
+  # the env, leaving the containers running under docker's policy while the
+  # unit that owns them sits failed. Overridden per service -- compose has
+  # no wildcard -- so check this list against docker-compose.yml on bump.
+  restartOverride = [ "    restart: \"no\"" ];
+
   overrideLines = [
     "services:"
     "  odysseus:"
+  ]
+  ++ restartOverride
+  ++ [
     "    environment:"
   ]
   ++ lib.mapAttrsToList (k: v: "      ${k}: ${builtins.toJSON v}") containerEnv
@@ -112,7 +122,16 @@ let
     ++ map (n: "      - ${n}") cfg.extraNetworks
   )
 
-  # Must come after every odysseus-scoped key: this line closes that block.
+  # Must come after every odysseus-scoped key: these lines close that block.
+  ++ [
+    "  chromadb:"
+  ]
+  ++ restartOverride
+  ++ [
+    "  ntfy:"
+  ]
+  ++ restartOverride
+  ++ lib.optionals cfg.bundledSearxng ([ "  searxng:" ] ++ restartOverride)
   ++ lib.optionals (!cfg.bundledSearxng) [ "  searxng: !reset null" ]
 
   ++ [

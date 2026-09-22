@@ -136,6 +136,11 @@ in
         ]
         ++ networkUnits;
         requires = [ "docker.service" ] ++ networkUnits;
+        # Containers carry `restart: "no"`, so docker never starts a project
+        # behind systemd's back -- ExecStartPre always wins the race to stage
+        # secrets. PartOf is what then brings projects back with the daemon:
+        # Requires propagates stop, not restart.
+        partOf = [ "docker.service" ];
         wantedBy = [ "multi-user.target" ];
         path = [ pkgs.coreutils ];
 

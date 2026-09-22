@@ -10,7 +10,9 @@ services:
     # Tag suffix selects the accelerated build (-openvino, -cuda, ...).
     image: ghcr.io/immich-app/immich-machine-learning:@ML_IMAGE_TAG@
     container_name: immich-machine-learning
-    restart: unless-stopped
+    # "no", not unless-stopped: docker would otherwise restore this at
+    # boot before the unit's ExecStartPre stages secrets into /run.
+    restart: "no"
 
     # One of [cpu, openvino, cuda, rocm, ...] from the vendored upstream file.
     extends:

@@ -13,7 +13,9 @@ services:
     # removed half the headers middleware), and a reboot is not the moment.
     image: traefik:v3.7
     container_name: traefik
-    restart: unless-stopped
+    # "no", not unless-stopped: docker would otherwise restore this at
+    # boot before the unit's ExecStartPre stages secrets into /run.
+    restart: "no"
     command: ["--configFile=/etc/traefik/traefik.toml"]
 
     ports:

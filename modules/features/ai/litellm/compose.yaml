@@ -7,7 +7,9 @@ services:
     # Pinned on purpose; a major bump can change key/DB semantics.
     image: ghcr.io/berriai/litellm:v1.99.0
     container_name: litellm
-    restart: unless-stopped
+    # "no", not unless-stopped: docker would otherwise restore this at
+    # boot before the unit's ExecStartPre stages secrets into /run.
+    restart: "no"
     command: ["--config", "/app/config.yaml"]
 
     depends_on:
@@ -52,7 +54,7 @@ services:
     # postgres 18+ moves PGDATA; keep the pin and the volume path in sync.
     image: postgres:17-alpine
     container_name: litellm-db
-    restart: unless-stopped
+    restart: "no"
 
     environment:
       POSTGRES_USER: litellm

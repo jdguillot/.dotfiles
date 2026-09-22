@@ -13,7 +13,9 @@ services:
     # ships ComfyUI + Manager; nodes install from the web UI.
     image: yanwk/comfyui-boot:cu130-slim-v2
     container_name: comfyui
-    restart: unless-stopped
+    # "no", not unless-stopped: docker would otherwise restore this at
+    # boot before the unit's ExecStartPre stages secrets into /run.
+    restart: "no"
 
     # ComfyUI has NO auth: anything reaching the port runs arbitrary
     # workflows and reads every mount. Keep the publish on 127.0.0.1 (the
