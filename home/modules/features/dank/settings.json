@@ -131,6 +131,9 @@
       "widgetTransparency": 0.68
     }
   ],
+  "batteryLockTimeout": 1800,
+  "batteryMonitorTimeout": 1800,
+  "batterySuspendTimeout": 5400,
   "builtInPluginSettings": {
     "dms_clipboard_search": {
       "trigger": "cb"
