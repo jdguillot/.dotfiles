@@ -166,11 +166,16 @@
     upstream = {
       issue = "https://github.com/anomalyco/opencode/issues/48372";
     };
+    # Watches nixpkgs, not upstream's releases: the workaround is a pin of
+    # nixpkgs, so an upstream tag says nothing about whether the fix is
+    # reachable from here -- 1.18.32 was cut 2026-09-21 while nixpkgs still
+    # carried 1.18.30, the broken one. `input` reads the unoverlaid nixpkgs;
+    # the host's own pkgs would report the pinned 1.18.21 forever.
     resolved = {
-      kind = "release";
-      repo = "anomalyco/opencode";
+      kind = "package";
+      attr = "opencode";
+      input = "nixpkgs";
       minVersion = "1.18.32";
-      prerelease = false;
     };
     retire = "manual";
     removal = ''

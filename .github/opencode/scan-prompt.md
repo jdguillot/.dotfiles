@@ -39,6 +39,26 @@ evidence predicts, not for risk in general. Holding everything is as wrong
 as holding nothing, and a false hold silently freezes a dependency for a
 week.
 
+### `repo_symbol`
+
+Every hold must carry a `repo_symbol`: the exact name the hold rests on --
+the option, attribute, function or module path whose removal, rename or
+change is what would break this flake. Write it as it would appear in a
+configuration file (`wayland.windowManager.niri.extraConfigEarly`,
+`services.foo.bar`, `mkDerivation`), not as prose.
+
+It is checked against this repo before your hold is applied. A hold naming a
+symbol nothing here references is dropped: an option that is never set
+cannot break a build that never reads it. You are given the host list, but
+not the configuration that sets these options, so do not try to guess
+whether it is used -- name the symbol and let the check decide.
+
+Use the empty string when the hold is not about a named symbol -- a compiler
+crash, a revert in flight, a maintainer saying to wait. An empty
+`repo_symbol` is never dropped, so do not reach for a vaguely related name
+to fill the field: a wrong name gets a real hold dropped, while an empty one
+costs nothing.
+
 ## Watched packages
 
 The watched packages are not sources and cannot be held: they ship inside

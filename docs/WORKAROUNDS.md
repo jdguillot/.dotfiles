@@ -92,7 +92,7 @@ shipped. One of:
 | `pr` | `url` | the pull request is merged |
 | `issue` | `url` | the issue is closed |
 | `commit` | `input`, `sha` | the flake input named `input` is pinned, after this week's bump, to a revision that contains `sha` |
-| `package` | `attr`, `minVersion` | `pkgs.<attr>.version` evaluates, on the entry's first host, to `minVersion` or later |
+| `package` | `attr`, `minVersion`, `input` (optional) | `pkgs.<attr>.version` evaluates, on the entry's first host, to `minVersion` or later. With `input`, the version is read from that flake input directly instead — required whenever the workaround IS an overlay, since the entry's own overlay would otherwise pin the probe to the held version forever. |
 
 `commit` is the one to reach for when a nixpkgs or module fix has merged
 and the question is whether it has reached the branch this repo tracks.

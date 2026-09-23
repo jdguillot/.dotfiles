@@ -360,6 +360,17 @@ flake check and the per-host builds are the actual gate, so an unreachable
 model or a garbled answer must not stall the week's bump. They record
 `degraded: true` or skip the file and proceed without.
 
+Every hold also carries a `repo_symbol`: the option, attribute or module
+path whose change is what would break this flake. The model is given the
+host list but never the configuration, so it cannot answer the question
+that actually decides an option-removal hold — does anything here set it?
+It names the symbol and `scan-verdict.sh` greps the tree, dropping any
+hold whose symbol nothing references and saying so in the summary. The
+grep is scoped to `*.nix` and skips `.github/`: an option is used when a
+configuration sets it, not when a prompt or a document names it. An empty
+symbol, or one under three characters, is left alone — the check only
+removes holds it can positively disprove.
+
 ### update — apply, prove, and adapt
 
 First the job re-runs `.github/scripts/merge-staging.sh` against the same

@@ -69,8 +69,17 @@ probe_ref() {
   esac
 }
 
-# Is <sha> an ancestor of the revision a flake input is now pinned to? Read
-# from the lock after the bump, so this answers for the tree being built.
+# What flake.lock currently pins an input to, as a flake reference. Read from
+# the lock after the bump, so probes answer for the tree being built.
+locked_flake_ref() {
+  local input="$1" node loc
+  node=$(jq -r --arg i "$input" '.nodes[.root].inputs[$i] | if type == "string" then . else .[0] end' flake.lock)
+  loc=$(jq -c --arg n "$node" '.nodes[$n].locked // null' flake.lock)
+  [ "$loc" != "null" ] || return 1
+  jq -er '"github:\(.owner)/\(.repo)/\(.rev)"' <<<"$loc"
+}
+
+# Is <sha> an ancestor of the revision a flake input is now pinned to?
 probe_commit() {
   local input="$1" sha="$2" node loc slug rev cmp status
   node=$(jq -r --arg i "$input" '.nodes[.root].inputs[$i] | if type == "string" then . else .[0] end' flake.lock)
@@ -87,14 +96,25 @@ probe_commit() {
   esac
 }
 
-# The version of a package as the pinned nixpkgs evaluates it for one host.
+# The version of a package. Without `input`, as the host evaluates it --
+# overlays included, which is what a host actually runs. With one, straight
+# from that flake input instead: a workaround implemented BY an overlay must
+# watch the unoverlaid source, or its own overlay pins the probe to the held
+# version and the entry can never resolve.
 probe_package() {
-  local host="$1" attr="$2" min="$3" v
-  v=$(nix eval --raw ".#nixosConfigurations.$host.pkgs.$attr.version" 2>/dev/null) || { echo "unknown	$attr did not evaluate on $host"; return; }
-  if jq -en --arg v "$v" --arg min "$min" "$VER"'($v | ver) >= ($min | ver)' > /dev/null; then
-    echo "resolved	$attr is $v on $host"
+  local host="$1" attr="$2" min="$3" input="${4:-}" v where src
+  if [ -n "$input" ] && [ "$input" != "null" ]; then
+    src=$(locked_flake_ref "$input") || { echo "unknown	no flake input named $input"; return; }
+    v=$(nix eval --raw "$src#$attr.version" 2>/dev/null) || { echo "unknown	$attr did not evaluate in $input"; return; }
+    where="in $input"
   else
-    echo "waiting	$attr is $v on $host, need $min"
+    v=$(nix eval --raw ".#nixosConfigurations.$host.pkgs.$attr.version" 2>/dev/null) || { echo "unknown	$attr did not evaluate on $host"; return; }
+    where="on $host"
+  fi
+  if jq -en --arg v "$v" --arg min "$min" "$VER"'($v | ver) >= ($min | ver)' > /dev/null; then
+    echo "resolved	$attr is $v $where"
+  else
+    echo "waiting	$attr is $v $where, need $min"
   fi
 }
 
@@ -110,7 +130,9 @@ while read -r id; do
     pr)      line=$(probe_ref "$(jq -r .resolved.url <<<"$entry")" merged) ;;
     issue)   line=$(probe_ref "$(jq -r .resolved.url <<<"$entry")" closed) ;;
     commit)  line=$(probe_commit "$(jq -r .resolved.input <<<"$entry")" "$(jq -r .resolved.sha <<<"$entry")") ;;
-    package) line=$(probe_package "${hosts%% *}" "$(jq -r .resolved.attr <<<"$entry")" "$(jq -r .resolved.minVersion <<<"$entry")") ;;
+    package) line=$(probe_package "${hosts%% *}" "$(jq -r .resolved.attr <<<"$entry")" \
+                                  "$(jq -r .resolved.minVersion <<<"$entry")" \
+                                  "$(jq -r '.resolved.input // ""' <<<"$entry")") ;;
     none)    line='waiting	nothing probed: the entry has no `resolved` block' ;;
     *)       line="unknown	probe kind '$kind' is not one this script knows" ;;
   esac
@@ -153,6 +175,7 @@ printf '%s\n' "$results" | jq . > "$RESULTS"
      elif .resolved.kind == "issue" then "close of " + .resolved.url
      elif .resolved.kind == "commit" then "`" + .resolved.input + "` to contain " + (.resolved.sha[0:12])
      elif .resolved.kind == "package" then "`" + .resolved.attr + "` ≥ " + .resolved.minVersion
+        + (if .resolved.input then " in `" + .resolved.input + "`" else "" end)
      else "nothing tracked" end) as $on |
     (if .state == "resolved" and .action == "retired" then "**fixed upstream, retired in this run**"
      elif .state == "resolved" and .action == "retire-failed" then "**fixed upstream; automatic removal failed, see below**"

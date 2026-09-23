@@ -81,9 +81,10 @@ schema=$(jq -n --argjson names "$names" '{
         properties: {
           name: { type: "string", enum: $names },
           reason: { type: "string" },
-          evidence: { type: "string" }
+          evidence: { type: "string" },
+          repo_symbol: { type: "string" }
         },
-        required: ["name", "reason", "evidence"]
+        required: ["name", "reason", "evidence", "repo_symbol"]
       }
     },
     summary: { type: "string" },
@@ -136,6 +137,34 @@ jq --argjson names "$names" \
      summary: (.summary // ""),
      staged_notes: (.staged_notes // ""),
      degraded: false }' <<<"$content" > "$verdict"
+
+# The model reasons from release notes and never sees this tree, so the one
+# question that decides an option-removal hold -- does anything here set it?
+# -- is the one question it cannot answer. It names the symbol instead and
+# the answer is looked up here. A symbol nothing references cannot break a
+# build, so the hold goes. Fails safe in both directions: a hold that named
+# nothing checkable, or a symbol too short to grep for without matching half
+# the tree, is left exactly as the model returned it.
+dropped='[]'
+while IFS=$'\t' read -r hold_name symbol; do
+  [ ${#symbol} -ge 3 ] || continue
+  # Nix files only, and never this repo's own prose: an option is "used"
+  # when a configuration sets it, not when a document names it. Without the
+  # scope, the example symbol in scan-prompt.md matches every hold that
+  # cites it and the check silently passes everything.
+  git grep -qFI "$symbol" -- '*.nix' ':(exclude)npins' ':(exclude).github' && continue
+  echo "scan: dropping hold on $hold_name: nothing in this tree references '$symbol'" >&2
+  dropped=$(jq -c --arg n "$hold_name" '. + [$n]' <<<"$dropped")
+done < <(jq -r '.holds[] | select((.repo_symbol // "") != "") | "\(.name)\t\(.repo_symbol)"' "$verdict")
+
+if [ "$(jq 'length' <<<"$dropped")" -gt 0 ]; then
+  unused_note=$(jq -r 'join(", ")' <<<"$dropped")
+  jq --argjson drop "$dropped" --arg note "$unused_note" '
+    .holds |= [ .[] | select(.name as $n | $drop | index($n) | not) ]
+    | .summary += ("\n\nDropped as unfounded: " + $note
+                   + " -- the option or symbol each hold named is not referenced anywhere in this repo.")
+  ' "$verdict" > "$verdict.tmp" && mv "$verdict.tmp" "$verdict"
+fi
 
 echo "scan: $(jq '.holds | length' "$verdict") hold(s) of $(jq 'length' "$sources") sources"
 jq -r '.holds[] | "  hold \(.name): \(.reason)"' "$verdict"
