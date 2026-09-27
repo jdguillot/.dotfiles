@@ -521,6 +521,10 @@
     partOf = lib.mkForce [ ];
   };
 
+  # Gamescope reads Lua from /etc/gamescope recursively at startup; this one
+  # keeps the panel out of HDR, which otherwise greys out every stream.
+  environment.etc."gamescope/scripts/10-no-hdr.lua".source = ./gamescope-no-hdr.lua;
+
   # gamescope's output mode is fixed off SteamOS, so it is pinned here rather
   # than negotiated per client. -O DP-1: card0 is the Raphael iGPU with
   # nothing attached, and only the 5090 has a connected connector.
