@@ -90,6 +90,11 @@
         csrfAllowedOrigins = [
           "https://ryzn-server:47990"
         ];
+
+        # Moonlight has no Guide button of its own, and this session is Big
+        # Picture, where it is the way back out of a game. Holding
+        # Back/Select for two seconds stands in for it.
+        settings.back_button_timeout = 2000;
       };
 
       # Web UI on the LAN (http://192.168.101.94:8384), login from sops
