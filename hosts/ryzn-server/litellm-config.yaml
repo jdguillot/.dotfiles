@@ -18,6 +18,13 @@ model_list:
       # The openai/ route's SDK client refuses to start without a key;
       # Ollama ignores it, any non-empty value passes.
       api_key: ollama
+      # Full-entropy sampling corrupts tool-call XML (an unclosed
+      # <parameter>), which Ollama's qwen parsers drop -- the reply returns
+      # 200 with no tool_calls and the agent loop stalls silently. DEFAULTS
+      # ONLY: the router merges {**litellm_params, **request}, so a client
+      # sending its own value wins and must clamp on its side too.
+      temperature: 0.6
+      top_p: 0.95
       # Cloudflare kills proxied requests silent >125s; big-context prompt
       # eval exceeds that before Ollama's first token. `: ping` SSE comments
       # (sent even before the first upstream chunk) keep the edge open.

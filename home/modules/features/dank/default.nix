@@ -141,6 +141,21 @@ in
       "QS_ICON_THEME=${config.gtk.iconTheme.name}"
     ];
 
+    # Both are Quickshell surfaces and need a running niri to attach to.
+    # Upstream binds them to graphical-session.target, which any session can
+    # reach -- Sunshine's unit pulls that target in all by itself -- and on a
+    # seat with no niri they abort on startup and are restarted forever, each
+    # crash feeding a drkonqi launcher that aborts too (ryzn-server made ~4k
+    # coredumps in 20 minutes that way). niri hands the user manager
+    # NIRI_SOCKET via `systemctl --user import-environment`, so conditioning
+    # on it skips them everywhere else -- and a skipped condition is not a
+    # failure, so nothing retries.
+    systemd.user.services.dms.Unit.ConditionEnvironment = "NIRI_SOCKET";
+
+    systemd.user.services.dcal = lib.mkIf cfg.apps.calendar {
+      Unit.ConditionEnvironment = "NIRI_SOCKET";
+    };
+
     # dgop is not pulled in by the DMS module itself, but the bar's cpuUsage
     # and memUsage widgets and the Mod+M process list all shell out to it.
     home.packages = [
