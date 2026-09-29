@@ -9,9 +9,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "34040c9c568585f6929bedeaad110ad08f079624",
-      "url": "https://github.com/anthropics/skills/archive/34040c9c568585f6929bedeaad110ad08f079624.tar.gz",
-      "hash": "sha256-tI4bTTBfI1ylltklGyiyA7pLoKXEWtrT6lrmwrpLbCw="
+      "revision": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+      "url": "https://github.com/anthropics/skills/archive/8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4.tar.gz",
+      "hash": "sha256-PRBkTEGNwT73EFCvuTprzIBGiG+UGSYiaCkY7Ji13us="
     },
     "astrotuxlauncher": {
       "type": "GitRelease",
@@ -181,9 +181,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "bb90a1db7d540e64ae049c5906afba9b24baa865",
-      "url": "https://github.com/AvengeMedia/dms-plugins/archive/bb90a1db7d540e64ae049c5906afba9b24baa865.tar.gz",
-      "hash": "sha256-NYmw2wCZYAKNU1xcodKMDXs5wwtAguOUNazRxcLjsUE="
+      "revision": "e774a9756f2a50499c37a5513f28bee4ebe81d73",
+      "url": "https://github.com/AvengeMedia/dms-plugins/archive/e774a9756f2a50499c37a5513f28bee4ebe81d73.tar.gz",
+      "hash": "sha256-92NjKVTslsbSVJMnxV4SaL7o0vZ1/mxaKdcRJr7EoqI="
     },
     "hyperskills": {
       "type": "Git",
