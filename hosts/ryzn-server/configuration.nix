@@ -526,6 +526,14 @@
     partOf = lib.mkForce [ ];
   };
 
+  # Steam's fossilize pre-caching is a poor trade here: it is CPU work, and
+  # No Man's Sky alone carries a 9.7GB pipeline cache that five workers chew
+  # through on six cores while the 5090 sits idle. With it off, the NVIDIA
+  # driver's own shader cache does the job -- but its default is far too
+  # small for games that size, and it had only grown to 16MB. Games inherit
+  # this from Steam, which inherits it from the session.
+  programs.steam.gamescopeSession.env.__GL_SHADER_DISK_CACHE_SIZE = "12884901888"; # 12GiB
+
   # gamescope's output mode is fixed off SteamOS, so it is pinned here rather
   # than negotiated per client. -O DP-1: card0 is the Raphael iGPU with
   # nothing attached, and only the 5090 has a connected connector.
