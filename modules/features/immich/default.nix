@@ -396,12 +396,15 @@ in
       # The images chown their data dirs at init; `+C`: the database
       # fragments under CoW.
       # `v`: a btrfs subvolume where the filesystem allows, so the compose
-      # unit can snapshot it before each start.
+      # unit can snapshot it before each start. Ownership of the Postgres
+      # and Valkey directories is left alone (`- -`): `d` re-applies it on
+      # every activation, and a running Postgres with a root-owned data
+      # directory PANICs on its next WAL segment.
       systemd.tmpfiles.rules = [
         "v ${cfg.stateDir} 0750 root root -"
-        "d ${cfg.stateDir}/postgres 0700 root root -"
+        "d ${cfg.stateDir}/postgres 0700 - - -"
         "h ${cfg.stateDir}/postgres - - - - +C"
-        "d ${cfg.stateDir}/redis 0755 root root -"
+        "d ${cfg.stateDir}/redis 0755 - - -"
         "d ${cfg.stateDir}/thumbs 0755 root root -"
         "d ${cfg.stateDir}/encoded-video 0755 root root -"
         "d ${cfg.stateDir}/model-cache 0755 root root -"
