@@ -44,7 +44,6 @@ let
     .${cfg.transcoding};
 
   composeYaml = pkgs.replaceVars ./compose.yaml {
-    VERSION = cfg.version;
     NETWORK = traefikCfg.network;
     DATA_DIR = cfg.dataDir;
     STATE_DIR = cfg.stateDir;
@@ -132,12 +131,21 @@ in
 
     version = lib.mkOption {
       type = lib.types.str;
-      default = "v3.2.0";
+      readOnly = true;
+      default =
+        let
+          line = lib.findFirst (lib.hasInfix "image: ghcr.io/immich-app/immich-server:") (throw
+            "cyberfighter.features.immich: no immich-server image line in compose.yaml"
+          ) (lib.splitString "\n" (builtins.readFile ./compose.yaml));
+        in
+        lib.last (lib.splitString ":" line);
+      defaultText = lib.literalMD "the `immich-server` tag in `compose.yaml`";
       description = ''
-        Immich image tag, shared by the server and every ML container so a
-        remote ML host renders the same version. Exact tags only: Immich
-        ships breaking changes on minor versions and the mobile app tracks
-        the server, so bump deliberately with the release notes.
+        The Immich release, read from the server's image line in
+        compose.yaml so the pin lives where every other project keeps it.
+        Every ML container and the mlServer host render their tags from
+        it, which is why it is read-only: a host override would desync
+        them from the server.
       '';
     };
 
@@ -387,8 +395,10 @@ in
 
       # The images chown their data dirs at init; `+C`: the database
       # fragments under CoW.
+      # `v`: a btrfs subvolume where the filesystem allows, so the compose
+      # unit can snapshot it before each start.
       systemd.tmpfiles.rules = [
-        "d ${cfg.stateDir} 0750 root root -"
+        "v ${cfg.stateDir} 0750 root root -"
         "d ${cfg.stateDir}/postgres 0700 root root -"
         "h ${cfg.stateDir}/postgres - - - - +C"
         "d ${cfg.stateDir}/redis 0755 root root -"
@@ -432,6 +442,9 @@ in
         networks = [ traefikCfg.network ];
         inherit prepare;
         runtimeDirectory = "immich";
+        # Postgres, the job queue and the regenerable caches; the originals
+        # on the NAS are never rewritten by an upgrade.
+        snapshot.dir = cfg.stateDir;
         # First start pulls four images, the ML one being ~2 GB.
         timeout = "20min";
         restartTriggers = [

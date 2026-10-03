@@ -7,7 +7,10 @@
 
 services:
   immich-server:
-    image: ghcr.io/immich-app/immich-server:@VERSION@
+    # The one pin: the ML containers and the mlServer host render their
+    # tags from this line (the module reads it). Immich ships breaking
+    # changes on minor versions and the mobile app tracks the server.
+    image: ghcr.io/immich-app/immich-server:v3.2.0
     container_name: immich-server
     # "no", not unless-stopped: docker would otherwise restore this at
     # boot before the unit's ExecStartPre stages secrets into /run.
@@ -90,7 +93,10 @@ services:
 
   database:
     # Immich's own build: Postgres + VectorChord. The server checks the
-    # extension versions at start, so bump this together with @VERSION@.
+    # extension versions at start and updates the extension one way, so
+    # this takes the tag upstream's compose names beside the server
+    # release above, never the registry's newest.
+    # bump: follows=ghcr.io/immich-app/immich-server source=docker/docker-compose.yml service=database
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
     container_name: immich-postgres
     restart: "no"

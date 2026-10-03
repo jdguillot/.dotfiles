@@ -25,7 +25,8 @@ Use the README for the quick map, then jump into the focused docs:
   `deploy-rs`, and `nixos-anywhere`
 - [`docs/SOPS.md`](docs/SOPS.md) - system, home, and SSH-host secret workflows
 - [`docs/CI.md`](docs/CI.md) - the self-hosted GitHub Actions workflows:
-  build and cache, and the weekly dependency bump
+  build and cache, and the weekly bump of flake inputs, npins pins and
+  the pinned container images
 - [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) - repo
   recommendations and why they are worth following
 - [`docs/WORKAROUNDS.md`](docs/WORKAROUNDS.md) - the register of

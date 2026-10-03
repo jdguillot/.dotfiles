@@ -4,7 +4,10 @@
 
 services:
   litellm:
-    # Pinned on purpose; a major bump can change key/DB semantics.
+    # Pinned on purpose; a major bump can change key/DB semantics. The
+    # release notes open with a signing preamble; the host's config file
+    # is where the routes the notes may break are set.
+    # bump: notes-start="## What's Changed" context=hosts/ryzn-server/litellm-config.yaml
     image: ghcr.io/berriai/litellm:v1.99.0
     container_name: litellm
     # "no", not unless-stopped: docker would otherwise restore this at

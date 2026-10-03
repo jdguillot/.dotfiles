@@ -196,6 +196,15 @@ Operational notes:
 
 - Manual `deploy` runs still work and take no lock; the deptui TUI warns
   and offers to pause the agent when you deploy an agent-managed host.
+- The agent's drift guard holds a host whose profiles changed behind its
+  back, unless the running generation's `configurationRevision` is a
+  commit in the watched history. The flake sets it from `self.rev`, so a
+  manual deploy from a clean checkout of a commit that later reaches
+  `latest` passes — a `staging/*` branch the weekly merge picks up,
+  merged with a merge commit rather than a squash. A dirty checkout
+  records no revision and is held until `deptui-agent approve HOST`.
+  Deploy the exact commit you push: an amended commit leaves the host on
+  a revision `latest` never contains.
 - The agent generates its own ssh identity on first start;
   `deptui-agent pubkey` prints the public half, which lives in the
   shared `ssh.authorizedKeys` so every host already trusts it. Host keys

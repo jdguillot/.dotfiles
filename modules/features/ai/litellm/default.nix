@@ -230,8 +230,10 @@ in
         environment.systemPackages = [ keysWrapper ];
 
         # The image chowns PGDATA at init; `+C`: databases fragment under CoW.
+        # `v`: a btrfs subvolume where the filesystem allows, so the compose
+        # unit can snapshot it before each start.
         systemd.tmpfiles.rules = [
-          "d ${cfg.stateDir} 0750 root root -"
+          "v ${cfg.stateDir} 0750 root root -"
           "d ${cfg.stateDir}/postgres 0700 root root -"
           "h ${cfg.stateDir}/postgres - - - - +C"
         ];
@@ -262,6 +264,8 @@ in
           networks = [ traefikCfg.network ];
           inherit prepare;
           runtimeDirectory = "litellm";
+          # Every virtual key and the spend log live in the database.
+          snapshot.dir = cfg.stateDir;
           # First start pulls both images.
           timeout = "15min";
           restartTriggers = [

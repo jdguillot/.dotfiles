@@ -371,6 +371,113 @@ configuration sets it, not when a prompt or a document names it. An empty
 symbol, or one under three characters, is left alone — the check only
 removes holds it can positively disprove.
 
+#### Container images
+
+The two collectors above see what the lock files pin and what nixpkgs
+ships. An image tag in a compose file is neither: `traefik:v3.7` and
+`ghcr.io/berriai/litellm:v1.99.0` are pinned by hand and move only when
+somebody edits the file, which is how a service sits a dozen releases
+behind without anything saying so. `.github/scripts/collect-container-signal.sh`
+closes that for every `image:` line in a tracked compose file under
+`modules/` or `hosts/`. Only those: a container a host runs outside this
+tree is not the repo's to move, and the images inside odysseus's pinned
+source tree move with that npins pin.
+
+There is no list to maintain. The compose files are the inventory, and
+the rest is derived:
+
+- **The tags a bump may take** come from the shape of the pinned tag: the
+  first number stays, every later one is free, the text is literal. `v3.7`
+  gives `^v3\.[0-9]+$`, so traefik moves along its v3 minor line and never
+  to v4; `v1.99.0` gives `^v1\.[0-9]+\.[0-9]+$`, which keeps litellm inside
+  v1 and off its `-rc` and `-dev` tags. A tag with no free number, such as
+  `postgres:17-alpine` or `valkey:9`, matches only itself: a moving alias,
+  reported as floating and left alone (the host takes the newer build on
+  its next `<project>-compose pull`). A version is the run of numbers in
+  the tag, so `v3.7` sorts below `v3.10`.
+- **The project to read** comes from the image's own
+  `org.opencontainers.image.source` label, which ghcr images and most
+  official images carry. A label that is not a GitHub repository (a base
+  image's, say) is named and not read.
+- **The files the model is shown** are the compose file and every tracked
+  `.nix`, `.toml`, `.yaml`, `.json` or `.conf` beside it.
+- **The hosts** are the ones enabling a compose project named after the
+  compose file's directory (`immich/` is `immich` and `immich-ml`).
+- **A placeholder tag** (`@ML_IMAGE_TAG@`) is rendered by the module from
+  another pin and is listed as derived, with nothing to read.
+
+Exceptions are declared where they apply, as a `# bump:` comment on the
+line above the image. `follows=<image> source=<path> service=<name>` says
+the tag is whatever upstream's compose file names beside the followed
+image's release: Immich's Postgres build carries extension versions the
+server checks at start and updates one way, so the right tag is what
+`docker/docker-compose.yml` says at the server release being taken, never
+the registry's newest. `pattern=`, `repo=`, `min-age=` override the derived
+values; `notes-start=` drops a preamble from the release notes (litellm's
+signing instructions); `context=` adds files, such as a host's own config
+for the service; `skip` excludes the line.
+
+The newest matching tag wins unless it is younger than three days
+(`CONTAINER_MIN_AGE_DAYS`, or `min-age=` per image), in which case the next
+older one does. A release on fire is usually found out within days, and
+the bump that would have taken it is only a week away. Age comes from the
+earliest stable GitHub release on that line — `v3.8.0` for a `v3.8` tag —
+and a candidate no release maps to is taken as is: an unknown age is not a
+young one. A follower moves only if the image it follows did.
+
+The registry is read with plain `curl` against the OCI distribution API
+and an anonymous pull token taken from the registry's own
+`WWW-Authenticate` challenge — what `docker pull` sees, and no new tool on
+the runner's PATH. Docker Hub returns every tag in one page; ghcr pages at
+a thousand, the script follows `Link`, and the calls retry with backoff
+because ghcr answers back-to-back anonymous listings with a 429. A
+registry that still does not answer leaves the image `unknown` — no bump,
+and the table says why. For a tag that moves it then resolves the manifest
+and checks that a `linux/amd64` image is behind it: a tag that exists but
+lacks the platform pulls fine as far as the registry is concerned and
+fails on the host, so the bump is withheld with a ⚠ in the table.
+
+For a GitHub project the digest carries the release notes of every stable
+release between the two tags, ordered by version so a backport to an
+older line does not land between two releases of the line being taken,
+the loudest and the most recently touched threads since the current
+release — the same two reads as the watched packages — and this
+repository's own files for the image. The files are the part the nix scan
+does without. There is no build gate behind an image tag: a new tag
+renders into a compose file that evaluates and builds exactly as before,
+and the first thing that can fail is the container on the host after the
+merge deploys. So the model is given what this repo sets, and asked to
+match a removed key to a line here.
+
+`.github/scripts/scan-containers.sh` makes one schema-constrained Ollama
+call over that digest (`.github/opencode/container-prompt.md`), only when
+something moves, and gets back holds plus, per moving image, three
+markdown fields: `watch_for`, `before_deploying` and `highlights`.
+`before_deploying` is the one the nix bump has no analogue for: a database
+or state backup when a release migrates data, a companion that has to move
+with it (an Immich server bump moves the mobile app's minimum version), a
+config edit that has to land first. It fails open like the other calls,
+and a dispatch `hold` naming an image (`immich/immich-server`, the
+compose directory and service) lands in this verdict as well as the nix
+one.
+
+What cannot be done here is a rehearsal. Starting the new image against
+the service's data is the only test that catches a failed schema
+migration, and that data lives on the host behind root-owned volumes,
+while the runner is a `DynamicUser` without the docker socket, on purpose
+(see "What the agent can reach"). Giving it the socket would be root on
+`ryzn-server` for every job a public repo can trigger. The safety net is
+on the host instead: a compose project with `snapshot.dir` set takes a
+read-only btrfs snapshot of its state directory before every start, after
+the previous `down`, and `docs/MODULES.md` ("Rollback" under Immich) has
+the four commands that put it back. The `before_deploying` note is the
+other half.
+
+The long form goes to `digest-containers.md`, kept apart from `digest.md`
+so the nix triage does not read release notes for images it cannot hold;
+the table goes to `containers.md`, printed by the scan's summary and the
+pull request; `containers.json` is what the update job applies.
+
 ### update — apply, prove, and adapt
 
 First the job re-runs `.github/scripts/merge-staging.sh` against the same
@@ -381,6 +488,16 @@ job's working tree died with it). Then
 with an explicit name list, so a hold is a real hold — that input keeps its
 revision while everything around it moves. Inputs that `follows` nixpkgs
 still move with nixpkgs; holding those back would mean holding nixpkgs.
+
+`.github/scripts/apply-container-updates.sh` then edits the pinned files
+for every image the scan marked as moving, minus the container verdict's
+holds, minus any whose target lacks a `linux/amd64` image, and minus a
+follower whose followed entry did not move. Each edit is read back the
+way the collector read the tag, so a line a staged branch changed since
+the scan is reported and left alone rather than half-edited. The edits
+are what the `changed` gate below sees and what the build renders; an
+image bump that cannot be applied is a warning, never a failed week. The
+outcome per image goes to `containers-applied.json` for the pull request.
 
 The job then works out whether the tree it is about to push is different
 from `main` at all — diffing the working tree (staged merges committed,
@@ -777,10 +894,14 @@ paragraph; the held-back table, if anything was held; a second table for
 anything the fix agent held *after* the build failed; the ledger's standing
 holds with how long each has stood; the release-notes
 overview of what landed upstream, grouped by this repo's own module
-families; the "how to apply" section from `boot-requirement.sh`; the table
-of package versions this bump changes; and the fix agent's note, if the
-bump needed an in-repo change. Each section is
-omitted when it has nothing to say, so a clean week reads clean.
+families; the containers section — the watched-images table, the model's
+summary, and per bumped image what to watch for, what to do on the host
+before deploying and what is new (`container-notes.sh`, which also prints
+the scan's preview, so the two cannot drift); the "how to apply" section
+from `boot-requirement.sh`; the table of package versions this bump
+changes; and the fix agent's note, if the bump needed an in-repo change.
+Each section is omitted when it has nothing to say, so a clean week reads
+clean.
 
 The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull
 request
@@ -791,8 +912,8 @@ the PAT is so the PR visibly shows it.
 
 Manual dispatch takes three inputs: `skip-scan` bumps everything without the
 triage pass, `fix-timeout-minutes` changes the fix agent's budget, and `hold`
-takes a space-separated list of sources to hold regardless of what the triage
-says.
+takes a space-separated list of sources — flake inputs, npins pins or
+watched containers — to hold regardless of what the triage says.
 
 ## `docs-refresh.yml` — the weekly docs refresh
 
