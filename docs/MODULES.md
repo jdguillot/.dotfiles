@@ -111,6 +111,11 @@ Key options:
 - `cyberfighter.system.bootloader.luksDevice`
 - `cyberfighter.system.windowsUsername`
 
+The module also caps the systemd journal at 500M on every host
+(`services.journald.settings.Journal.SystemMaxUse`, a `mkDefault`): journald's own default
+is 10% of the filesystem up to 4G, which on a small server disk is space
+better spent elsewhere.
+
 #### Choosing a bootloader
 
 `bootloader.type` is one choice, not a flag per loader, because every loader
