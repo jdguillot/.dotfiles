@@ -769,7 +769,11 @@ request, and the body says so if the push did not succeed.
 The branch is pushed from the **update** job, not the PR job, because the
 agent's fix lives in that working tree and only that job has it. A branch
 push is not a pull request, and it only happens once the tree is green
-*and* different from `main`.
+*and* different from `main`. The PR job also requires the update job itself
+to have succeeded: `green` is set before the push, so a rejected push would
+otherwise still reach it. It edits only an *open* pull request on the
+branch — `gh pr edit <branch>` also matches last week's merged one, and once
+rewrote its description.
 
 The PR body, when one opens, is assembled from: the staged-branch report
 and the list of commits that landed; the triage summary and its `staged_notes`
@@ -783,11 +787,15 @@ bump needed an in-repo change. Each section is
 omitted when it has nothing to say, so a clean week reads clean.
 
 The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull
-request
-opened with the default `GITHUB_TOKEN` does not trigger other workflows —
-GitHub suppresses that to avoid recursive runs — so `ci.yml` would never
-post a status on it. The builds in the update job already proved the tree;
-the PAT is so the PR visibly shows it.
+request opened with the default `GITHUB_TOKEN` does not trigger other
+workflows — GitHub suppresses that to avoid recursive runs — so `ci.yml`
+would never post a status on it. The builds in the update job already proved
+the tree; the PAT is so the PR visibly shows it.
+
+The same PAT pushes the branch, and it needs the `workflow` scope (a
+fine-grained token: **Workflows: read and write**). Without it GitHub
+rejects any push whose diff touches `.github/workflows/`, which a staged
+branch that changes this workflow does.
 
 Manual dispatch takes three inputs: `skip-scan` bumps everything without the
 triage pass, `fix-timeout-minutes` changes the fix agent's budget, and `hold`
