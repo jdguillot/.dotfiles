@@ -39,13 +39,16 @@ instead of guessing, and keep them current (see "Documentation"):
   `nix build .#nixosConfigurations.<hostname>.config.system.build.toplevel`
 - Hostnames and users are centralized in `hosts/default.nix`; the flake
   outputs list every valid `<hostname>` and `<user>@<hostname>` target.
-- Two lockfiles: `flake.lock` pins flake inputs (nixpkgs, home-manager,
+- Three lockfiles: `flake.lock` pins flake inputs (nixpkgs, home-manager,
   …); `npins/sources.json` pins vendored third-party sources (skill
   repos, pinned app trees) — update those with `npins update <name>`,
   never by hand-editing revs. New pins: `npins add github <owner> <repo>
   --branch <br>`, or declare by hand in `sources.json` (spec fields
   only, `null` revision/url/hash) and run `npins update <name>` to
-  resolve. See `docs/RECOMMENDATIONS.md`.
+  resolve. See `docs/RECOMMENDATIONS.md`. `images.lock.json` pins the
+  compose images a project preloads (`preloadImages`) by digest and Nix
+  hash; after changing such an image's tag run `nix run .#lock-images`
+  and commit both files. Never hand-edit it.
 
 ### Build on hosts with horsepower
 

@@ -13,6 +13,7 @@
 
 let
   cfg = config.cyberfighter.features.compose;
+  composeImages = import ../../../lib/compose-images.nix { inherit lib; };
 
   composeCmd =
     name: p:
@@ -87,6 +88,18 @@ let
           description = "Flags appended to `up -d --remove-orphans`.";
         };
 
+        preloadImages = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = lib.literalExpression "composeImages.imagesIn ./compose.yaml";
+          description = ''
+            Image refs (`name:tag`) to load from the Nix store before `up`,
+            pinned in images.lock.json. They reach the host with the closure,
+            so activation runs `docker load` instead of a registry pull. Must
+            name every image the project runs: `up` gets `--pull never`.
+          '';
+        };
+
         restartTriggers = lib.mkOption {
           type = lib.types.listOf lib.types.unspecified;
           default = [ ];
@@ -145,6 +158,38 @@ let
         btrfs subvolume delete "$s"
       done
     '';
+
+  # Loads each preloaded image unless the one docker holds under that ref is
+  # still the one this tar last produced. A manual `docker pull` changes the
+  # ID, so it lasts until the next start; a new lock entry changes the tar.
+  loadScript =
+    name: p:
+    pkgs.writeShellScript "${name}-load-images" (
+      ''
+        set -euo pipefail
+        state=/var/lib/compose-images/${name}
+        mkdir -p "$state"
+        load() {
+          local ref=$1 tar=$2 marker=$3 id
+          id=$(${pkgs.docker}/bin/docker image inspect --format '{{.Id}}' "$ref" 2>/dev/null || true)
+          if [ -n "$id" ] && [ "$(cat "$marker" 2>/dev/null)" = "$tar $id" ]; then
+            echo "${name}: $ref already loaded from $tar"
+            return
+          fi
+          echo "${name}: loading $ref from $tar"
+          ${pkgs.docker}/bin/docker load --input "$tar"
+          id=$(${pkgs.docker}/bin/docker image inspect --format '{{.Id}}' "$ref")
+          printf '%s %s\n' "$tar" "$id" > "$marker"
+        }
+      ''
+      + lib.concatMapStrings (
+        ref:
+        let
+          marker = builtins.replaceStrings [ "/" ":" ] [ "_" "_" ] ref;
+        in
+        "load ${lib.escapeShellArg ref} ${composeImages.pull pkgs ref} \"$state/${marker}\"\n"
+      ) p.preloadImages
+    );
 in
 {
   options.cyberfighter.features.compose.projects = lib.mkOption {
@@ -174,6 +219,10 @@ in
       let
         compose = composeCmd name p;
         networkUnits = map (n: "docker-network-${n}.service") p.networks;
+        upFlags = p.extraUpFlags ++ lib.optionals (p.preloadImages != [ ]) [
+          "--pull"
+          "never"
+        ];
       in
       {
         inherit (p) description restartTriggers;
@@ -213,14 +262,15 @@ in
           RestartSec = "30s";
 
           ExecStart = "${compose} up -d --remove-orphans${
-            lib.optionalString (p.extraUpFlags != [ ]) " ${lib.concatStringsSep " " p.extraUpFlags}"
+            lib.optionalString (upFlags != [ ]) " ${lib.concatStringsSep " " upFlags}"
           }";
           ExecStop = "${compose} down";
         }
-        // lib.optionalAttrs (p.prepare != null || p.snapshot.dir != null) {
+        // lib.optionalAttrs (p.prepare != null || p.snapshot.dir != null || p.preloadImages != [ ]) {
           ExecStartPre =
             lib.optional (p.prepare != null) "${p.prepare}"
-            ++ lib.optional (p.snapshot.dir != null) "-${snapshotScript name p}";
+            ++ lib.optional (p.snapshot.dir != null) "-${snapshotScript name p}"
+            ++ lib.optional (p.preloadImages != [ ]) "${loadScript name p}";
         }
         // lib.optionalAttrs (p.runtimeDirectory != null) {
           RuntimeDirectory = p.runtimeDirectory;

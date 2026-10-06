@@ -3,6 +3,10 @@
 # cachix: drops every path holding a git-crypt file's bytes and every path
 # whose closure contains one. attic is LAN-only and still gets everything.
 #
+# Preloaded compose images (dockerTools.pullImage tars, `docker-image-*.tar`)
+# are withheld the same way: they are public, but multi-gigabyte, and a host
+# off the LAN can pull them from their registry instead.
+#
 # The secret files are whatever .gitattributes routes through git-crypt, so a
 # newly encrypted file is covered with no edit here. They are found in the
 # store by name -- a path literal lands as /nix/store/<hash>-<basename> -- which
@@ -33,12 +37,14 @@ if [ ${#secret_names[@]} -eq 0 ]; then
   exit 1
 fi
 
-# Reads store paths on stdin, prints those named like a secret file.
-# ${p:44} skips "/nix/store/" and the 32-char hash plus its dash.
+# Reads store paths on stdin, prints those named like a secret file or a
+# preloaded image tar. ${p:44} skips "/nix/store/" and the 32-char hash plus
+# its dash.
 secret_paths() {
-  local p
+  local p n
   while IFS= read -r p; do
-    if [ -n "${secret_names[${p:44}]:-}" ]; then
+    n=${p:44}
+    if [ -n "${secret_names[$n]:-}" ] || [[ $n == docker-image-*.tar ]]; then
       printf '%s\n' "$p"
     fi
   done

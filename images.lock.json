@@ -1,0 +1,7 @@
+{
+  "yanwk/comfyui-boot:cu130-slim-v2": {
+    "hash": "sha256-SDnI91G2aDrZIZ/Ime/bOI4zoIPHsthOzhjceDWTlfQ=",
+    "imageDigest": "sha256:8c72cb7f983741f19c896dcb869f8aaa7e1d6d8785a28183367291eb91754d3b",
+    "imageName": "yanwk/comfyui-boot"
+  }
+}

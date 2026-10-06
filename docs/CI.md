@@ -226,6 +226,11 @@ path's whole closure, so the script finally re-checks the closure of what it
 lets through and fails the job rather than push a secret. A host fetching
 from cachix off the LAN builds those few paths itself in seconds.
 
+Preloaded image tars (`docker-image-*.tar`, see "Preloaded images") are
+withheld the same way, with everything that references them. They hold
+nothing secret, but they are multi-gigabyte, and a host off the LAN can pull
+the same image from its registry.
+
 ## `weekly-update.yml` — the weekly bump
 
 Tuesdays at 11:00 UTC, or on manual dispatch. That is 04:00 Pacific now
@@ -477,6 +482,25 @@ The long form goes to `digest-containers.md`, kept apart from `digest.md`
 so the nix triage does not read release notes for images it cannot hold;
 the table goes to `containers.md`, printed by the scan's summary and the
 pull request; `containers.json` is what the update job applies.
+
+#### Preloaded images
+
+A compose unit is started during activation, and `switch-to-configuration`
+waits for it. A pull there is time spent inside deploy-rs's 240-second
+activation timeout, and a slow one ends in a magic rollback. A project can
+instead list its images in `preloadImages` (see `docs/MODULES.md`, the
+`compose` row): each is pinned by digest in `images.lock.json` and becomes a
+`dockerTools.pullImage` store path, so CI fetches it, attic caches it, and
+deploy-rs copies it with the closure *before* activation. The unit then only
+runs `docker load`, skipped when the loaded image is unchanged, and `up`
+gets `--pull never`.
+
+`nix run .#lock-images` (`scripts/lock-images.sh`) writes the lock. It
+re-resolves each tag and downloads only an image whose digest moved, which
+covers a bumped tag and a floating tag that upstream rebuilt. The update job
+runs it right after `apply-container-updates.sh`, so a bumped tag and its
+lock entry land in the same commit. A tag with no lock entry fails the
+build, naming the image and the command, so the two cannot drift.
 
 ### update — apply, prove, and adapt
 

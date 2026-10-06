@@ -264,7 +264,21 @@
 
       # Built by the update workflow and linked into the fix agent's opencode
       # config; not part of any host's closure.
-      packages.${system}.ci-agent-skills = import ./ci/agent-skills.nix { inherit pkgs; };
+      packages.${system} = {
+        ci-agent-skills = import ./ci/agent-skills.nix { inherit pkgs; };
+
+        # Writes images.lock.json; see scripts/lock-images.sh. nix itself is
+        # left to the caller's PATH so client and daemon agree.
+        lock-images = pkgs.writeShellApplication {
+          name = "lock-images";
+          runtimeInputs = [
+            pkgs.jq
+            pkgs.skopeo
+            pkgs.nix-prefetch-docker
+          ];
+          text = builtins.readFile ./scripts/lock-images.sh;
+        };
+      };
 
     };
 

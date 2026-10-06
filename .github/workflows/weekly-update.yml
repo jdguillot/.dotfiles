@@ -372,6 +372,14 @@ jobs:
           .github/scripts/apply-updates.sh
           .github/scripts/apply-container-updates.sh
 
+      # After the tags move: re-pins every preloaded image, fetching only the
+      # ones whose digest changed (a bumped tag, or a floating tag upstream
+      # rebuilt). Non-fatal like the tag edits -- an entry it could not write
+      # fails the build below with a message naming the image.
+      - name: Lock the preloaded images
+        run: |
+          nix run .#lock-images || echo "::warning::lock-images failed; a preloaded image whose tag moved will fail the build"
+
       # After the bump and before the build: a `commit` probe has to read
       # the revision the lock just moved to, and a retirement is then proved
       # by the same build gate as the bump. Fails open -- the register is

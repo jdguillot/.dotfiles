@@ -16,6 +16,7 @@
 let
   cfg = config.cyberfighter.features.ai.comfyui.server;
   traefikCfg = config.cyberfighter.features.traefik;
+  composeImages = import ../../../../lib/compose-images.nix { inherit lib; };
 
   composeYaml = pkgs.replaceVars ./compose.yaml {
     BIND = cfg.bind;
@@ -166,7 +167,9 @@ in
         "${traefikCfg.routeLabelFiles.comfyui}"
       ];
       networks = [ traefikCfg.network ];
-      # Pulling a multi-gigabyte CUDA image on a cold start takes a while.
+      # A 16 GB CUDA image: loaded from the store, not pulled mid-activation.
+      preloadImages = composeImages.imagesIn ./compose.yaml;
+      # Loading it on a cold start still takes a while.
       timeout = "30min";
       restartTriggers = [ composeYaml ];
     };
