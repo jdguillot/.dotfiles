@@ -48,6 +48,7 @@ mkdir -p "$OUT_DIR"
 # attempted. Both are no-ops on a full clone that already has the refs.
 git fetch -t --prune origin
 
+# Names keep their `staging/` prefix; the report prints them as they are.
 mapfile -t branches < <(
   git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/staging/*' \
     | sed 's@^origin/@@' | sort
@@ -66,13 +67,20 @@ for b in ${branches[@]+"${branches[@]}"}; do
     continue
   fi
 
-  echo "::group::merge staging/$b ($count commits over HEAD)"
+  echo "::group::merge $b ($count commits over HEAD)"
   # The merge is the only step that can fail in a way we need to recover
   # from, so it is the only one we isolate with set +e. A failure is not
   # fatal to the loop: we just need to roll back and move on to the next
   # branch.
+  #
+  # --no-ff always writes a commit, so it needs a committer: the ephemeral
+  # runner has no global git config, and without one every merge fails
+  # before it starts. git's own output stays in the log for the same reason.
   set +e
-  git merge --no-ff --no-edit -m "Merge staging/$b" "$full" >/dev/null 2>&1
+  git -c user.name="github-actions[bot]" \
+    -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+    -c commit.gpgsign=false \
+    merge --no-ff --no-edit -m "Merge $b" "$full"
   rc=$?
   set -e
   if [ "$rc" -eq 0 ]; then
@@ -85,7 +93,7 @@ for b in ${branches[@]+"${branches[@]}"}; do
     # actually started. `|| true` keeps us safe in both cases.
     git merge --abort >/dev/null 2>&1 || true
     echo "skipped: $b does not merge cleanly ($count commits)"
-    echo "::warning::staging/$b left out of the tree; the report in the pull request body has the full list"
+    echo "::warning::$b left out of the tree; the report in the pull request body has the full list"
   fi
   echo "::endgroup::"
 done
@@ -108,7 +116,7 @@ fi
     if [ ${#merged[@]} -gt 0 ]; then
       echo "### Merged into this pull request"
       echo ""
-      for b in "${merged[@]}"; do printf -- '- \`staging/%s\`' "$b"; echo; done
+      for b in "${merged[@]}"; do printf -- '- `%s`' "$b"; echo; done
       echo ""
     fi
     if [ ${#skipped[@]} -gt 0 ]; then
@@ -116,13 +124,13 @@ fi
       echo ""
       echo "These did not merge cleanly against the tree being updated. They stay on their own branches and will need their own pull request. Their presence here is for awareness; it does not affect whether the update itself ships."
       echo ""
-      for b in "${skipped[@]}"; do printf -- '- \`staging/%s\`' "$b"; echo; done
+      for b in "${skipped[@]}"; do printf -- '- `%s`' "$b"; echo; done
       echo ""
     fi
     if [ ${#untouched[@]} -gt 0 ]; then
       echo "### Already up to date with \`main\`"
       echo ""
-      for b in "${untouched[@]}"; do printf -- '- \`staging/%s\`' "$b"; echo; done
+      for b in "${untouched[@]}"; do printf -- '- `%s`' "$b"; echo; done
       echo ""
     fi
   fi

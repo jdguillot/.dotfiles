@@ -88,7 +88,6 @@ jobs:
       - name: Merge `staging/*` branches
         run: |
           .github/scripts/merge-staging.sh
-          echo "### Staged branches" >> "$GITHUB_STEP_SUMMARY"
           cat staging-report/staging.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Collect upstream signal
@@ -646,8 +645,10 @@ jobs:
     needs: [update, cache]
     # A cache hiccup should not cost the week its pull request, so this waits
     # for the push but does not require it to have succeeded. A no-change
-    # week is a legitimate "no pull request" outcome.
-    if: ${{ !cancelled() && needs.update.outputs.green == 'true' && needs.update.outputs.changed == 'true' }}
+    # week is a legitimate "no pull request" outcome. `green` is set before the
+    # push, so the update job's own result gates too: an unpushed branch has
+    # nothing for a pull request to show.
+    if: ${{ !cancelled() && needs.update.result == 'success' && needs.update.outputs.green == 'true' && needs.update.outputs.changed == 'true' }}
     runs-on: [self-hosted, nixos]
     steps:
       # Before the downloads: checkout cleans the workspace, and this job
@@ -690,8 +691,6 @@ jobs:
             # the paths' common ancestor, so `staging-report/` survives into
             # the download.
             if [ -s update-report/staging-report/staging.md ]; then
-              echo "## Staged branches"
-              echo ""
               cat update-report/staging-report/staging.md
               echo ""
               if [ -s update-report/staging-report/staged-commits.txt ]; then
@@ -811,9 +810,16 @@ jobs:
           # writer remembering.
           } | .github/scripts/sanitize-refs.sh > "$body"
 
-          gh pr create --repo "$GITHUB_REPOSITORY" \
-            --head "$UPDATE_BRANCH" --base main \
-            --title "chore: weekly update" \
-            --body-file "$body" \
-            --label dependencies --label automated \
-          || gh pr edit "$UPDATE_BRANCH" --repo "$GITHUB_REPOSITORY" --body-file "$body"
+          # Edit only an open pull request: `gh pr edit <branch>` also matches
+          # last week's merged one and would rewrite its history.
+          open_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$UPDATE_BRANCH" \
+            --state open --json number --jq '.[0].number // empty')
+          if [ -n "$open_pr" ]; then
+            gh pr edit "$open_pr" --repo "$GITHUB_REPOSITORY" --body-file "$body"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" \
+              --head "$UPDATE_BRANCH" --base main \
+              --title "chore: weekly update" \
+              --body-file "$body" \
+              --label dependencies --label automated
+          fi

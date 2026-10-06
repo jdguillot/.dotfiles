@@ -700,11 +700,11 @@ cannot answer is reported as unknown rather than read as "still waiting".
 A resolved entry marked `retire = "auto"` is removed by
 `.github/scripts/retire-workaround.sh`: every `WORKAROUND(<id>)` ..
 `END WORKAROUND(<id>)` block in the files it lists, then its own block in
-the register. Deleting a line range is something `awk` gets right every
-time, which is more than a model editing Nix can claim, so no agent is
-involved. The result is evaluated for the hosts the entry names and put
-back untouched if that fails; what survives is built by the same gate as
-the bump. A resolved entry marked `manual` — a fix woven through a module,
+the register. Deleting a line range is something a plain bash loop gets
+right every time, which is more than a model editing Nix can claim, so no
+agent is involved. The result is evaluated for the hosts the entry names
+and put back untouched if that fails; what survives is built by the same
+gate as the bump. A resolved entry marked `manual` — a fix woven through a module,
 or one that lives outside the repo, such as a WSL channel on the Windows
 host — is reported instead, with its removal notes, every week until
 someone deletes the entry. Both reach the job summary, the pull request
@@ -886,7 +886,11 @@ request, and the body says so if the push did not succeed.
 The branch is pushed from the **update** job, not the PR job, because the
 agent's fix lives in that working tree and only that job has it. A branch
 push is not a pull request, and it only happens once the tree is green
-*and* different from `main`.
+*and* different from `main`. The PR job also requires the update job itself
+to have succeeded: `green` is set before the push, so a rejected push would
+otherwise still reach it. It edits only an *open* pull request on the
+branch — `gh pr edit <branch>` also matches last week's merged one, and once
+rewrote its description.
 
 The PR body, when one opens, is assembled from: the staged-branch report
 and the list of commits that landed; the triage summary and its `staged_notes`
@@ -904,11 +908,15 @@ Each section is omitted when it has nothing to say, so a clean week reads
 clean.
 
 The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull
-request
-opened with the default `GITHUB_TOKEN` does not trigger other workflows —
-GitHub suppresses that to avoid recursive runs — so `ci.yml` would never
-post a status on it. The builds in the update job already proved the tree;
-the PAT is so the PR visibly shows it.
+request opened with the default `GITHUB_TOKEN` does not trigger other
+workflows — GitHub suppresses that to avoid recursive runs — so `ci.yml`
+would never post a status on it. The builds in the update job already proved
+the tree; the PAT is so the PR visibly shows it.
+
+The same PAT pushes the branch, and it needs the `workflow` scope (a
+fine-grained token: **Workflows: read and write**). Without it GitHub
+rejects any push whose diff touches `.github/workflows/`, which a staged
+branch that changes this workflow does.
 
 Manual dispatch takes three inputs: `skip-scan` bumps everything without the
 triage pass, `fix-timeout-minutes` changes the fix agent's budget, and `hold`

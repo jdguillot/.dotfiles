@@ -75,7 +75,9 @@
       kind = "issue";
       url = "https://github.com/immich-app/immich/issues/23462";
     };
-    retire = "auto";
+    # A closed issue says nothing about the pinned Immich tag carrying the
+    # fix; retiring on it alone turns OCR back on against the leaky release.
+    retire = "manual";
     removal = ''
       Delete the fenced `ocr = false;` line on thkpd-pve1 (the option
       defaults to true), bump `immich.version` to a release that carries the
@@ -112,15 +114,18 @@
     ];
     upstream = {
       issue = "https://github.com/immich-app/immich/issues/31488";
-      fix = "https://github.com/immich-app/immich/pull/31523";
     };
+    # The issue closed on the fix reaching main (a Node bump, not the closed
+    # PR 31523); a maintainer there says it ships in v3.3.0.
     resolved = {
-      kind = "pr";
-      url = "https://github.com/immich-app/immich/pull/31523";
+      kind = "release";
+      repo = "immich-app/immich";
+      minVersion = "3.3.0";
+      prerelease = false;
     };
     retire = "manual";
     removal = ''
-      A merged PR is not enough: `cyberfighter.features.immich.version` is an
+      A release is not enough: `cyberfighter.features.immich.version` is an
       exact tag. Bump it to the first release that carries the fix and deploy,
       then delete the fenced watchdog block in thkpd-pve1's configuration.nix,
       delete hosts/thkpd-pve1/immich-memory-watchdog.sh and this entry. Before

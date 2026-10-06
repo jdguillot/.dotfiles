@@ -15,8 +15,9 @@ model:
   provider: "custom"
   base_url: "http://127.0.0.1:11434/v1"
 
-  # Conservative; raise only with a measured nvidia-smi check.
-  context_length: 65536
+  # Match the server window (OLLAMA_CONTEXT_LENGTH), as opencode already runs.
+  # KV spill lands on free RAM (q8_0 KV + flash attention), no 400s at the edge.
+  context_length: 262144
 
 # A cold start pays a ~18GB SSD read before the first token; the cloud-tuned
 # default gives up first.
