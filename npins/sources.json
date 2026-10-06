@@ -9,9 +9,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
-      "url": "https://github.com/anthropics/skills/archive/8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4.tar.gz",
-      "hash": "sha256-PRBkTEGNwT73EFCvuTprzIBGiG+UGSYiaCkY7Ji13us="
+      "revision": "683bc88e56f3e09ba94f7055977f3d3aa499f202",
+      "url": "https://github.com/anthropics/skills/archive/683bc88e56f3e09ba94f7055977f3d3aa499f202.tar.gz",
+      "hash": "sha256-APw+xMKqRvkLnuQxttiyyIeylrIMSxZovQnw3xEl1C4="
     },
     "astrotuxlauncher": {
       "type": "GitRelease",
@@ -90,9 +90,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "9ef6d4f1a79d68c49849bffd76d496b02feb52e7",
-      "url": "https://github.com/arqueon/dms-gaze-auth/archive/9ef6d4f1a79d68c49849bffd76d496b02feb52e7.tar.gz",
-      "hash": "sha256-QPAK4eFSsxYfRmGYOZqUAYSlLpukm0eZHn5c6SSHdPo="
+      "revision": "d2cda3db76a8769a5c316f6031161e66c5fc8a7a",
+      "url": "https://github.com/arqueon/dms-gaze-auth/archive/d2cda3db76a8769a5c316f6031161e66c5fc8a7a.tar.gz",
+      "hash": "sha256-NU/lJUuktrY1SLYa0Z+SnnvoTGGu/RYiecWK7W4S8U0="
     },
     "dms-plugin-hass": {
       "type": "Git",
@@ -181,9 +181,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "e774a9756f2a50499c37a5513f28bee4ebe81d73",
-      "url": "https://github.com/AvengeMedia/dms-plugins/archive/e774a9756f2a50499c37a5513f28bee4ebe81d73.tar.gz",
-      "hash": "sha256-92NjKVTslsbSVJMnxV4SaL7o0vZ1/mxaKdcRJr7EoqI="
+      "revision": "a8a508bc371e7c3f2c7862d8840b88cf5c63978f",
+      "url": "https://github.com/AvengeMedia/dms-plugins/archive/a8a508bc371e7c3f2c7862d8840b88cf5c63978f.tar.gz",
+      "hash": "sha256-3nHfkGzmmq8JpN7bmO8Z5zIumvx8dzwS1GtQ6V0XgMg="
     },
     "hyperskills": {
       "type": "Git",
@@ -207,9 +207,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "c55ee46073ed923f86ce59a5eb3b6d895095d1b7",
-      "url": "https://github.com/mattpocock/skills/archive/c55ee46073ed923f86ce59a5eb3b6d895095d1b7.tar.gz",
-      "hash": "sha256-L3CpIT2DeI+fUFl9fcygojtQo2DzEen69rMD1XqR1vM="
+      "revision": "7a030a8b0dcaa601bb0dda9aaf174affb3d61145",
+      "url": "https://github.com/mattpocock/skills/archive/7a030a8b0dcaa601bb0dda9aaf174affb3d61145.tar.gz",
+      "hash": "sha256-Uym8q7sK1CmByUMWpTCM8KSq0rYFca2DC7u4ZbsCa1s="
     },
     "nix-skills": {
       "type": "Git",
@@ -246,9 +246,9 @@
       },
       "branch": "dev",
       "submodules": false,
-      "revision": "3b6c169162330cd35c4ce6d14949ef15fd3208a2",
-      "url": "https://github.com/odysseus-dev/odysseus/archive/3b6c169162330cd35c4ce6d14949ef15fd3208a2.tar.gz",
-      "hash": "sha256-iHjcuZbstrHTWUfPxpMrbjLA+zYl3f2zsfILkagCGGE="
+      "revision": "2992bf6d368a11472323e47d3bfed91e79cefc6b",
+      "url": "https://github.com/odysseus-dev/odysseus/archive/2992bf6d368a11472323e47d3bfed91e79cefc6b.tar.gz",
+      "hash": "sha256-Uk7xONuvSf1wqNHdi5i0+huAOskB+0PiUJUTySRlsT8="
     },
     "tmux-sessionx": {
       "type": "Git",
