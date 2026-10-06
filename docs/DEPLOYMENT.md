@@ -217,6 +217,12 @@ Operational notes:
   come from the `system.hostKey` pins in `hosts/default.nix` where set,
   and are learned on first contact otherwise
   (`StrictHostKeyChecking=accept-new`).
+- Every deploy node sets `activationTimeout = 900` (deploy-rs defaults to
+  240 seconds). Compose units start during activation, so a new image pull
+  or an odysseus rebuild runs inside that window. When activation outlasts
+  it, deploy-rs gives up, the host finishes switching with nobody left to
+  confirm it, and magic rollback reverts it 30 seconds later. The log
+  reads `Timeout elapsed for confirmation`.
 - A failed host is parked until the tag moves again or a kick; a host that
   was simply offline is caught up automatically when it answers again.
 - Kick it instead of waiting for the next poll — locally

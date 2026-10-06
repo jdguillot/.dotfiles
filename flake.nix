@@ -211,6 +211,10 @@
           # login session (`sudo -u` from root has no D-Bus, so
           # `systemctl --user` fails).
           sshUser = username;
+          # Compose units start inside activation, and a new image pull or
+          # build runs there; the 240s default rolled back a 7.5-minute
+          # odysseus rebuild. Magic rollback still catches a broken switch.
+          activationTimeout = 900;
         }
         // (
           if withHome then
