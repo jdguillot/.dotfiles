@@ -88,7 +88,6 @@ jobs:
       - name: Merge `staging/*` branches
         run: |
           .github/scripts/merge-staging.sh
-          echo "### Staged branches" >> "$GITHUB_STEP_SUMMARY"
           cat staging-report/staging.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Collect upstream signal
@@ -643,8 +642,6 @@ jobs:
             # the paths' common ancestor, so `staging-report/` survives into
             # the download.
             if [ -s update-report/staging-report/staging.md ]; then
-              echo "## Staged branches"
-              echo ""
               cat update-report/staging-report/staging.md
               echo ""
               if [ -s update-report/staging-report/staged-commits.txt ]; then

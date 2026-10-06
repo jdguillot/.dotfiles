@@ -161,8 +161,9 @@ if [ "$(jq 'length' <<<"$dropped")" -gt 0 ]; then
   unused_note=$(jq -r 'join(", ")' <<<"$dropped")
   jq --argjson drop "$dropped" --arg note "$unused_note" '
     .holds |= [ .[] | select(.name as $n | $drop | index($n) | not) ]
-    | .summary += ("\n\nDropped as unfounded: " + $note
-                   + " -- the option or symbol each hold named is not referenced anywhere in this repo.")
+    | .summary += ("\n\n**Not held after all:** " + $note
+                   + " -- the paragraph above was written before the check that drops a hold whose"
+                   + " option or symbol nothing in this repo references, so these bump with everything else.")
   ' "$verdict" > "$verdict.tmp" && mv "$verdict.tmp" "$verdict"
 fi
 
