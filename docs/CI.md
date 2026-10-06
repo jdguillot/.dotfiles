@@ -583,11 +583,11 @@ cannot answer is reported as unknown rather than read as "still waiting".
 A resolved entry marked `retire = "auto"` is removed by
 `.github/scripts/retire-workaround.sh`: every `WORKAROUND(<id>)` ..
 `END WORKAROUND(<id>)` block in the files it lists, then its own block in
-the register. Deleting a line range is something `awk` gets right every
-time, which is more than a model editing Nix can claim, so no agent is
-involved. The result is evaluated for the hosts the entry names and put
-back untouched if that fails; what survives is built by the same gate as
-the bump. A resolved entry marked `manual` — a fix woven through a module,
+the register. Deleting a line range is something a plain bash loop gets
+right every time, which is more than a model editing Nix can claim, so no
+agent is involved. The result is evaluated for the hosts the entry names
+and put back untouched if that fails; what survives is built by the same
+gate as the bump. A resolved entry marked `manual` — a fix woven through a module,
 or one that lives outside the repo, such as a WSL channel on the Windows
 host — is reported instead, with its removal notes, every week until
 someone deletes the entry. Both reach the job summary, the pull request

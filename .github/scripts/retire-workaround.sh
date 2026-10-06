@@ -4,10 +4,10 @@
 # files the entry lists, then the entry's own block in workarounds.nix.
 #
 # Deterministic on purpose. A fenced block is a plain line range, and
-# deleting a line range is something `awk` gets right every time, which is
-# more than can be said for a model editing Nix. What the markers cannot
-# express -- a changed value, a fix woven through a module -- is a `manual`
-# entry, and this script refuses it.
+# deleting a line range is something a plain loop gets right every time,
+# which is more than can be said for a model editing Nix. What the markers
+# cannot express -- a changed value, a fix woven through a module -- is a
+# `manual` entry, and this script refuses it.
 #
 # The result is verified by evaluating every host the entry names (every
 # host, if it names none) before it is kept. An edit that does not evaluate
@@ -37,8 +37,7 @@ end="END WORKAROUND($id)"
 
 # Both markers, exactly once each, in every file, before anything is
 # touched. A block with one end is not a block, and half a removal is worse
-# than none. Fixed strings throughout: the id is not a regex, and awk's -v
-# would eat the escapes a regex needed.
+# than none. Fixed strings throughout: the id is not a regex.
 for f in "${files[@]}"; do
   if [ ! -f "$f" ]; then
     echo "retire-workaround.sh: '$id' lists $f, which does not exist" >&2
@@ -63,15 +62,26 @@ for f in "${files[@]}"; do
   cp "$f" "$backup/$f"
 done
 
+# Plain bash, no awk: the runner's PATH has none. The output is written
+# outside the tree, so a failure part-way leaves no stray file for the
+# workflow's `git add -A` to pick up.
+strip_block() {
+  local line skip=0 ended=0 blank=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ $line == *"$end"* ]]; then skip=0; ended=1; continue; fi
+    [ "$skip" -eq 1 ] && continue
+    if [[ $line == *"$start"* ]]; then skip=1; continue; fi
+    # A block usually sits between two blank lines; keep one of them.
+    if [ "$ended" -eq 1 ] && [ -z "$line" ] && [ "$blank" -eq 1 ]; then ended=0; continue; fi
+    printf '%s\n' "$line"
+    if [ -z "$line" ]; then blank=1; else blank=0; fi
+    ended=0
+  done
+}
+
 for f in "${files[@]}"; do
-  # A block usually sits between two blank lines; keep one of them.
-  awk -v s="$start" -v e="$end" '
-    index($0, e) { skip = 0; ended = 1; next }
-    skip { next }
-    index($0, s) { skip = 1; next }
-    ended && $0 == "" && blank { ended = 0; next }
-    { print; blank = ($0 == ""); ended = 0 }' "$f" > "$f.retire"
-  mv "$f.retire" "$f"
+  strip_block < "$f" > "$backup/.retire"
+  cat "$backup/.retire" > "$f"
 done
 
 restore() {

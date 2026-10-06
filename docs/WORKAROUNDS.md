@@ -119,6 +119,12 @@ component.
   repository — the first entry, a WSL channel switch on a Windows host, is
   one of those.
 
+`auto` is only safe when the probe proves the fix is in what this tree
+runs. An issue closing, or a pull request merging, says nothing about an
+exact-tag pin (an Immich image, say) having moved to a release that
+carries it; deleting the workaround on that signal re-exposes the bug.
+Those entries are `manual` unless the probe reads the pin itself.
+
 ## Doing it by hand
 
 ```bash
