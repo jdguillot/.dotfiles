@@ -9,6 +9,9 @@
 # "system", or "system+home". flake.nix derives nixosConfigurations,
 # homeConfigurations, and deploy.nodes from these fields -- registering a
 # host here is the only registration step.
+# `deployMode` (optional) is "switch" (default) or "boot": how deptui-agent
+# applies a new generation to the host -- "boot" installs it as the next
+# boot entry and restarts nothing until the host reboots.
 # `system.hostKey` (optional) is the host's ed25519 PUBLIC host key -- just
 # the "ssh-ed25519 AAAA..." part, WITHOUT the leading hostname ssh-keyscan
 # prints (hostNames come from the attr name). modules/core/known-hosts pins
@@ -50,6 +53,7 @@ let
       profile = "desktop";
       home = "cyberfighter";
       deploy = "system+home";
+      deployMode = "boot";
       system = {
         hostname = "sys-galp-nix";
         username = "cyberfighter";

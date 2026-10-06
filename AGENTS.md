@@ -129,7 +129,12 @@ deviates.
 2. Register the import in `modules/default.nix`.
 3. Ship the service's config files in native format next to the module
    (see "Native config files" below); `modules/features/traefik/` is
-   the reference example.
+   the reference example. A service that runs as a container pins its
+   image by tag in the compose file; the weekly bump finds every `image:`
+   line there and moves it within its major, and a `# bump:` comment on
+   the line above declares the exceptions (`docs/CI.md`, "Container
+   images"). A project with a database sets `snapshot.dir` on its compose
+   project and declares the directory with a `v` tmpfiles rule.
 4. Home Manager modules follow the same shape under
    `home/modules/{core,features}/`, registered in
    `home/modules/default.nix`.

@@ -230,9 +230,14 @@ in
         environment.systemPackages = [ keysWrapper ];
 
         # The image chowns PGDATA at init; `+C`: databases fragment under CoW.
+        # `v`: a btrfs subvolume where the filesystem allows, so the compose
+        # unit can snapshot it before each start. Ownership of PGDATA is left
+        # alone (`- -`): `d` re-applies it on every activation, and a running
+        # Postgres with a root-owned data directory PANICs on its next WAL
+        # segment -- that killed litellm-db for two days once.
         systemd.tmpfiles.rules = [
-          "d ${cfg.stateDir} 0750 root root -"
-          "d ${cfg.stateDir}/postgres 0700 root root -"
+          "v ${cfg.stateDir} 0750 root root -"
+          "d ${cfg.stateDir}/postgres 0700 - - -"
           "h ${cfg.stateDir}/postgres - - - - +C"
         ];
 
@@ -262,6 +267,8 @@ in
           networks = [ traefikCfg.network ];
           inherit prepare;
           runtimeDirectory = "litellm";
+          # Every virtual key and the spend log live in the database.
+          snapshot.dir = cfg.stateDir;
           # First start pulls both images.
           timeout = "15min";
           restartTriggers = [

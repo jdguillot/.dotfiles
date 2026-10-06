@@ -133,6 +133,10 @@ in
     time.timeZone = cfg.timeZone;
     system.stateVersion = cfg.stateVersion;
 
+    # journald's default cap is 10% of the filesystem, up to 4G; 500M is
+    # weeks of logs on these hosts and was 1.2G on a disk at 88%.
+    services.journald.settings.Journal.SystemMaxUse = lib.mkDefault "500M";
+
     i18n.defaultLocale = cfg.locale;
     i18n.extraLocaleSettings = {
       LC_ADDRESS = cfg.locale;

@@ -111,6 +111,11 @@ Key options:
 - `cyberfighter.system.bootloader.luksDevice`
 - `cyberfighter.system.windowsUsername`
 
+The module also caps the systemd journal at 500M on every host
+(`services.journald.settings.Journal.SystemMaxUse`, a `mkDefault`): journald's own default
+is 10% of the filesystem up to 4G, which on a small server disk is space
+better spent elsewhere.
+
 #### Choosing a bootloader
 
 `bootloader.type` is one choice, not a flag per loader, because every loader
@@ -270,7 +275,7 @@ Example:
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
 | `docker` | `enable`, `rootless`, `enableOnBoot`, `networks` | Docker engine plus optional named bridge networks | <https://mynixos.com/search?q=virtualisation.docker.enable> |
-| `compose` | `projects.<name>` (`files`, `networks`, `envFile`, `prepare`, `runtimeDirectory`, `timeout`, `extraUpFlags`, `restartTriggers`) | shared scaffolding for compose projects as boot-time systemd oneshots — owns the unit ordering/lifecycle invariants and a `<name>-compose` day-2 wrapper; traefik, litellm, comfyui, and odysseus declare their projects through it. systemd owns project lifecycle end to end: containers carry `restart: "no"` so docker never restores a project at boot behind the unit's back (which would race `ExecStartPre` and start containers before secrets are staged), and `PartOf=docker.service` brings projects back with the daemon since `Requires=` propagates stop but not restart. Units retry on failure (`on-failure`, 30s, bounded by a 5-in-600s start limit): a project that builds or pulls needs a registry, and no ordering edge expresses “the internet is up”. Trade-off of `restart: "no"`: nothing restarts a container that crashes while the unit sits `active` — docker's policy used to cover that, and now does not | <https://docs.docker.com/compose/> |
+| `compose` | `projects.<name>` (`files`, `networks`, `envFile`, `prepare`, `runtimeDirectory`, `timeout`, `extraUpFlags`, `restartTriggers`, `snapshot.{dir,days}`) | shared scaffolding for compose projects as boot-time systemd oneshots — owns the unit ordering/lifecycle invariants and a `<name>-compose` day-2 wrapper; traefik, litellm, comfyui, immich, and odysseus declare their projects through it. With `snapshot.dir` set, a read-only btrfs snapshot of that directory is taken before every start (after `down`, so the data is quiescent) and kept `snapshot.days` days beside it in `<dir>.snapshots`: the manual rollback for an image bump whose migration went wrong (see [Immich](#immich-immich), "Rollback"); the directory has to be a subvolume (`v` tmpfiles rule), and elsewhere the step only logs. systemd owns project lifecycle end to end: containers carry `restart: "no"` so docker never restores a project at boot behind the unit's back (which would race `ExecStartPre` and start containers before secrets are staged), and `PartOf=docker.service` brings projects back with the daemon since `Requires=` propagates stop but not restart. Units retry on failure (`on-failure`, 30s, bounded by a 5-in-600s start limit): a project that builds or pulls needs a registry, and no ordering edge expresses “the internet is up”. Trade-off of `restart: "no"`: nothing restarts a container that crashes while the unit sits `active` — docker's policy used to cover that, and now does not | <https://docs.docker.com/compose/> |
 | `traefik` | `enable`, `dnsDomain`, `email`, `network`, `routes.<name>` (`host`, `port`, `url`, `auth`, `rateLimit`, `backend`, `extraHosts`, `network`), `claimedRoutes`, `dnsResolvers`, `rateLimit`, `dynamicFiles`, `secrets.*` | TLS-terminating reverse proxy as a compose project; declares its own sops secrets (name-style, `*File` escape hatches); `routes` declares a routed service once and the module renders it as docker labels (`routeLabels`/`routeLabelFiles`) or a file-provider fragment (`backend = "host"` for a host port, `"url"` for a service on another machine), owning the entrypoint/cert-resolver/middleware-chain spelling; `dynamicFiles` stays as the escape hatch for routing `routes` cannot express; `backend` defaults to `"docker"`, whose labels reach traefik only if a module attaches them, so whichever module reads `routeLabels`/`routeLabelFiles` must also name the route in `claimedRoutes` — an unclaimed docker route is a build-time assertion rather than a route that silently never appears | <https://doc.traefik.io/traefik/> |
 | `attic` | `enable`, `port`, `apiEndpoint`, `storage`, `localPath`, `s3.endpoint`, `s3.bucket`, `s3.region`, `retentionPeriod`, `openFirewall`, `secrets.environment`, `environmentFile` | self-hosted Nix binary cache server (`services.atticd`, monolithic); chunks go to a local path — typically an NFS mount from TrueNAS, with atticd pinned to uid 568 (`apps`) for stable NFS ownership — or an S3 bucket; one sops env file carries the RS256 JWT secret (plus `AWS_*` keys for s3); pair with a traefik `routes` entry (`backend = "host"`, `auth = "none"`) for TLS | <https://docs.attic.rs/> |
 | `immich` | `enable`, `version`, `publicHost`, `dataDir`, `libraries.<label>`, `stateDir`, `storageTemplate`, `transcoding`, `transcodingDevice`, `jobConcurrency.<queue>`, `machineLearning.{urls,modelTtl,ocr,local.{enable,device,memory}}`, `memory.{server,database}`, `secrets.envSecret`, `mlServer.{enable,device,port,bind,allowedClients,memory,stateDir}` | self-hosted photo/video library as a compose project (server + VectorChord Postgres + Valkey, optional local ML container) behind a traefik `routes` entry; `/data` is a NAS export, each user's originals are a separate mount bound at `/data/library/<label>` so the NAS can `mapall` writes to that user's uid, and Postgres/thumbnails stay on local disk; system settings come from a native `immich-config.yaml` (admin settings pages turn read-only); `mlServer` is the standalone GPU role for a server elsewhere, with a `DOCKER-USER` client allowlist since the ML API has no auth; see [Immich](#immich-immich) below | <https://docs.immich.app/> |
@@ -396,10 +401,32 @@ preview's worth per request to a remote ML server. Raising `memory.server`
 only delays the OOM kill. thkpd-pve1 carries a restart watchdog for it until
 the fix ships — see `immich-ml-memory-leak` in `workarounds.nix`.
 
-**Updates.** `version` is an exact tag. Immich ships breaking changes on
-minor versions and the mobile app follows the server, so bump with the
-release notes; the Postgres image tag in `compose.yaml` moves with it when
-upstream says so. The DB dump before the bump is the rollback.
+**Updates.** The pin is the `immich-server` image line in `compose.yaml`;
+`version` is read from it and read-only, so the ML containers and an
+`mlServer` host always render the same release. Immich ships breaking
+changes on minor versions and the mobile app follows the server, so bump
+with the release notes: the weekly bump proposes the next release inside
+v3 with those notes and a before-deploying note in the pull request
+(`docs/CI.md`, "Container images"), and moves the Postgres image tag with
+it when upstream's own compose file does, because the server refuses an
+extension version outside its range and updates the extension one way.
+
+**Rollback.** The compose unit snapshots `stateDir` read-only before every
+start, after the previous `down`, into `stateDir.snapshots/<timestamp>`
+(kept 14 days). When a bump goes wrong:
+
+```bash
+sudo systemctl stop immich
+sudo mv /var/lib/immich /var/lib/immich.failed
+sudo btrfs subvolume snapshot /var/lib/immich.snapshots/<timestamp> /var/lib/immich
+# then put the old image back: revert the bump commit and deploy, which starts the unit
+```
+
+Reverting in git is the durable half; the deploy agent would otherwise
+redeploy the new tag on its next poll. `stateDir` has to be a btrfs
+subvolume for any of this: the tmpfiles rule creates one on a fresh host,
+and an existing directory is converted once, with the unit stopped, by
+moving it aside, creating the subvolume, and moving the contents back.
 
 **Recovery.** `stateDir/postgres` is the only state a rebuild cannot
 recreate. Restore per <https://docs.immich.app/administration/backup-and-restore>
