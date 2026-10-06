@@ -172,6 +172,12 @@
               # the auto-enroll eval warning.
               catppuccin.autoEnable = false;
             }
+            {
+              # deptui-agent's drift guard passes a manual deploy whose
+              # configurationRevision is in the watched history; a dirty
+              # checkout has no `rev` and stays held, by design.
+              system.configurationRevision = self.rev or null;
+            }
           ];
         };
 

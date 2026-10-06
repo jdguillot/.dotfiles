@@ -4,6 +4,7 @@
   lib,
   pkgs,
   config,
+  hostConfigs,
   ...
 }:
 {
@@ -405,37 +406,35 @@
         watches =
           let
             repo = "https://github.com/jdguillot/.dotfiles";
-            # skip_checks: this repo's CI matrix
-            # already builds every host's closure. (Host-key policy needs
-            # nothing here: the upstream module defaults the agent's ssh
-            # to accept-new, and pinned fleet keys from hosts/default.nix
-            # take precedence.)
-            hostFlags = {
-              skip_checks = true;
+            # skip_checks: this repo's CI matrix already builds every host's
+            # closure. (Host-key policy needs nothing here: the upstream
+            # module defaults the agent's ssh to accept-new, and pinned
+            # fleet keys from hosts/default.nix take precedence.) A host
+            # whose metadata says `deployMode = "boot"` gets the generation
+            # as its next boot entry and nothing restarted.
+            flagsFor =
+              h:
+              {
+                skip_checks = true;
+              }
+              // lib.optionalAttrs ((h.deployMode or "switch") == "boot") { mode = "boot"; };
+            # Every deployable host in hosts/default.nix, so registering a
+            # host there registers it with the agent too.
+            fleetHosts = lib.filterAttrs (
+              name: h: h.deploy != null && name != config.networking.hostName
+            ) hostConfigs;
+            watch = hosts: {
+              inherit repo hosts;
+              tag = "latest";
+              # Safety net only: CI kicks this watch as soon as the tag moves.
+              cron = "0 2 1 * *"; # monthly, off-peak
+              git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
             };
           in
           {
-            fleet = {
-              inherit repo;
-              tag = "latest";
-              # Safety net only: CI kicks this watch as soon as the tag moves.
-              cron = "0 2 1 * *"; # monthly, off-peak
-              git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
-              hosts = lib.genAttrs [
-                "simple-vm"
-                "sys-galp-nix"
-                "thkpd-pve1"
-                "vm-gameserver-nix"
-              ] (_: hostFlags);
-            };
-
-            self = {
-              inherit repo;
-              tag = "latest";
-              # Safety net only: CI kicks this watch as soon as the tag moves.
-              cron = "0 2 1 * *"; # monthly, off-peak
-              git_crypt_key_file = config.cyberfighter.features.deptui-agent.gitCryptKeyFile;
-              hosts.ryzn-server = hostFlags;
+            fleet = watch (lib.mapAttrs (_: flagsFor) fleetHosts);
+            self = watch {
+              ${config.networking.hostName} = flagsFor hostConfigs.${config.networking.hostName};
             };
           };
       };

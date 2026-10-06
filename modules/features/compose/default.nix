@@ -92,8 +92,59 @@ let
           default = [ ];
           description = "Restart the unit when these change. Needed whenever ExecStart only names /etc paths: without it an edit deploys but never takes effect.";
         };
+
+        snapshot = {
+          dir = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            example = "/var/lib/immich";
+            description = ''
+              The project's state directory, snapshotted read-only before
+              every start into `<dir>.snapshots/<timestamp>`. The step runs
+              after `down`, so the data is quiescent, and it is the manual
+              rollback for an image bump whose migration went wrong. Must
+              be a btrfs subvolume: declare it with a `v` tmpfiles rule,
+              and on a host where it already exists as a directory, convert
+              it once with the unit stopped. Elsewhere the step logs and
+              takes nothing.
+            '';
+          };
+
+          days = lib.mkOption {
+            type = lib.types.ints.positive;
+            default = 14;
+            description = "Snapshots older than this are deleted when a new one is taken. By the timestamp in the name: a snapshot's own mtime is the source's, not the time it was taken.";
+          };
+        };
       };
     };
+
+  # Read-only snapshot of the state subvolume, before `up` and after the
+  # previous `down`. Unconditional and time-expired rather than keyed on
+  # "did the images change": no detection logic, and a few reboots cannot
+  # push the pre-upgrade snapshot out. A snapshot of unchanged data costs
+  # nothing. Non-fatal (`-` in ExecStartPre): a snapshot that cannot be
+  # taken is logged, not a reason to keep the service down.
+  snapshotScript =
+    name: p:
+    pkgs.writeShellScript "${name}-snapshot" ''
+      set -euo pipefail
+      dir=${lib.escapeShellArg p.snapshot.dir}
+      snaps="$dir.snapshots"
+      mkdir -p "$snaps"
+      if ! btrfs subvolume show "$dir" >/dev/null 2>&1; then
+        echo "${name}: $dir is not a btrfs subvolume; no snapshot taken" >&2
+        exit 0
+      fi
+      btrfs subvolume snapshot -r "$dir" "$snaps/$(date -u +%Y%m%d-%H%M%S)"
+      cutoff=$(date -u -d "${toString p.snapshot.days} days ago" +%Y%m%d-%H%M%S)
+      for s in "$snaps"/*/; do
+        s="''${s%/}"
+        [ -e "$s" ] || continue
+        [ "$(basename "$s")" \< "$cutoff" ] || continue
+        btrfs subvolume delete "$s"
+      done
+    '';
 in
 {
   options.cyberfighter.features.compose.projects = lib.mkOption {
@@ -142,7 +193,10 @@ in
         # Requires propagates stop, not restart.
         partOf = [ "docker.service" ];
         wantedBy = [ "multi-user.target" ];
-        path = [ pkgs.coreutils ];
+        path = [
+          pkgs.coreutils
+          pkgs.btrfs-progs
+        ];
 
         serviceConfig = {
           Type = "oneshot";
@@ -163,7 +217,11 @@ in
           }";
           ExecStop = "${compose} down";
         }
-        // lib.optionalAttrs (p.prepare != null) { ExecStartPre = "${p.prepare}"; }
+        // lib.optionalAttrs (p.prepare != null || p.snapshot.dir != null) {
+          ExecStartPre =
+            lib.optional (p.prepare != null) "${p.prepare}"
+            ++ lib.optional (p.snapshot.dir != null) "-${snapshotScript name p}";
+        }
         // lib.optionalAttrs (p.runtimeDirectory != null) {
           RuntimeDirectory = p.runtimeDirectory;
           RuntimeDirectoryMode = "0700";

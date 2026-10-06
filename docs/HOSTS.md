@@ -7,7 +7,7 @@ This page summarizes the current flake outputs, the folders they come from, the 
 | Host | Profile | Traits | Folder | Home config | `deploy-rs` | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `razer-nixos` | `desktop` | `dev` | `hosts/razer-nixos/` | `cyberfighter@razer-nixos` | no | Niri workstation with gaming, Docker, Flatpak, Cachix, SOPS, VPN, and TrueNAS mounts |
-| `sys-galp-nix` | `desktop` | — | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
+| `sys-galp-nix` | `desktop` | — | `hosts/sys-galp-nix/` | `cyberfighter@sys-galp-nix` | yes (boot) | Plasma 6 laptop with gaming, Bluetooth, Flatpak, SOPS, and Waydroid |
 | `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | Headless RTX 5090 streaming a gamescope Steam Big Picture session to Moonlight via Sunshine: gaming, local inference (Ollama + the Hermes Agent gateway), ComfyUI, Immich ML server for `thkpd-pve1`, Waydroid, lanzaboote Secure Boot, and SOPS |
 | `work-nix-wsl` | `wsl` | `dev` | `hosts/work-nix-wsl/` | `jdguillot@work-nix-wsl` | no | WSL with VS Code Server, Docker Desktop, Tailscale, SSH, and a SOPS-managed work CA |
 | `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, traefik, attic, Immich (originals on TrueNAS NFS, ML on `ryzn-server`), Tailscale, and SOPS |
@@ -42,6 +42,13 @@ names the folder under `home/` (or `null` for no home config; the
 target is always `<username>@<hostname>`), and `deploy` is `null`,
 `"system"`, or `"system+home"`. List the current outputs with
 `nix flake show` rather than trusting any table here.
+
+`deployMode` (optional) is `"switch"` (the default) or `"boot"`: how
+`deptui-agent` applies a new generation to that host. `"boot"` installs
+it as the next boot entry and restarts nothing until the host reboots,
+for a workstation that may be mid-task; the home profile, which has no
+boot mode, still activates live. The agent's host list on `ryzn-server`
+is derived from these entries, so this field is the whole configuration.
 
 Examples:
 

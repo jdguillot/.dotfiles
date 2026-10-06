@@ -107,6 +107,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/collect-package-signal.sh
 
+      # Images, not packages or pins. The tags in this repo's compose files
+      # (and the Immich release the module defaults to) are in neither lock
+      # file, so nothing above moves them. Registry and release reads only,
+      # no model; deterministic, so it runs on a skip-scan dispatch too --
+      # the targets it resolves are what the update job applies. Its own
+      # digest, not digest.md: the nix triage should not read release notes
+      # for images it cannot hold.
+      - name: Collect container signal
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/collect-container-signal.sh
+
       # Before the model, because a hold that has already stood for weeks is
       # the strongest thing the model can be told about a source -- and the
       # thing it otherwise has no way to know, each run being the first.
@@ -130,21 +143,39 @@ jobs:
             STAGED_REPORT=staging-report .github/scripts/scan-verdict.sh
           fi
 
-      # After the model, so a hand-given hold wins over its judgement. The
-      # names are not validated here: apply-updates.sh treats an unknown name
-      # as holding nothing, and the summary below prints what was held, which
-      # is where a typo shows up.
+      # The containers get their own verdict: holds, what to watch for, what
+      # to do on the host before the deploy, and the features worth knowing.
+      # There is no build gate behind an image tag, so these notes and the
+      # person reading them are the gate. Not asked when nothing moves.
+      - name: Ask the model about the containers
+        run: |
+          mkdir -p upstream-signal
+          if [ "${{ inputs.skip-scan }}" = "true" ]; then
+            echo '{"holds":[],"containers":[],"summary":"Container triage skipped by manual dispatch.","degraded":true}' \
+              > upstream-signal/containers-verdict.json
+          else
+            .github/scripts/scan-containers.sh
+          fi
+
+      # After the models, so a hand-given hold wins over their judgement. The
+      # names are not validated here: both apply scripts treat an unknown
+      # name as holding nothing, and the summary below prints what was held,
+      # which is where a typo shows up. A name goes into both verdicts: a
+      # dispatch does not say whether it means an input or a container.
       - name: Hold what the dispatch asked to hold
         if: inputs.hold != ''
         env:
           HOLD: ${{ inputs.hold }}
         run: |
           for n in $HOLD; do
-            jq --arg n "$n" \
-              '.holds += [{ name: $n, reason: "held by hand on dispatch",
-                            evidence: "workflow_dispatch input" }]' \
-              upstream-signal/verdict.json > verdict.new
-            mv verdict.new upstream-signal/verdict.json
+            for f in upstream-signal/verdict.json upstream-signal/containers-verdict.json; do
+              [ -s "$f" ] || continue
+              jq --arg n "$n" \
+                '.holds += [{ name: $n, reason: "held by hand on dispatch",
+                              evidence: "workflow_dispatch input" }]' \
+                "$f" > verdict.new
+              mv verdict.new "$f"
+            done
           done
 
       - name: Ask the model for release notes
@@ -184,6 +215,14 @@ jobs:
               echo "## Release notes preview"
               echo ""
               cat upstream-signal/release-notes.md
+            fi
+            if [ -s upstream-signal/containers.md ]; then
+              echo ""
+              echo "## Containers"
+              echo ""
+              cat upstream-signal/containers.md
+              .github/scripts/container-notes.sh \
+                upstream-signal/containers.json upstream-signal/containers-verdict.json
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -296,6 +335,7 @@ jobs:
           /hold-report.md
           /workarounds-report.md
           /workarounds.json
+          /containers-applied.json
           EOF
 
       # Re-run the merge here, not on the `scan` job's tree: the scan's
@@ -321,10 +361,16 @@ jobs:
         continue-on-error: true
         run: .github/scripts/package-versions.sh record packages-pre.json
 
+      # The lock files first, then the image tags: the latter are edits to
+      # compose files and the immich module, minus the container verdict's
+      # holds, and the same `changed` gate and build below cover them. A
+      # tag that cannot be applied is reported, not fatal -- it must not
+      # cost the week its nix bump.
       - name: Apply the bump
         id: apply
         run: |
           .github/scripts/apply-updates.sh
+          .github/scripts/apply-container-updates.sh
 
       # After the bump and before the build: a `commit` probe has to read
       # the revision the lock just moved to, and a retirement is then proved
@@ -582,6 +628,7 @@ jobs:
             package-notes.md
             workarounds-report.md
             workarounds.json
+            containers-applied.json
             upstream-signal/threads/
           if-no-files-found: ignore
           retention-days: 14
@@ -704,6 +751,20 @@ jobs:
 
             if [ -s upstream-signal/packages.md ]; then
               cat upstream-signal/packages.md
+              echo ""
+            fi
+
+            # What moved, what was held, and per bumped image what to watch
+            # for, what to do on the host first, and what is new. Nothing
+            # builds against an image tag, so this is the review material.
+            if [ -s upstream-signal/containers.md ]; then
+              echo "## Containers"
+              echo ""
+              cat upstream-signal/containers.md
+              .github/scripts/container-notes.sh \
+                upstream-signal/containers.json \
+                upstream-signal/containers-verdict.json \
+                update-report/containers-applied.json
               echo ""
             fi
 
