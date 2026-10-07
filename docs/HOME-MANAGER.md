@@ -23,6 +23,7 @@ home/modules/
     ├── sops/
     ├── ssh/
     ├── terminal/
+    ├── themes/
     └── tools/
 ```
 
@@ -133,6 +134,22 @@ Notes:
 
 The base `editor` module also supports simple `vim`, `neovim`, and `vscode` toggles directly under `cyberfighter.features.editor.*`.
 
+## Themes
+
+`cyberfighter.features.themes` is the shared palette for terminal apps. Each
+theme identity is a standalone palette file under
+`home/modules/features/themes/` (e.g. `catppuccin-frappe-blue.nix`); add a new
+identity by dropping a file there and registering it in
+`themes/default.nix`.
+
+- `cyberfighter.features.themes.active` — the identity name (enum of the
+  registered themes)
+- `cyberfighter.features.themes.activeTheme` — the resolved palette
+
+Apps read from `activeTheme` and map the tokens to their own config shape
+(lazygit's `gui.theme` must be a color map, not a file path, so it cannot
+point at a shared theme file).
+
 ## Tool submodules
 
 All tool submodules live below `cyberfighter.features.tools.*`. The
@@ -148,7 +165,7 @@ without per-user lines.
 | `zellij` | `enable` | Zellij multiplexer |
 | `yazi` | `enable`, `theme` | terminal file manager |
 | `btop` | `enable`, `theme` | system monitor |
-| `lazygit` | `enable`, `settings` | Git TUI |
+| `lazygit` | `enable`, `settings` | Git TUI; `gui.theme` defaults from `cyberfighter.features.themes.activeTheme` |
 | `jujutsu` | `enable`, `userName`, `userEmail`, `useSecretsForIdentity`, `extraSettings` | can consume SOPS identity data |
 | `carapace` | `enable`, `enableZshIntegration`, `enableBashIntegration`, `enableFishIntegration` | shell completion helpers |
 | `direnv` | `enable` | direnv integration |
