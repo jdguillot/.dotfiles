@@ -9,6 +9,7 @@
     ./sops/default.nix
     ./editor/default.nix
     ./terminal/default.nix
+    ./themes/default.nix
     ./desktop/default.nix
     ./kdeconnect/default.nix
     ./ssh/default.nix
