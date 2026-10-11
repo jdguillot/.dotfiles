@@ -129,6 +129,7 @@ in
         libraries = {
           jonny = "/mnt/immich/library/jonny";
           porscha = "/mnt/immich/library/porscha";
+          bella = "/mnt/immich/library/bella";
         };
         transcoding = "quicksync";
         # renderD128 is the Iris Xe; renderD129 is the Quadro on nouveau,
@@ -201,6 +202,7 @@ in
       "/mnt/immich/data" = nas "/mnt/Main/Data/object-storage/immich";
       "/mnt/immich/library/jonny" = nas "/mnt/Main/Data/userData/Jonny/Photos";
       "/mnt/immich/library/porscha" = nas "/mnt/Main/Data/userData/Porscha/Photos";
+      "/mnt/immich/library/bella" = nas "/mnt/Main/Data/userData/Bella/Photos";
     };
 
   # Swap is an NVMe btrfs file here, not zram: paging out an idle pve daemon
