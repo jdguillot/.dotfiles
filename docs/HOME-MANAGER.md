@@ -14,10 +14,12 @@ home/modules/
 │   ├── users/
 │   └── wsl/
 └── features/
+    ├── dank/
     ├── desktop/
     ├── editor/
     ├── git/
     ├── kdeconnect/
+    ├── niri/
     ├── noctalia/
     ├── shell/
     ├── sops/
@@ -269,7 +271,7 @@ See [`SOPS.md`](SOPS.md) for the full secrets workflow.
         tmux.enable = true;
         lazygit.enable = true;
         yazi.enable = true;
-        copilotMcp.enable = true;
+        mcp.enable = true;
       };
     };
   };

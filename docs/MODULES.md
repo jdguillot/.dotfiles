@@ -21,19 +21,27 @@ A small but important detail: not everything is under `cyberfighter.features.*`.
 ```text
 modules/
 ├── core/
+│   ├── known-hosts/
+│   ├── nix-settings/
 │   ├── profiles/
 │   ├── system/
-│   ├── users/
-│   └── nix-settings/
+│   ├── traits/
+│   └── users/
 └── features/
     ├── 1password/
     ├── ai/
     │   ├── comfyui/
     │   ├── hermes/
+    │   ├── litellm/
     │   ├── odysseus/
     │   └── ollama/
+    ├── attic/
+    ├── auto-reboot/
     ├── bluetooth/
     ├── cachix/
+    ├── cloudflared/
+    ├── compose/
+    ├── deptui-agent/
     ├── desktop/
     ├── docker/
     ├── filesystems/
@@ -42,7 +50,9 @@ modules/
     ├── gameserver/
     ├── gaming/
     ├── gaze/
+    ├── github-runner/
     ├── graphics/
+    ├── immich/
     ├── kdeconnect/
     ├── networking/
     ├── packages/
@@ -259,6 +269,7 @@ Example:
 | `tailscale` | `enable`, `useRoutingFeatures`, `acceptRoutes`, `extraUpFlags` | client and routing flags | <https://mynixos.com/search?q=services.tailscale.enable> |
 | `vpn.pia` | `enable`, `autoStart`, `server`, `port`, `credentialsFile` | PIA/OpenVPN workflow; expects SOPS when credentials are secret-backed | <https://mynixos.com/search?q=services.openvpn.servers> |
 | `kdeconnect` | `enable` | opens TCP+UDP 1714-1764 for KDE Connect. The daemon itself is a per-user thing and comes from the matching Home Manager module — see [HOME-MANAGER.md](HOME-MANAGER.md) | <https://mynixos.com/search?q=programs.kdeconnect.enable> |
+| `cloudflared` | `enable`, `secrets.token`, `tokenFile` | outbound Cloudflare Tunnel *connector* (7844 out; hostnames and origin rules live in the Zero Trust dashboard) via a custom `cloudflared-tunnel` unit — upstream `services.cloudflared` only supports legacy locally-managed tunnels; the token is a sops secret read by `LoadCredential` (the module declares it and its restartUnits itself), with `tokenFile` as a bypass; runs hardened (dynamic user, `ProtectSystem = "strict"`) and retries on edge drops | <https://github.com/cloudflare/cloudflared> |
 
 ### Packaging and applications
 
@@ -285,6 +296,7 @@ Example:
 | `security` | `firejail` | lightweight sandboxing toggle | <https://mynixos.com/search?q=programs.firejail.enable> |
 | `sops` | `enable`, `defaultSopsFile`, `sshKeyPath`, `deployUserAgeKey` | wraps `sops-nix`; can derive a user age key from the host SSH key | <https://github.com/Mic92/sops-nix> |
 | `proxmox` | `enable`, `ipAddress`, `publishHostKeys.{enable,knownHostsFile,timeout}` | Proxmox VE via `proxmox-nixos`, plus the wiring a stock Debian node gets from its postinst and a NixOS node does not: root's `known_hosts` linked at the cluster file, and a boot-time oneshot that publishes this node's host keys into it under both hostname and IP; see [Proxmox](#proxmox-proxmox) below | <https://github.com/SaumonNet/proxmox-nixos> |
+| `syncthing` | `enable`, `user`, `dataDir`, `guiAddress`, `openFirewall`, `openGuiFirewall`, `secrets.{guiUser,guiPassword}`, `{guiUserFile,guiPasswordFile}` | Syncthing as a system service running as the host user, wrapping `services.syncthing`; devices and folders stay UI-managed (`overrideDevices`/`overrideFolders` off) so rebuilding does not wipe them; `openFirewall` (default on) opens the transfer/discovery ports, while `openGuiFirewall` keeps the loopback-bounded web UI private unless a GUI credential is present; GUI credentials come from sops (`secrets.*`, which the module declares itself) applied over the REST API at boot so they never land in the store, with `*File` escape hatches | <https://syncthing.net/docs/> |
 
 #### Immich (`immich`)
 
@@ -499,6 +511,7 @@ N copies of the weights resident on one GPU.
 | --- | --- | --- | --- |
 | `ai.ollama` | `enable`, `acceleration`, `modelsDir`, `models`, `syncModels`, `host`, `port`, `exposeToContainers`, `keepAlive`, `maxLoadedModels`, `numParallel`, `flashAttention`, `kvCacheType`, `groupMembers`, `environmentVariables` | local OpenAI-compatible inference server at `/v1` | <https://mynixos.com/search?q=services.ollama> |
 | `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `groupMembers`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a systemd service | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
+| `ai.litellm` | `enable`, `configFile`, `publicHost`, `port`, `stateDir`, `bridgeName`, `secrets.envSecret`, `secrets.sopsFile` | LiteLLM team gateway in front of `ai.ollama`: per-user virtual keys with model allowlists and rate limits, with only OpenAI-style routes reaching Ollama; a compose project (LiteLLM + Postgres for the key DB) behind a traefik `routes` entry — the module declares the `litellm` route (`auth = "none"`, since the virtual keys are the auth) and claims it; `configFile` is the host's native `config.yaml`, `stateDir` holds the Postgres key/spend DB (btrfs subvolume, snapshotted by the compose module); a `litellm-keys` CLI manages keys; the token bundle (`POSTGRES_PASSWORD`, `LITELLM_MASTER_KEY`, `LITELLM_SALT_KEY`) is a sops dotenv blob — the salt key must never change once the DB exists | <https://docs.litellm.ai/docs/proxy/configs> |
 | `ai.odysseus` | `enable`, `src`, `patches`, `researchProbeTimeout`, `projectName`, `stateDir`, `bind`, `port`, `auth`, `allowedOrigins`, `ollamaBaseUrl`, `llmHost`, `bundledSearxng`, `searxngInstance`, `bridgeName`, `puid`, `pgid`, `extraEnv`, `secrets.envSecret`, `secrets.sopsFile` | self-hosted AI workspace; a systemd oneshot drives `docker compose` off a pinned source tree | <https://github.com/odysseus-dev/odysseus> |
 | `searxng` | `enable`, `package`, `listen`, `port`, `baseUrl`, `jsonApi`, `limiter`, `openFirewall`, `exposeToContainers`, `secretKeyFile`, `settings` | host-native metasearch (lives outside `ai.*` -- the AI stack is just one client), usable on its own and as the search backend for `ai.odysseus` | <https://mynixos.com/search?q=services.searx> |
 | `ai.comfyui` | `enable`, `modelsDir`, `user`, `group`, `hfTokenFile`, `models` | declarative checkpoint downloads only; the runtime itself is `ai.comfyui.server` | <https://github.com/comfyanonymous/ComfyUI> |

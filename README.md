@@ -93,10 +93,12 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
   `kdeconnect`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
 - Services and infrastructure: `docker`, `compose`, `traefik`, `attic`,
-  `immich`, `github-runner`, `security`, `sops`, `proxmox`, `autoReboot`
+  `immich`, `github-runner`, `security`, `sops`, `proxmox`, `autoReboot`,
+  `cloudflared`, `syncthing`
 - Gaming and hosting: `gaming`, `sunshine`, `gameserver`,
   `gameserver.astroneer`, `gameserver.playit`
-- AI agents: `ai.hermes`
+- AI agents: `ai.ollama`, `ai.hermes`, `ai.litellm`, `ai.odysseus`,
+  `ai.comfyui`
 
 Common host shape:
 
@@ -140,13 +142,14 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 
 - `cyberfighter.features.git`, `shell`, `terminal`, `editor`,
   `desktop`, `ssh`, `sops`, `tools`, `noctalia`, `dank`, `niri`,
-  `kdeconnect`
+  `themes`, `kdeconnect`
 - Shell toggles: `bash`, `fish`, `zsh`, `starship`
 - Terminal submodules: `terminal.alacritty`, `terminal.ghostty`
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`
 - Tool submodules: `tmux`, `zellij`, `yazi`, `btop`, `lazygit`,
   `jujutsu`, `carapace`, `direnv`, `rofi`, `sesh`, `fastfetch`,
-  `opencode`, `crush`, `tmuxai`, `mc`, `mcp`, `skills`, `lsp`
+  `opencode`, `crush`, `tmuxai`, `mc`, `mcp`, `skills`, `lsp`,
+  `agentBrowser`, `claude-code`
 
 Common home shape:
 
@@ -166,7 +169,7 @@ Common home shape:
       editor.lazyvim.enable = true;
       terminal.ghostty.enable = true;
       tools.tmux.enable = true;
-      tools.copilotMcp.enable = true;
+      tools.mcp.enable = true;
     };
   };
 }
