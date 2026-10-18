@@ -705,6 +705,13 @@ picker then shows cloud providers and **no local Ollama models at all**, because
 `curated_models_for_provider("custom")` has no endpoint left to probe. A
 `systemd.path` unit on `HERMES_HOME` re-applies group ownership after each write.
 
+The other direction breaks the gateway itself. A CLI run as a group member
+rotates `logs/agent.log` and writes `backups/` as that user, mode 0660, which
+the `hermes` user cannot open. The gateway holds its log open and keeps running
+until its next restart (a deploy, say), then dies on `open()` in a loop. So the
+fixer also takes `logs/` and `backups/` back recursively, the path unit watches
+`logs/` for rotations, and `hermes-agent` runs the fixer before every start.
+
 #### Backend and container mode
 
 `backend.mode` (`none`/`serve`/`dashboard`) starts a second unit,

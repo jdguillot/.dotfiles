@@ -425,8 +425,18 @@ in
           wantedBy = [ "multi-user.target" ];
           pathConfig = {
             PathModified = "${cfg.stateDir}/.hermes";
+            # PathChanged, not PathModified: log handlers hold their file
+            # open, so this fires on rotation (create/rename), not every line.
+            PathChanged = "${cfg.stateDir}/.hermes/logs";
             Unit = "hermes-shared-home.service";
           };
+        };
+
+        # A CLI run as a group member leaves its files owned by that user;
+        # the gateway then dies on open() at startup, so repair first.
+        systemd.services.hermes-agent = {
+          wants = [ "hermes-shared-home.service" ];
+          after = [ "hermes-shared-home.service" ];
         };
 
         systemd.services.hermes-shared-home = {
@@ -453,12 +463,18 @@ in
                 set -uo pipefail
                 d=${lib.escapeShellArg "${cfg.stateDir}/.hermes"}
                 [ -d "$d" ] || exit 0
-                # Regular files only: gateway.sock keeps its mode, and the
-                # subdirectories are already handled by upstream's activation.
-                find "$d" -maxdepth 1 -type f -print0 \
-                  | xargs -0 -r chown ${config.services.hermes-agent.user}:${config.services.hermes-agent.group}
-                find "$d" -maxdepth 1 -type f -print0 \
-                  | xargs -0 -r chmod g+rw
+                owner=${config.services.hermes-agent.user}:${config.services.hermes-agent.group}
+                # Top level: regular files only, so gateway.sock keeps its mode.
+                find "$d" -maxdepth 1 -type f -print0 | xargs -0 -r chown "$owner"
+                find "$d" -maxdepth 1 -type f -print0 | xargs -0 -r chmod g+rw
+                # Upstream's activation fixes only the directories' modes;
+                # rotated logs and config backups inside them keep the owner of
+                # whichever process wrote them.
+                for sub in logs backups; do
+                  [ -d "$d/$sub" ] || continue
+                  find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chown "$owner"
+                  find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chmod g+rwX
+                done
                 exit 0
               ''
             );
