@@ -59,7 +59,15 @@ in
       };
 
       docker.enable = true;
-      tailscale.enable = true;
+      tailscale = {
+        enable = true;
+        secrets.authKey = "tailscale-authkey";
+        # OPNsense advertises this host's own LAN and VLAN 40; accepting them
+        # would route NFS and VM traffic through the tailnet.
+        acceptRoutes = false;
+        # Static resolv.conf: the Pi-hole container owns :53 here.
+        acceptDns = false;
+      };
 
       # Shared traefik module, replacing the hand-run copy under
       # /home/cyberfighter/docker/traefik (same credentials via SOPS, same
