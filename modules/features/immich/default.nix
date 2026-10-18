@@ -155,6 +155,20 @@ in
       description = "Hostname traefik routes to the server; also Immich's external domain for share links. The DNS record is yours to create.";
     };
 
+    tailnetService = {
+      enable = lib.mkEnableOption ''
+        a Tailscale Service (`svc:<name>`) serving Immich at
+        https://<name>.<tailnet>.ts.net through traefik. The host must be
+        tagged, and the service needs a grant and host approval in the
+        tailnet policy
+      '';
+      name = lib.mkOption {
+        type = lib.types.strMatching "[a-z0-9-]+";
+        default = "immich";
+        description = "Service name, without the `svc:` prefix; also the first label of its ts.net hostname.";
+      };
+    };
+
     dataDir = lib.mkOption {
       type = lib.types.str;
       example = "/mnt/immich/data";
@@ -387,6 +401,10 @@ in
           assertion = lib.all (l: builtins.match "[A-Za-z0-9_-]+" l != null) (lib.attrNames cfg.libraries);
           message = "cyberfighter.features.immich.libraries: labels must match [A-Za-z0-9_-]+ (they become path components and Immich storage labels).";
         }
+        {
+          assertion = cfg.tailnetService.enable -> config.cyberfighter.features.tailscale.enable;
+          message = "cyberfighter.features.immich.tailnetService needs cyberfighter.features.tailscale.enable = true.";
+        }
       ];
 
       # Bulk importer for existing archives (Takeout, folders); runs on this
@@ -430,6 +448,18 @@ in
         rateLimit = false;
       };
       cyberfighter.features.traefik.claimedRoutes = [ "immich" ];
+
+      # https+insecure: the config file only terminates TLS for an https
+      # backend, and traefik's default cert on 127.0.0.1 is self-signed.
+      cyberfighter.features.traefik.dynamicFiles = lib.mkIf cfg.tailnetService.enable {
+        "immich-tailnet.toml" = pkgs.replaceVars ./traefik-tailnet.toml {
+          SERVICE = cfg.tailnetService.name;
+        };
+      };
+      cyberfighter.features.tailscale.serve = lib.mkIf cfg.tailnetService.enable {
+        enable = true;
+        services.${cfg.tailnetService.name}.endpoints."tcp:443" = "https+insecure://127.0.0.1:443";
+      };
 
       cyberfighter.features.compose.projects.immich = {
         description = "Immich photo library (docker compose)";

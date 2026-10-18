@@ -67,6 +67,9 @@ in
         acceptRoutes = false;
         # Static resolv.conf: the Pi-hole container owns :53 here.
         acceptDns = false;
+        # Required to host svc:immich; control drops svc adverts from
+        # untagged nodes.
+        extraUpFlags = [ "--advertise-tags=tag:server" ];
       };
 
       # Shared traefik module, replacing the hand-run copy under
@@ -133,6 +136,8 @@ in
       immich = {
         enable = true;
         publicHost = "immich.cyberfighter.space";
+        # Invited tailnet members reach it at immich.<tailnet>.ts.net.
+        tailnetService.enable = true;
         dataDir = "/mnt/immich/data";
         libraries = {
           jonny = "/mnt/immich/library/jonny";

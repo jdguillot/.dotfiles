@@ -1,0 +1,11 @@
+# Router for the Tailscale Service `svc:@SERVICE@`: tailscaled terminates TLS
+# with its ts.net cert and proxies to traefik on 127.0.0.1:443, keeping the
+# client's Host. A regexp names no domain, so traefik requests no ACME cert
+# for it, and the tailnet name stays out of the repo.
+[http.routers.@SERVICE@-tailnet]
+  rule = 'HostRegexp(`^@SERVICE@\.[^.]+\.ts\.net$`)'
+  entrypoints = ["websecure"]
+  # The docker-label service the public route already defines.
+  service = "immich-svc@docker"
+  middlewares = ["chain-no-auth-unlimited"]
+  [http.routers.@SERVICE@-tailnet.tls]
