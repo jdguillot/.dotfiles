@@ -77,6 +77,8 @@
     };
     # A closed issue says nothing about the pinned Immich tag carrying the
     # fix; retiring on it alone turns OCR back on against the leaky release.
+    # Closed as bounded by v3.3.0's ML rework, but a v3.3.x report on
+    # 2026-10-10 (PP-OCRv6, model revision v2) still fills an 8 GB card.
     retire = "manual";
     removal = ''
       Delete the fenced `ocr = false;` line on thkpd-pve1 (the option

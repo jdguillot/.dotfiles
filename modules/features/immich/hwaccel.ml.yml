@@ -46,8 +46,6 @@ services:
       - /dev/kfd:/dev/kfd
 
   openvino:
-    device_cgroup_rules:
-      - 'c 189:* rmw'
     devices:
       - /dev/dri:/dev/dri
 
