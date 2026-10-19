@@ -5,8 +5,8 @@ machines, servers, and VMs. The repo is organized around a shared
 `cyberfighter.*` option namespace so hosts mostly declare intent and let
 modules handle the underlying NixOS or Home Manager settings.
 
-The flake follows `nixos-unstable`, keeps `nixos-25.11` available for
-selected packages, and wires in shared tooling such as `sops-nix`,
+The flake follows `nixos-unstable`, keeps `nixos-26.05` available as the
+stable package set, and wires in shared tooling such as `sops-nix`,
 `disko`, `deploy-rs`, `nixos-wsl`, `vscode-server`, `niri`,
 `proxmox-nixos`, `noctalia`, the dank desktop suite (`dms`, `dank-greeter`,
 `dgop`, `danksearch`, `dankcalendar`), and `deptui`.

@@ -256,7 +256,7 @@ currently pinned revision and which issues and pull requests were touched in
 that window. Direct inputs only: transitive nodes are pinned by their own
 flakes and move when the direct input moves, so holding one back means
 nothing. The tracked branch or tag comes from the lock's `original` field,
-never `locked` — half these inputs pin one (`nixos-25.11`, `legacy-v4`,
+never `locked` — half these inputs pin one (`nixos-26.05`, `legacy-v4`,
 `stable`, `v1.1.0`), and comparing those against `HEAD` would diff them
 against master.
 
