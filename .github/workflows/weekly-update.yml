@@ -80,7 +80,7 @@ jobs:
       - name: Preflight
         # nix: the watched-package step evaluates versions out of two nixpkgs
         # revisions, which is the only thing in this job that needs it.
-        run: .github/scripts/preflight.sh gh jq curl git nix
+        run: .github/scripts/preflight.sh gh jq curl git nix awk
 
       # Pull in the staging work first, before asking the LLM to reason
       # about anything. The LLM is looking at two documents: the upstream
