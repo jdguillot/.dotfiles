@@ -16,7 +16,8 @@ running on the server.
 The runner's job PATH is nearly empty by design; anything a workflow calls
 has to be listed in `github-runner.extraPackages` on `ryzn-server`. Today
 that is `cachix`, `attic-client`, `findutils`, `git-crypt`, `gh`, `jq`,
-`npins`, `opencode`, `curl` and `deptui-agent`.
+`markdownlint-cli`, `npins`, `opencode`, `mcp-nixos`, `curl`, `gawk`,
+`diffutils`, `util-linux` and `deptui-agent`.
 
 Adding a tool there does nothing until `ryzn-server` is rebuilt, and even
 then each runner takes the new PATH only after it next finishes a job. A

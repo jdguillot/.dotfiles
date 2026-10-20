@@ -126,6 +126,9 @@
         # mcp-nixos backs its `nixos` server). markdownlint is the advisory
         # gate on the docs refresh. deptui-agent is the kick after a green
         # build (ci.yml). git-crypt unlocks the build checkouts (ci.yml).
+        # gawk, diffutils and util-linux cover the text tools the scripts use
+        # beyond coreutils (awk, diff/cmp, column/flock); the job PATH has
+        # nothing else.
         extraPackages = [
           pkgs.cachix
           pkgs.attic-client
@@ -138,6 +141,9 @@
           pkgs.opencode
           pkgs.mcp-nixos
           pkgs.curl
+          pkgs.gawk
+          pkgs.diffutils
+          pkgs.util-linux
           config.services.deptui-agent.package
         ];
         # Control-socket access for that kick. It is the agent's whole
