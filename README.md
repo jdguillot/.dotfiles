@@ -61,7 +61,7 @@ Use the README for the quick map, then jump into the focused docs:
 | `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, traefik, attic, Immich (originals on TrueNAS NFS), Tailscale, and SOPS |
 | `simple-vm` | `minimal` | — | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
 | `vm-gameserver-nix` | `minimal` | — | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
-| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | Headless RTX 5090 streaming a gamescope Steam Big Picture session to Moonlight via Sunshine, with local inference (Ollama + the Hermes Agent gateway), ComfyUI, Waydroid, Docker, Tailscale, SOPS, and Immich's GPU machine-learning server |
+| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | Headless RTX 5090 streaming a gamescope Steam Big Picture session to Moonlight via Sunshine, with local inference (Ollama + the Hermes Agent gateway, Paperclip as the agent control plane), ComfyUI, Waydroid, Docker, Tailscale, SOPS, and Immich's GPU machine-learning server |
 
 For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
 
@@ -96,7 +96,7 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
   `immich`, `github-runner`, `security`, `sops`, `proxmox`, `autoReboot`
 - Gaming and hosting: `gaming`, `sunshine`, `gameserver`,
   `gameserver.astroneer`, `gameserver.playit`
-- AI agents: `ai.hermes`
+- AI agents: `ai.hermes`, `ai.paperclip`
 
 Common host shape:
 
