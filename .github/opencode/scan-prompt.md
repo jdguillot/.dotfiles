@@ -53,6 +53,15 @@ cannot break a build that never reads it. You are given the host list, but
 not the configuration that sets these options, so do not try to guess
 whether it is used -- name the symbol and let the check decide.
 
+For a hold on `nixpkgs` (or `nixpkgs-stable`) that rests on a package -- it
+no longer builds, its new release crashes -- `repo_symbol` is that package's
+nixpkgs attribute, exactly as `nix build nixpkgs#<attr>` would take it
+(`go-mockery`, `typescript-language-server`). It is checked against what the
+machines actually install, not against the files: the hold stands when some
+host or home has the package in its build closure and is dropped when none
+does, however broken the package is upstream. Name the package the evidence
+is about, not one you guess is used.
+
 Use the empty string when the hold is not about a named symbol -- a compiler
 crash, a revert in flight, a maintainer saying to wait. An empty
 `repo_symbol` is never dropped, so do not reach for a vaguely related name
@@ -74,11 +83,12 @@ Treat them as evidence about `nixpkgs`, not as candidates:
   nothing
 - reports concentrated on the *incoming* version, saying it crashes on
   startup or fails on every use, are worth acting on. Say so in `summary`,
-  name the version and the issue, and say that pinning that one package
-  (the workaround register) is the narrow fix. Recommend holding `nixpkgs`
-  for it only if the package is one the machines cannot go a week without;
-  holding all of nixpkgs to avoid one bad program is usually the worse
-  trade, and the summary is the right place to say which you think it is.
+  name the version and the issue, and say that pinning that one package is
+  the narrow fix: a `pin` entry in the workaround register, which the fix
+  stage adds with `pin-package.sh`, keeps the version the machines already
+  run while the rest of nixpkgs moves. Holding all of nixpkgs to avoid one
+  bad program is the worse trade; recommend it only when the breakage is
+  wider than one package.
 
 ## Sources that are already held
 

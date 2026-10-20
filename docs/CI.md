@@ -302,8 +302,9 @@ lock is a months-old revision from another flake.
 
 A watched package cannot be held: holding it means holding `nixpkgs`
 entirely. The list is advice to the triage model and to whoever reads the
-pull request, and the narrow remedy for a bad release is a pin in the
-workaround register (`docs/WORKAROUNDS.md`), not a hold.
+pull request, and the narrow remedy for a bad release is a `pin` entry in
+the workaround register (`docs/WORKAROUNDS.md`, "Pinning a package";
+`.github/scripts/pin-package.sh --min-version` writes one), not a hold.
 
 What earns a slot is a program where a bad release is expensive *and* the
 breakage would not show up in a build. Most of this repo's fast-moving
@@ -364,13 +365,21 @@ model or a garbled answer must not stall the week's bump. They record
 Every hold also carries a `repo_symbol`: the option, attribute or module
 path whose change is what would break this flake. The model is given the
 host list but never the configuration, so it cannot answer the question
-that actually decides an option-removal hold — does anything here set it?
-It names the symbol and `scan-verdict.sh` greps the tree, dropping any
-hold whose symbol nothing references and saying so in the summary. The
-grep is scoped to `*.nix` and skips `.github/`: an option is used when a
-configuration sets it, not when a prompt or a document names it. An empty
-symbol, or one under three characters, is left alone — the check only
-removes holds it can positively disprove.
+that actually decides a hold — does anything here set that option, does
+anything here install that package? It names the symbol and
+`scan-verdict.sh` looks it up, dropping any hold whose symbol nothing uses
+and saying so in the summary. For a hold on `nixpkgs` the symbol is a
+package attribute and the lookup is `.github/scripts/closure-has.sh`: the
+package's own derivation from each target's `pkgs`, matched against
+`nix-store -qR` of every host's system toplevel and every standalone
+home's activation package. A package in no closure cannot fail a build
+here however broken it is upstream — the fortnight nixpkgs sat held for
+go-mockery and typescript-language-server, which only the home closures
+carry, is what the check is for. For an option the lookup is a grep scoped
+to `*.nix`, skipping `.github/`: an option is used when a configuration
+sets it, not when a prompt or a document names it. An empty symbol, or one
+under three characters, is left alone — the check only removes holds it
+can positively disprove.
 
 #### Container images
 
@@ -551,28 +560,41 @@ rebuilt and each runner has restarted — until then the check is, correctly,
 still testing the old build.
 
 If that fails, `opencode run --auto` gets the failure log and
-`.github/opencode/fix-prompt.md`. The prompt gives it two legitimate
+`.github/opencode/fix-prompt.md`. The prompt gives it three legitimate
 outcomes and asks it to decide which one it is looking at *before* editing
 anything:
 
 - **adapt the repository**, when the error names a file here and the cause
   is that we call something upstream renamed or removed. This is the common
   case and the diff is a few lines.
+- **pin one package**, via `.github/scripts/pin-package.sh <attr>
+  "<reason>"`, when the failing derivation is a single nixpkgs package this
+  flake installs and the error is in upstream's description of it — a stale
+  `vendorHash`, its tests failing under the new Go. The script adds a `pin`
+  entry to `workarounds.nix` that takes the package from the revision
+  `main` has, which is what every host already runs, so nothing moves
+  backwards; `package-pins.nix` turns it into an overlay and the entry
+  retires itself once the package builds again (`docs/WORKAROUNDS.md`,
+  "Pinning a package"). The lock files are untouched and the other
+  thousands of packages in the bump still move.
 - **hold one input back**, via `.github/scripts/hold-input.sh <name>
-  "<reason>"`, when the error is in upstream's own tree — a stale
-  `vendorHash`, source that no longer compiles, an output that no longer
-  evaluates on its own terms. The script pins that one input to the revision
-  `main` has and replays the rest of the bump on top, so everything else
-  still moves, and records the hold for the pull request body.
+  "<reason>"`, when the breakage is wider than one package — an input's
+  output that no longer evaluates on its own terms, an npins pin whose
+  source no longer builds, a toolchain change that fails several packages
+  at once. The script pins that one input to the revision `main` has and
+  replays the rest of the bump on top, so everything else still moves, and
+  records the hold for the pull request body.
 
 The dividing question the prompt gives is whether the fix would edit a
 description of *upstream's* package or *this repository's* configuration.
 Writing a `vendorHash`, hanging an `.overrideAttrs` off someone else's
 derivation, or carrying a patch for another project's source is the wrong
 side of that line: upstream fixes it within days, and the workaround then
-goes stale silently as a mismatch in the other direction. `hold-input.sh` is
-the only supported way to move the lock files from this step; a hand edit
-does not survive the replay.
+goes stale silently as a mismatch in the other direction. Between pin and
+hold the question is the blast radius: one package is a pin, a tree is a
+hold, and two broken packages are two pins. `hold-input.sh` is the only
+supported way to move the lock files from this step; a hand edit does not
+survive the replay.
 
 The attempt is bounded: `fix-timeout-minutes` (default 60, changeable on a
 manual dispatch) is both a `timeout` around the run and a line in the prompt,

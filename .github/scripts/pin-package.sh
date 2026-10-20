@@ -141,8 +141,9 @@ $upstream
 $resolved
     retire = \"auto\";
     removal = ''
-      Retired by the weekly run once $until. Deleting this entry is the
-      whole removal; nothing else is fenced.
+      Retired by the weekly run once
+      $until.
+      Deleting this entry is the whole removal; nothing else is fenced.
     '';
   };
   # END WORKAROUND($id)
@@ -172,8 +173,8 @@ if ! nix eval --json --file "$REGISTER" --apply "r: r.\"$id\".pin.version" >/dev
 fi
 first="${where[0]}"
 case "$first" in
-  home:*) got=$(nix eval --raw ".#homeConfigurations.\"${first#home:}\".pkgs.$attr.version" 2>&1 || true) ;;
-  *) got=$(nix eval --raw ".#nixosConfigurations.$first.pkgs.$attr.version" 2>&1 || true) ;;
+  home:*) got=$(nix eval --raw ".#homeConfigurations.\"${first#home:}\".pkgs.$attr.version" 2>/dev/null || true) ;;
+  *) got=$(nix eval --raw ".#nixosConfigurations.$first.pkgs.$attr.version" 2>/dev/null || true) ;;
 esac
 if [ "$got" != "$version" ]; then
   restore
