@@ -74,17 +74,18 @@
       config, an isolated HOME, and any provider. 1.18.31 does not fix it.
     '';
     workaround = ''
-      modules/features/packages/default.nix overlays `opencode` from the
-      `nixpkgs-opencode` flake input, pinned to nixpkgs c27cdad4 (opencode
-      1.18.21, the last packaged version before the regression). Verified by
-      running `opencode run -m ollama/qwen3.8:27b-q4_K_M` against
-      ryzn-server. The pin is system-wide; the home-manager module sets
-      `package = null` and only writes config, so it needs no change.
+      The `pin` below takes `opencode` from nixpkgs c27cdad4 (1.18.21, the
+      last packaged version before the regression); package-pins.nix turns
+      it into an overlay on every host and home. Verified by running
+      `opencode run -m ollama/qwen3.8:27b-q4_K_M` against ryzn-server.
     '';
-    files = [
-      "flake.nix"
-      "modules/features/packages/default.nix"
-    ];
+    files = [ ];
+    pin = {
+      attr = "opencode";
+      rev = "c27cdad491a991b11ed731760aa2ef8db0cb0410";
+      narHash = "sha256-PYZq1qzCJXC2zGI0mH07vrZBsw6DRBAOX0jN1pPtqOQ=";
+      version = "1.18.21";
+    };
     upstream = {
       issue = "https://github.com/anomalyco/opencode/issues/48372";
     };
@@ -107,12 +108,9 @@
       close, so no probe can. When it fires, re-test by hand: build the
       candidate (`nix build nixpkgs#opencode`) and run `opencode run -m
       <any model> "Reply with exactly: PONG"` in an empty directory. A PONG
-      means the fix shipped. Then delete the fenced overlay in
-      modules/features/packages/default.nix, the now-unused `inputs` argument
-      in that file's header if nothing else uses it, the fenced input in
-      flake.nix, `nixpkgs-opencode` from flake.lock (`nix flake update`), and
-      this entry. A crash instead means the release is another broken one:
-      leave the pin and note the version here.
+      means the fix shipped: delete this entry, and the pin goes with it. A
+      crash instead means the release is another broken one: leave the pin
+      and note the version here.
     '';
   };
   # END WORKAROUND(opencode-1-18-30-prompt-crash)

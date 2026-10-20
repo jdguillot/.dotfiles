@@ -58,6 +58,7 @@ re-deriving what the fix touched.
        issue = "https://github.com/owner/repo/issues/N";   # optional
        fix = "https://github.com/owner/repo/pull/N";       # optional
      };
+     pin = { ... };        # optional: a package kept at an older nixpkgs, see below
      resolved = { ... };   # the probe, see below
      retire = "auto";      # or "manual"
      removal = ''what removing it takes, for a person'';
@@ -93,6 +94,7 @@ shipped. One of:
 | `issue` | `url` | the issue is closed |
 | `commit` | `input`, `sha` | the flake input named `input` is pinned, after this week's bump, to a revision that contains `sha` |
 | `package` | `attr`, `minVersion`, `input` (optional) | `pkgs.<attr>.version` evaluates, on the entry's first host, to `minVersion` or later. With `input`, the version is read from that flake input directly instead — required whenever the workaround IS an overlay, since the entry's own overlay would otherwise pin the probe to the held version forever. |
+| `builds` | `attr`, `input` (default `nixpkgs`) | `<attr>` builds again at the revision the lock now pins `input` to: substitutable from the cache (`nix build --max-jobs 0`), or built locally within `PROBE_BUILD_TIMEOUT` (default 900 s). Read from the input directly, never through a host, for the same reason as `package` with `input`. The probe for a `pin` taken because the package stopped building. |
 
 `commit` is the one to reach for when a nixpkgs or module fix has merged
 and the question is whether it has reached the branch this repo tracks.
@@ -125,6 +127,54 @@ exact-tag pin (an Immich image, say) having moved to a release that
 carries it; deleting the workaround on that signal re-exposes the bug.
 Those entries are `manual` unless the probe reads the pin itself.
 
+## Pinning a package
+
+A nixpkgs package that stops building, or whose new release is broken,
+does not need `nixpkgs` held: one or two of those a week would keep the
+whole of nixpkgs bouncing between holds. The entry carries a `pin` block
+instead, and `package-pins.nix` turns every `pin` in the register into one
+overlay on every host and standalone home:
+
+```nix
+pin = {
+  attr = "go-mockery";                 # top-level nixpkgs attribute
+  rev = "<nixpkgs commit>";            # where to take it from
+  narHash = "sha256-…";                # that revision's narHash, as flake.lock records it
+  version = "3.7.5";                   # what that gives, for the reader
+};
+```
+
+`builtins.fetchTree` with the narHash is pure, so no flake input is added
+and `flake.lock` does not move; one nixpkgs import per distinct `rev`,
+with the host's own nixpkgs config, so unfree and platform settings carry
+over. Top-level attributes only: `python3Packages.foo` cannot be pinned
+this way.
+
+The revision is always the one `main`'s lock had when the pin was taken,
+which is the revision every host built and runs. That is the rule that
+keeps a pin safe: a bump that failed to build never deployed, so pinning
+to the previous lock changes nothing on the machine, and a package with
+state — a database, a profile directory — is never started on an older
+version than the one that wrote that state. `nixpkgs-stable` is not an
+anchor for the same reason: its version may be older than what runs.
+
+`.github/scripts/pin-package.sh <attr> "<reason>" [<url>]` writes the
+entry: it reads the revision and narHash from `origin/main`'s lock, checks
+with `closure-has.sh` that some host or home actually installs the package
+(a failure in a package nothing installs is a failure in something else),
+appends the entry with a `builds` probe and `retire = "auto"`, and proves
+the pin took by evaluating the package's version through the flake before
+keeping the edit. `--min-version <v>` swaps the probe for `package` with
+that version, for a release that builds but is broken at run time. The fix
+stage of the weekly bump runs it (`docs/CI.md`, "update — apply, prove, and
+adapt"); it works the same by hand.
+
+Retiring a pin is deleting its entry: `files` is empty because nothing
+outside the register is fenced, so the weekly run's `auto` retirement, or a
+person, removes the block and the overlay loses the attribute. The first
+entry of this kind is `opencode-1-18-30-prompt-crash`, which is `manual`
+because the crash it waits out has no version to test for.
+
 ## Doing it by hand
 
 ```bash
@@ -133,6 +183,12 @@ Those entries are `manual` unless the probe reads the pin itself.
 
 # remove one auto entry now, with the same checks the run applies
 .github/scripts/retire-workaround.sh <id>
+
+# pin one nixpkgs package at main's revision, with the checks the fix stage applies
+.github/scripts/pin-package.sh <attr> "<what is broken upstream>" [<url>]
+
+# which hosts and homes install a package (what the scan's hold check and pin-package.sh ask)
+.github/scripts/closure-has.sh <attr>
 ```
 
 Both need `gh` authenticated for the GitHub probes. `check-workarounds.sh`

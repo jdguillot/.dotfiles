@@ -37,6 +37,10 @@ fi
 # A version is an array of numbers so jq compares it element-wise.
 VER='def ver: ltrimstr("v") | split(".") | map(tonumber? // 0);'
 
+# A local build for the `builds` probe is bounded: a package hydra never
+# builds (unfree, say) would otherwise hold the run for as long as it takes.
+PROBE_BUILD_TIMEOUT="${PROBE_BUILD_TIMEOUT:-900}"
+
 probe_release() {
   local repo="$1" min="$2" pre="$3" body
   body=$(gh api "repos/$repo/releases?per_page=50" 2>/dev/null) || { echo 'unknown	the releases API did not answer'; return; }
@@ -118,6 +122,24 @@ probe_package() {
   fi
 }
 
+# Does a package build again in a flake input, at the revision the lock now
+# has? Substitution first: hydra having built it is the cheap and usual
+# answer, and `--max-jobs 0` refuses to build anything locally. Then one
+# bounded local build. Reads the input unoverlaid, like probe_package with
+# `input`: the pin itself would otherwise answer for upstream.
+probe_builds() {
+  local attr="$1" input="${2:-nixpkgs}" src
+  src=$(locked_flake_ref "$input") || { echo "unknown	no flake input named $input"; return; }
+  nix eval --raw "$src#$attr.drvPath" >/dev/null 2>&1 || { echo "unknown	$attr did not evaluate in $input"; return; }
+  if nix build --no-link --max-jobs 0 "$src#$attr" >/dev/null 2>&1; then
+    echo "resolved	$attr builds again in $input (substituted from the cache)"
+  elif timeout "$PROBE_BUILD_TIMEOUT" nix build --no-link "$src#$attr" >/dev/null 2>&1; then
+    echo "resolved	$attr builds again in $input (built here)"
+  else
+    echo "waiting	$attr still fails to build in $input, or no build finished in ${PROBE_BUILD_TIMEOUT}s"
+  fi
+}
+
 results='[]'
 while read -r id; do
   entry=$(jq -c --arg i "$id" '.[$i]' <<<"$register")
@@ -133,6 +155,8 @@ while read -r id; do
     package) line=$(probe_package "${hosts%% *}" "$(jq -r .resolved.attr <<<"$entry")" \
                                   "$(jq -r .resolved.minVersion <<<"$entry")" \
                                   "$(jq -r '.resolved.input // ""' <<<"$entry")") ;;
+    builds)  line=$(probe_builds "$(jq -r .resolved.attr <<<"$entry")" \
+                                 "$(jq -r '.resolved.input // "nixpkgs"' <<<"$entry")") ;;
     none)    line='waiting	nothing probed: the entry has no `resolved` block' ;;
     *)       line="unknown	probe kind '$kind' is not one this script knows" ;;
   esac
@@ -176,6 +200,7 @@ printf '%s\n' "$results" | jq . > "$RESULTS"
      elif .resolved.kind == "commit" then "`" + .resolved.input + "` to contain " + (.resolved.sha[0:12])
      elif .resolved.kind == "package" then "`" + .resolved.attr + "` ≥ " + .resolved.minVersion
         + (if .resolved.input then " in `" + .resolved.input + "`" else "" end)
+     elif .resolved.kind == "builds" then "`" + .resolved.attr + "` to build again in `" + (.resolved.input // "nixpkgs") + "`"
      else "nothing tracked" end) as $on |
     (if .state == "resolved" and .action == "retired" then "**fixed upstream, retired in this run**"
      elif .state == "resolved" and .action == "retire-failed" then "**fixed upstream; automatic removal failed, see below**"
