@@ -280,6 +280,32 @@ in
       };
     };
 
+    apiServer = {
+      enable = lib.mkEnableOption ''
+        the gateway's OpenAI-compatible API server (`/v1/runs` included),
+        which paperclip's `hermes_gateway` adapter drives. It starts only
+        once `API_SERVER_KEY` (16+ chars) is in the `secrets.envSecret`
+        dotenv; every run it accepts has the agent's full terminal'';
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 8642;
+        description = "API server port (`API_SERVER_PORT`).";
+      };
+
+      interfaces = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        example = [ "br-paperclip" ];
+        description = ''
+          Interfaces to open `port` on. Empty keeps the server on loopback;
+          non-empty binds 0.0.0.0 and opens the port on these interfaces
+          only (the firewall still drops it on the LAN and tailnet), so a
+          container on that bridge reaches it at host.docker.internal.
+        '';
+      };
+    };
+
     container = {
       enable = lib.mkEnableOption ''
         container mode: run the gateway in an Ubuntu OCI container with a
@@ -343,6 +369,11 @@ in
             '';
           }
           {
+            # The firewall holes are host-side; container mode was never checked.
+            assertion = !(cfg.apiServer.enable && cfg.container.enable);
+            message = "cyberfighter.features.ai.hermes: `apiServer` is only wired for the native gateway, not `container.enable`.";
+          }
+          {
             assertion = cfg.backend.sessionTokenSecret == null || sopsEnabled;
             message = "cyberfighter.features.ai.hermes: `backend.sessionTokenSecret` requires cyberfighter.features.sops.enable = true.";
           }
@@ -369,8 +400,16 @@ in
             stateDir
             addToSystemPackages
             extraPackages
-            environment
             ;
+
+          # Non-secret half of the API server; the key arrives via envSecret.
+          environment =
+            cfg.environment
+            // lib.optionalAttrs cfg.apiServer.enable {
+              API_SERVER_ENABLED = "true";
+              API_SERVER_HOST = if cfg.apiServer.interfaces != [ ] then "0.0.0.0" else "127.0.0.1";
+              API_SERVER_PORT = toString cfg.apiServer.port;
+            };
 
           environmentFiles = envSecretPath ++ cfg.extraEnvironmentFiles;
 
@@ -493,6 +532,12 @@ in
           mode = "0400";
           sopsFile = lib.mkIf (cfg.secrets.sopsFile != null) cfg.secrets.sopsFile;
         };
+      })
+
+      (lib.mkIf (cfg.apiServer.enable && cfg.apiServer.interfaces != [ ]) {
+        networking.firewall.interfaces = lib.genAttrs cfg.apiServer.interfaces (_: {
+          allowedTCPPorts = [ cfg.apiServer.port ];
+        });
       })
 
       (lib.mkIf (cfg.backend.mode != "none" && cfg.backend.openFirewall) {
