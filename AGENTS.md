@@ -153,8 +153,12 @@ the upstream event that ends it, and every block of code it adds is fenced
 by `# WORKAROUND(<id>)` / `# END WORKAROUND(<id>)`. The weekly bump probes
 each entry and retires `auto` entries by deleting those blocks; `manual`
 entries are reported until a person removes them. See
-`docs/WORKAROUNDS.md`. Held *inputs* are a different mechanism (the hold
-ledger in `docs/CI.md`); the register is for code.
+`docs/WORKAROUNDS.md`. A single nixpkgs package that stops building or
+ships broken gets a `pin` entry there (`.github/scripts/pin-package.sh`),
+which keeps it at the revision the hosts already run while the rest of
+nixpkgs moves — never a hold on all of nixpkgs. Held *inputs* are a
+different mechanism (the hold ledger in `docs/CI.md`) for breakage wider
+than one package; the register is for code.
 
 ## Configuration style
 

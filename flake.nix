@@ -7,12 +7,6 @@
 
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
 
-    # WORKAROUND(opencode-1-18-30-prompt-crash)
-    # Last nixpkgs revision carrying an opencode before the 1.18.30
-    # SystemPrompt.environment regression. Pinned by revision, not a
-    # channel: any newer channel has the broken build.
-    nixpkgs-opencode.url = "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410";
-    # END WORKAROUND(opencode-1-18-30-prompt-crash)
 
     # Home-manager using the same nixpkgs
     home-manager = {
@@ -112,6 +106,8 @@
     let
       system = "x86_64-linux";
       pkgs-stable = import nixpkgs-stable { inherit system; };
+      # Packages the workaround register pins to an older nixpkgs revision.
+      pinsOverlay = import ./package-pins.nix;
 
       # Unmodified nixpkgs packages (used to force deploy-rs binary from nixpkgs cache)
       pkgs = nixpkgs.legacyPackages.${system};
@@ -174,6 +170,7 @@
               # checkout has no `rev` and stays held, by design.
               system.configurationRevision = self.rev or null;
             }
+            { nixpkgs.overlays = [ pinsOverlay ]; }
           ];
         };
 
@@ -192,6 +189,7 @@
             dms.homeModules.dank-material-shell
             danksearch.homeModules.dsearch
             dankcalendar.homeModules.dank-calendar
+            { nixpkgs.overlays = [ pinsOverlay ]; }
           ];
         };
 

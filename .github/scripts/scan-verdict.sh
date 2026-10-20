@@ -139,15 +139,31 @@ jq --argjson names "$names" \
      degraded: false }' <<<"$content" > "$verdict"
 
 # The model reasons from release notes and never sees this tree, so the one
-# question that decides an option-removal hold -- does anything here set it?
-# -- is the one question it cannot answer. It names the symbol instead and
-# the answer is looked up here. A symbol nothing references cannot break a
-# build, so the hold goes. Fails safe in both directions: a hold that named
-# nothing checkable, or a symbol too short to grep for without matching half
-# the tree, is left exactly as the model returned it.
+# question that decides a hold -- does anything here set that option, does
+# anything here install that package? -- is the one question it cannot
+# answer. It names the symbol instead and the answer is looked up here: a
+# package against the build closures, an option against the Nix files. A
+# symbol nothing uses cannot break a build, so the hold goes. Fails safe in
+# both directions: a hold that named nothing checkable, or a symbol too
+# short to grep for without matching half the tree, is left as returned.
 dropped='[]'
 while IFS=$'\t' read -r hold_name symbol; do
   [ ${#symbol} -ge 3 ] || continue
+  # A nixpkgs hold names a package, and the question is not whether a file
+  # mentions it but whether any host or home installs it: a package in no
+  # closure cannot fail a build here, however broken it is upstream.
+  if [[ "$hold_name" == nixpkgs* && "$symbol" != *.* ]]; then
+    rc=0
+    .github/scripts/closure-has.sh "$symbol" >/dev/null 2>&1 || rc=$?
+    case "$rc" in
+      0) continue ;;
+      1) echo "scan: dropping hold on $hold_name: no host or home installs '$symbol'" >&2
+         dropped=$(jq -c --arg n "$hold_name" '. + [$n]' <<<"$dropped")
+         continue ;;
+      *) echo "scan: keeping hold on $hold_name: '$symbol' does not evaluate as a package here, nothing to check" >&2
+         continue ;;
+    esac
+  fi
   # Nix files only, and never this repo's own prose: an option is "used"
   # when a configuration sets it, not when a document names it. Without the
   # scope, the example symbol in scan-prompt.md matches every hold that
@@ -163,7 +179,7 @@ if [ "$(jq 'length' <<<"$dropped")" -gt 0 ]; then
     .holds |= [ .[] | select(.name as $n | $drop | index($n) | not) ]
     | .summary += ("\n\n**Not held after all:** " + $note
                    + " -- the paragraph above was written before the check that drops a hold whose"
-                   + " option or symbol nothing in this repo references, so these bump with everything else.")
+                   + " option nothing in this repo sets or a package nothing here installs, so these bump with everything else.")
   ' "$verdict" > "$verdict.tmp" && mv "$verdict.tmp" "$verdict"
 fi
 

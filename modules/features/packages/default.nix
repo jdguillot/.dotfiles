@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -138,16 +137,6 @@ in
   config = lib.mkIf cfg.includeBase {
     environment.systemPackages = allPackages;
 
-    # WORKAROUND(opencode-1-18-30-prompt-crash)
-    # opencode 1.18.30/1.18.31 throw in SystemPrompt.environment before any
-    # request leaves the machine, so every prompt dies. Held at 1.18.21 from
-    # a pinned nixpkgs revision until upstream ships a fix.
-    nixpkgs.overlays = [
-      (_: prev: {
-        inherit (inputs.nixpkgs-opencode.legacyPackages.${prev.stdenv.hostPlatform.system}) opencode;
-      })
-    ];
-    # END WORKAROUND(opencode-1-18-30-prompt-crash)
 
     # Keeps the trash cans bounded; trash-empty walks every mounted volume,
     # not just ~/.local/share/Trash.

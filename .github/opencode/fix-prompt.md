@@ -1,9 +1,9 @@
 The weekly dependency bump has been applied to flake.lock and
 npins/sources.json in this working tree, and the repository no longer
-evaluates or builds. Your job is to get it building again, by one of two
-routes: adapt this repository to an upstream change, or hold one input back.
-Both are real outcomes. Deciding which one this is, quickly, is most of the
-work.
+evaluates or builds. Your job is to get it building again, by one of three
+routes: adapt this repository to an upstream change, pin the one nixpkgs
+package that broke, or hold one input back. All three are real outcomes.
+Deciding which one this is, quickly, is most of the work.
 
 Read `build-failure.log` first. Its last line names every target that
 failed, in the form the build script uses:
@@ -27,27 +27,37 @@ hosts is still a rename. If you can name the upstream commit or release
 note that changed it, and the lines here that have to change to match, you
 are in this case: make the change.
 
-**Upstream's — hold the input back.** The error is in upstream's own tree
-and no edit here is the right fix. The reliable signs:
+**Upstream's, in one package — pin that package.** The failing derivation
+is a single nixpkgs package this repository installs, and the error is in
+upstream's description of it, not in anything here. The reliable signs:
 
 - a fixed-output hash mismatch (`hash mismatch in fixed-output derivation`,
-  a stale `vendorHash`, `cargoHash`, `npmDepsHash`) in a package that the
-  input itself defines
-- upstream's own source failing to compile, or its own tests failing
-- an upstream flake output that no longer evaluates on its own terms
+  a stale `vendorHash`, `cargoHash`, `npmDepsHash`) in that package
+- the package's own source failing to compile, or its own tests failing,
+  typically after a toolchain bump (a new Go, Rust, Python or Node)
 
-That class is upstream's bug, it is usually fixed within days, and patching
-around it from here means carrying a hash or a patch that goes stale the
-moment upstream fixes it — and that then fails silently, next week, as a
-mismatch in the other direction. Hold the input and let the following run
-pick the real fix up.
+The log names it: `builder for '/nix/store/…-go-mockery-3.8.0.drv' failed`.
+That is upstream's bug, it is usually fixed within days, and the right
+response is to keep that one package where it is while the other thousands
+move. Do not hold `nixpkgs` for it: that freezes every package for one.
+See "Pinning one package" below.
 
-The question that separates the two: **would the fix edit a description of
-upstream's package, or this repository's own configuration?** Editing this
-repository's configuration is the job. If instead you find yourself writing
-a `vendorHash`, hanging an `.overrideAttrs` off someone else's derivation,
-or adding a patch file for another project's source, you are on the wrong
-side of that line. Hold instead.
+**Upstream's, wider than one package — hold the input back.** The breakage
+is in an input's tree as a whole and no edit here is the right fix: an
+upstream flake output that no longer evaluates on its own terms, an npins
+pin whose source no longer builds, a stdenv or toolchain change in nixpkgs
+that fails several unrelated packages at once. Hold the input and let the
+following run pick the real fix up.
+
+The question that separates ours from upstream's: **would the fix edit a
+description of upstream's package, or this repository's own
+configuration?** Editing this repository's configuration is the job. If
+instead you find yourself writing a `vendorHash`, hanging an
+`.overrideAttrs` off someone else's derivation, or adding a patch file for
+another project's source, you are on the wrong side of that line: a hash or
+a patch carried here goes stale the moment upstream fixes it, and then
+fails silently, next week, as a mismatch in the other direction. Pin or
+hold instead.
 
 Do not hold because adapting looks like work. Specifically, do not hold for:
 
@@ -58,6 +68,32 @@ Do not hold because adapting looks like work. Specifically, do not hold for:
 - not having found the cause yet. A hold names the input that is broken; if
   you cannot name it and say what is broken in *its* tree, you do not have a
   hold, you have an unfinished diagnosis. Write that up instead.
+
+## Pinning one package
+
+    .github/scripts/pin-package.sh <attr> "<what is broken upstream>" [<issue or PR url>]
+
+`<attr>` is the package's top-level nixpkgs attribute, exactly as `nix build
+nixpkgs#<attr>` would take it. The script adds a `pin` entry to
+`workarounds.nix` that takes the package from the nixpkgs revision `main`
+has -- the one every host built and runs today, so nothing moves backwards
+-- and `package-pins.nix` turns it into an overlay. The entry retires
+itself once the package builds again at the locked nixpkgs. The lock files
+are not touched; the rest of the bump stands.
+
+The script refuses a package nothing here installs. That means the failing
+derivation belongs to something else: find the top-level package it is a
+dependency of (`nix why-depends` on the failing target, or the attribute
+whose name appears in the log) and pin that, or, if the breakage is
+genuinely wider, hold the input.
+
+When the package builds but its new version is broken at run time -- the
+watched-package digest or an upstream issue says it crashes on every use
+-- pass `--min-version <v>` with the version upstream says fixes it, so
+the pin releases on that version rather than on a build.
+
+Write the attribute, the version it is kept at and the upstream issue in
+`fix-notes.md`.
 
 ## Holding an input back
 
@@ -78,7 +114,8 @@ and pass no URL.
 
 Hold one input, not several. If a second one is genuinely broken too, hold
 it separately and re-check in between — a hold that was not needed freezes a
-dependency for a week for no reason.
+dependency for a week for no reason. Two broken packages in nixpkgs are two
+pins, not a hold.
 
 Do not edit flake.lock or npins/sources.json by hand. `hold-input.sh` is the
 only supported way to move them here, and a hand edit does not survive the
@@ -116,8 +153,8 @@ toplevel build takes minutes.
   which of these you are in:
   - a verified diagnosis and an adaptation under way — keep going, that is
     the work, and finish it
-  - a verified diagnosis that the breakage is in the input's own tree —
-    hold it and be done
+  - a verified diagnosis that the breakage is in one nixpkgs package — pin
+    it and be done; in an input's tree as a whole — hold it and be done
   - no diagnosis yet — you are not going to reach one in the time left.
     Write up what you ruled out and stop. Do not hold an input on a guess:
     a hold that was not needed freezes a dependency for a week and hides
