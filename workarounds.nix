@@ -5,42 +5,6 @@
 # comment pair, here and in each file it lists, so the weekly run can retire
 # it by deleting those blocks once its `resolved` probe says the fix shipped.
 {
-  # WORKAROUND(wsl-prerelease-shared-memory)
-  wsl-prerelease-shared-memory = {
-    title = "WSL pre-release channel for the WSLg shared-memory fix";
-    added = "2026-09-11";
-    hosts = [ "work-nix-wsl" ];
-    problem = ''
-      WSL 2.7.x never mounts /mnt/shared_memory in the WSLg system distro, so
-      weston's startup probe fails and the whole session runs in RAIL copy
-      mode. Windows then intermittently never gets a first frame for a new
-      window: the taskbar icon appears, the app is alive, nothing is drawn.
-    '';
-    workaround = ''
-      The Windows host runs `wsl --update --pre-release` (2.9.11 at the time
-      of writing). Nothing in this repo changes; the fix is in WSL's
-      DeviceHost package, which the 2.7.x stable line has not picked up.
-    '';
-    files = [ ];
-    upstream = {
-      issue = "https://github.com/microsoft/WSL/issues/40618";
-      fix = "https://github.com/microsoft/WSL/pull/41499";
-    };
-    resolved = {
-      kind = "release";
-      repo = "microsoft/WSL";
-      minVersion = "2.9.10";
-      prerelease = false;
-    };
-    retire = "manual";
-    removal = ''
-      On the Windows host run `wsl --update` (no `--pre-release`) to return to
-      the stable channel, confirm `wsl --version` is at or past the release
-      the probe named, then delete this entry.
-    '';
-  };
-  # END WORKAROUND(wsl-prerelease-shared-memory)
-
   # WORKAROUND(immich-ocr-vram)
   immich-ocr-vram = {
     title = "Immich OCR off: the CUDA ML container's VRAM grows without bound";
@@ -69,16 +33,15 @@
     files = [ "hosts/thkpd-pve1/configuration.nix" ];
     upstream = {
       issue = "https://github.com/immich-app/immich/issues/23462";
-      fix = "https://github.com/immich-app/immich/pull/30332";
+      followup = "https://github.com/immich-app/immich/issues/32375";
     };
+    # 23462 closed on v3.3.0's ML rework, but v3.3.x still fills the card
+    # with the PP-OCRv6 models; 32375 is the open report for that, so it is
+    # the probe. A close says nothing about the pinned tag carrying the fix.
     resolved = {
       kind = "issue";
-      url = "https://github.com/immich-app/immich/issues/23462";
+      url = "https://github.com/immich-app/immich/issues/32375";
     };
-    # A closed issue says nothing about the pinned Immich tag carrying the
-    # fix; retiring on it alone turns OCR back on against the leaky release.
-    # Closed as bounded by v3.3.0's ML rework, but a v3.3.x report on
-    # 2026-10-10 (PP-OCRv6, model revision v2) still fills an 8 GB card.
     retire = "manual";
     removal = ''
       Delete the fenced `ocr = false;` line on thkpd-pve1 (the option
@@ -88,54 +51,6 @@
     '';
   };
   # END WORKAROUND(immich-ocr-vram)
-
-  # WORKAROUND(immich-ml-memory-leak)
-  immich-ml-memory-leak = {
-    title = "Restart immich-server before its remote-ML memory leak OOMs it";
-    added = "2026-09-14";
-    hosts = [ "thkpd-pve1" ];
-    problem = ''
-      Immich v3.2.0 never cancels the response body of its fetch calls to a
-      remote machine-learning server, so the server's node process keeps
-      roughly one preview image (300-600 KB) per asset sent to ML and only a
-      restart frees it. Smart search, face detection and OCR all leak.
-      thkpd-pve1 sends ML to ryzn-server, and after a library import ~57k
-      smart-search and face-detection jobs would grow the process well past
-      its 8g cgroup: the kernel SIGKILLs it mid-job, several times over.
-    '';
-    workaround = ''
-      A minutely systemd timer on thkpd-pve1 runs immich-memory-watchdog.sh,
-      which `docker restart`s immich-server (SIGTERM, 60s grace) once the
-      `immich` process passes 6.5G RSS and has been up at least 10 minutes.
-      The job queue lives in Valkey on disk, so work resumes after the
-      restart; only the in-flight jobs are retried.
-    '';
-    files = [
-      "hosts/thkpd-pve1/configuration.nix"
-      "hosts/thkpd-pve1/immich-memory-watchdog.sh"
-    ];
-    upstream = {
-      issue = "https://github.com/immich-app/immich/issues/31488";
-    };
-    # The issue closed on the fix reaching main (a Node bump, not the closed
-    # PR 31523); a maintainer there says it ships in v3.3.0.
-    resolved = {
-      kind = "release";
-      repo = "immich-app/immich";
-      minVersion = "3.3.0";
-      prerelease = false;
-    };
-    retire = "manual";
-    removal = ''
-      A release is not enough: `cyberfighter.features.immich.version` is an
-      exact tag. Bump it to the first release that carries the fix and deploy,
-      then delete the fenced watchdog block in thkpd-pve1's configuration.nix,
-      delete hosts/thkpd-pve1/immich-memory-watchdog.sh and this entry. Before
-      trusting it, run Smart Search for "All" and confirm `immich` RSS on
-      thkpd-pve1 levels off instead of climbing per asset.
-    '';
-  };
-  # END WORKAROUND(immich-ml-memory-leak)
 
   # WORKAROUND(opencode-1-18-30-prompt-crash)
   opencode-1-18-30-prompt-crash = {
@@ -201,51 +116,4 @@
     '';
   };
   # END WORKAROUND(opencode-1-18-30-prompt-crash)
-
-  # WORKAROUND(proxmox-ticket-signature-interop)
-  proxmox-ticket-signature-interop = {
-    title = "proxmox-nixos pinned to a fork: PVE tickets fail across a mixed cluster";
-    added = "2026-09-21";
-    hosts = [ "thkpd-pve1" ];
-    problem = ''
-      Crypt::OpenSSL::RSA 0.41, which nixpkgs ships, changed the defaults the
-      module signs with; stock Proxmox on Debian 13 is still on 0.35-1.1,
-      where SHA-1 is the default and the padding was whatever the older
-      version did. PVE tickets are exactly that signature, so a proxmox-nixos
-      node and a Debian node sharing one authkey produce signatures neither
-      can verify: `pveproxy: authentication failure: 401 permission denied -
-      invalid PVE ticket`, in both directions, with PVE::Ticket and
-      PVE::AccessControl byte-identical on both nodes. It reproduces on two
-      hosts sharing a key, with no cluster involved.
-    '';
-    workaround = ''
-      flake.nix pins `proxmox-nixos` to booxter/proxmox-nixos `fix-tickets`,
-      the branch behind the upstream pull request, which names SHA-1 and
-      PKCS#1 v1.5 explicitly instead of taking whichever defaults the
-      installed ::RSA has. Only the flake input moves; the proxmox module and
-      thkpd-pve1's config are untouched.
-    '';
-    files = [ "flake.nix" ];
-    upstream = {
-      issue = "https://github.com/SaumonNet/proxmox-nixos/issues/256";
-      fix = "https://github.com/SaumonNet/proxmox-nixos/pull/258";
-    };
-    resolved = {
-      kind = "pr";
-      url = "https://github.com/SaumonNet/proxmox-nixos/pull/258";
-    };
-    retire = "manual";
-    removal = ''
-      A fenced URL cannot be deleted automatically -- removing the block
-      leaves the flake with no `proxmox-nixos` input at all -- so this is a
-      value to put back by hand. When the probe fires, set the input back to
-      `github:SaumonNet/proxmox-nixos`, run `nix flake update proxmox-nixos`,
-      and deploy thkpd-pve1. Confirm before deleting this entry: log in to
-      the web UI on a Debian node and on thkpd-pve1, and check `journalctl -u
-      pveproxy` on both for the 401 above. The merge only says the fix is on
-      the default branch; the pin is only safe to drop once the lock has
-      actually moved to a revision that has it.
-    '';
-  };
-  # END WORKAROUND(proxmox-ticket-signature-interop)
 }

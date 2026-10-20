@@ -410,10 +410,10 @@ everything over NFS shows a load average near its core count while user CPU
 sits at ~0%, which reads as saturation but is I/O wait.
 
 Memory that climbs with every asset during smart search, face detection or
-OCR, and only drops on a restart, is not a sizing problem: v3.2.0 leaks a
-preview's worth per request to a remote ML server. Raising `memory.server`
-only delays the OOM kill. thkpd-pve1 carries a restart watchdog for it until
-the fix ships — see `immich-ml-memory-leak` in `workarounds.nix`.
+OCR, and only drops on a restart, is not a sizing problem: v3.2.x leaked a
+preview's worth per request to a remote ML server, and raising
+`memory.server` only delayed the OOM kill. v3.3.0 fixed it; on the pinned
+release the server sits well under 1 GiB after days of ML traffic.
 
 **Updates.** The pin is the `immich-server` image line in `compose.yaml`;
 `version` is read from it and read-only, so the ML containers and an
