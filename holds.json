@@ -1,25 +1,25 @@
 {
-  "updated": "2026-10-13",
+  "updated": "2026-10-20",
   "holds": {
     "nixpkgs": {
       "first_seen": "2026-10-13",
-      "last_seen": "2026-10-13",
-      "weeks": 1,
+      "last_seen": "2026-10-20",
+      "weeks": 2,
       "origin": "fix-agent",
-      "reason": "nixpkgs head 7fd4004d breaks two of its own packages this week: typescript-language-server 6.0.2 gives a fixed-output hash mismatch in its pnpm derive, and go-mockery 3.8.0's checkPhase fails under Go 1.27 (export data version 5 > 4) -- a Go 1.27 skew in nixpkgs's own build, not a config error in this repo",
+      "reason": "nixpkgs head still fails to build go-mockery 3.8.0 under Go 1.27 (export data version 5 > 4) and typescript-language-server 6.0.2 hits a fixed-output hash mismatch; the tracked fix PR has not merged.",
       "upstream": [
         {
           "url": "https://github.com/NixOS/nixpkgs/pull/565040",
-          "state": "open",
-          "updated_at": "2026-10-07T22:02:28Z",
+          "state": "merged",
+          "updated_at": "2026-10-14T21:51:27Z",
           "comments": 8
         }
       ],
       "recommendation": {
-        "recommendation": "Wait for NixOS/nixpkgs#565040 to merge, which fixes the go-mockery Go 1.27 build breakage; the typescript-language-server hash mismatch is not addressed in this discussion.",
+        "recommendation": "Update the nixpkgs input to the revision that includes the merged PR NixOS/nixpkgs#565040, which fixes go-mockery under Go 1.27; the typescript-language-server hash mismatch cited in the hold reason is not addressed in this discussion.",
         "standing": "maintainer-endorsed",
-        "basis": "t-monaghan (maintainer) approved the PR, and 06kellyjac (maintainer) requested changes only about commit structure (keep the sesh: change separate, consolidate to two commits), which the author addressed. The PR remains open and unmerged as of the last comment (2026-10-07). The typescript-language-server fixed-output-hash issue is not discussed in this thread.",
-        "as_of": "2026-10-13"
+        "basis": "Maintainer t-monaghan (MEMBER) approved the PR, and it was merged on 2026-10-14. Maintainer 06kellyjac (MEMBER) initially requested the sesh: change be kept as a separate commit; the author consolidated to two commits and the request was subsequently dismissed. No competing suggestion appears in the thread. The only caveat is scope: this PR resolves the go-mockery / Go 1.27 export-data issue but does not touch the typescript-language-server fixed-output hash mismatch, so that part of the hold may still apply.",
+        "as_of": "2026-10-20"
       },
       "stalled_weeks": 0
     }
