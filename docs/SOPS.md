@@ -87,6 +87,7 @@ paperclip-env: |
   BETTER_AUTH_SECRET=...
   PAPERCLIP_TOOL_ACTION_SIGNING_SECRET=...
   PAPERCLIP_PUBLIC_HOST=<private hostname traefik routes>
+  PAPERCLIP_LITELLM_KEY=<litellm-keys generate paperclip-local ...>
 litellm-env: |
   # existing keys, plus the provider key for the claude-verify route
   ANTHROPIC_API_KEY=sk-ant-...
@@ -95,9 +96,10 @@ hermes-env: |
   API_SERVER_KEY=<32+ random chars>
 ```
 
-The LiteLLM virtual keys Paperclip agents use are minted with `litellm-keys`
-and stored in Paperclip's own encrypted secret store, bound per agent -- not
-in SOPS. See [MODULES](MODULES.md#paperclip-aipaperclip).
+`PAPERCLIP_LITELLM_KEY` is the shared `paperclip-local` LiteLLM key every
+OpenCode agent uses. Per-agent LiteLLM keys (a secret-bound Claude reviewer)
+live in Paperclip's own encrypted secret store instead -- not in SOPS. See
+[MODULES](MODULES.md#paperclip-aipaperclip).
 
 ### When to use `deployUserAgeKey`
 

@@ -513,7 +513,7 @@ N copies of the weights resident on one GPU.
 | --- | --- | --- | --- |
 | `ai.ollama` | `enable`, `acceleration`, `modelsDir`, `models`, `syncModels`, `host`, `port`, `exposeToContainers`, `keepAlive`, `maxLoadedModels`, `numParallel`, `flashAttention`, `kvCacheType`, `groupMembers`, `environmentVariables` | local OpenAI-compatible inference server at `/v1` | <https://mynixos.com/search?q=services.ollama> |
 | `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `groupMembers`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `apiServer.*`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a systemd service | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
-| `ai.paperclip` | `enable`, `publicHost`, `port`, `stateDir`, `bridgeName`, `disableSignUp`, `anthropicBaseUrl`, `hermesGateway`, `secrets.envSecret`, `secrets.sopsFile` | agent org chart, tickets, budgets and review stages; compose project behind traefik, Claude reached only through LiteLLM | <https://docs.paperclip.ing> |
+| `ai.paperclip` | `enable`, `publicHost`, `port`, `stateDir`, `bridgeName`, `disableSignUp`, `anthropicBaseUrl`, `localGateway.{baseUrl,models,smallModel}`, `hermesGateway`, `secrets.envSecret`, `secrets.sopsFile` | agent org chart, tickets, budgets and review stages; compose project behind traefik, Claude reached only through LiteLLM | <https://docs.paperclip.ing> |
 | `ai.odysseus` | `enable`, `src`, `patches`, `researchProbeTimeout`, `projectName`, `stateDir`, `bind`, `port`, `auth`, `allowedOrigins`, `ollamaBaseUrl`, `llmHost`, `bundledSearxng`, `searxngInstance`, `bridgeName`, `puid`, `pgid`, `extraEnv`, `secrets.envSecret`, `secrets.sopsFile` | self-hosted AI workspace; a systemd oneshot drives `docker compose` off a pinned source tree | <https://github.com/odysseus-dev/odysseus> |
 | `searxng` | `enable`, `package`, `listen`, `port`, `baseUrl`, `jsonApi`, `limiter`, `openFirewall`, `exposeToContainers`, `secretKeyFile`, `settings` | host-native metasearch (lives outside `ai.*` -- the AI stack is just one client), usable on its own and as the search backend for `ai.odysseus` | <https://mynixos.com/search?q=services.searx> |
 | `ai.comfyui` | `enable`, `modelsDir`, `user`, `group`, `hfTokenFile`, `models` | declarative checkpoint downloads only; the runtime itself is `ai.comfyui.server` | <https://github.com/comfyanonymous/ComfyUI> |
@@ -1015,7 +1015,26 @@ The image tag is CalVer (`2026.1012.0`). The weekly bump's derived pattern
 freezes the first number, which here is the year, so the `# bump:` comment
 widens it to `^[0-9]+\.[0-9]+\.[0-9]+$` (stable tags, no `-cloud`).
 
-##### Claude behind LiteLLM
+##### Local models for OpenCode agents (`localGateway`)
+
+Paperclip `2026.1012.0` has no custom-gateway AI connection (it validates API
+keys against fixed provider endpoints), so the module registers LiteLLM as an
+OpenCode provider in the server env instead: `PAPERCLIP_OPENCODE_PROVIDERS`
+names a `litellm` provider at `localGateway.baseUrl`, keyed by
+`PAPERCLIP_LITELLM_KEY` from `paperclip-env`. The opencode_local adapter
+falls back to the server env when an agent sets none, so every OpenCode agent
+-- including workers the CEO hires, which cannot be given arbitrary env --
+selects `litellm/team-coder` or `litellm/team-small` with no per-agent setup.
+`PAPERCLIP_OPENCODE_SMALL_MODEL` pins OpenCode's helper model to a served one.
+The key is visible to every process in the container; it names local models
+only.
+
+##### Claude behind LiteLLM (secret-bound agents)
+
+An agent on a managed Claude connection (subscription or API key signed in
+through the UI) has `ANTHROPIC_BASE_URL` stripped and talks to Anthropic
+directly. The rest of this section applies to `claude_local` agents that
+authenticate with a LiteLLM key bound as a Paperclip secret instead.
 
 `ANTHROPIC_BASE_URL` is set container-wide to `anthropicBaseUrl`
 (`http://litellm:4000`, the litellm container by name over the shared traefik
@@ -1030,7 +1049,7 @@ Anthropic key. So the key's model allowlist decides who can reach Claude, its
 ```bash
 # on ryzn-server: a key that can name only the cloud route, $15 per 30 days
 sudo litellm-keys generate paperclip-claude --models claude-verify --budget 15 --budget-duration 30d
-# a separate key for the local agents (manager, opencode workers)
+# the key for local OpenCode agents: PAPERCLIP_LITELLM_KEY in paperclip-env
 sudo litellm-keys generate paperclip-local --models team-coder,team-small
 ```
 
@@ -1056,20 +1075,21 @@ approval (Hermes -> Paperclip, at `http://127.0.0.1:3100`).
 
 ##### Intended org chart
 
-- **Manager:** a local Qwen agent (`opencode_local`, model `team-coder` via a
-  *Custom Gateway* AI connection to `http://litellm:4000/v1` with the
-  `paperclip-local` key). Its `AGENTS.md` tells it to split goals into
-  issues, assign them, and set review stages on them.
+- **CEO:** `claude_local` on a Claude connection signed in during onboarding.
+  It plans, hires and delegates; enable board approval for hires so it cannot
+  bind a company secret to a new agent unreviewed.
+- **Workers:** `opencode_local` on `litellm/team-coder` (see `localGateway`).
 - **Worker:** Hermes via `hermes_gateway`, for homelab work that needs its
   tools and memory. Stays local end to end.
 - **Reviewer:** a `claude_local` agent, model `claude-verify`, with only the
   `paperclip-claude` key bound. It is the review-stage participant on the
   worker's issues, so it reads finished work and never executes it.
-- **Privacy:** worker issues are private (`PAPERCLIP_ISSUE_PRIVACY_MODE`
-  defaults to `enforce`) and the reviewer gets a self-contained review issue
-  written by the manager. Paperclip enforces what an agent can *fetch*, not
-  what the manager *writes*; content filtering would be a LiteLLM guardrail on
-  the `claude-verify` route.
+- **Visibility:** this edition has no issue-level privacy -- every agent in a
+  company can read all of its issues, comments and work products, so anything
+  a worker writes reaches the Claude agents' context. Secret values are never
+  returned by the API. Agents run in the server container as the same user, so
+  shell-capable agents share its reach; the `low_trust_review` preset contains
+  an agent only on a sandbox execution environment.
 - **Cost:** a monthly budget on the reviewer agent in Paperclip, and the
   LiteLLM key budget underneath it as the hard cap.
 
@@ -1082,12 +1102,13 @@ After `paperclip-env` (and the `hermes-env`/`litellm-env` additions in
    traefik routes. Do not add it to the Cloudflare tunnel.
 2. Open the URL, sign up, choose **Claim this instance**. Then set
    `disableSignUp = true` and redeploy.
-3. Create the company. In **Company Settings > Secrets** add the two LiteLLM
-   keys; in **AI connections** add a Custom Gateway at
-   `http://litellm:4000/v1` bound to `paperclip-local`.
-4. Create the manager (`opencode_local`, `team-coder`, cwd under
-   `/paperclip/workspaces/`), with delegation in its `AGENTS.md`.
-5. Create the reviewer (`claude_local`, model `claude-verify`, cwd under
+3. Onboarding creates the company and asks for a model source (Claude,
+   OpenAI or Grok only). Sign in there for the CEO, then turn on board
+   approval for new hires.
+4. Mint `paperclip-local`, add it to `paperclip-env` as
+   `PAPERCLIP_LITELLM_KEY`, and deploy. OpenCode agents then use
+   `litellm/team-coder`; the CEO can hire them without extra config.
+5. Optional: create the reviewer (`claude_local`, model `claude-verify`, cwd under
    `/paperclip/workspaces/`), env: `ANTHROPIC_API_KEY` from the
    `paperclip-claude` secret, and `ANTHROPIC_DEFAULT_HAIKU_MODEL`,
    `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_OPUS_MODEL` all set
@@ -1100,8 +1121,8 @@ After `paperclip-env` (and the `hermes-env`/`litellm-env` additions in
    `paperclipApiUrl: http://127.0.0.1:3100`, the `API_SERVER_KEY` value as
    `apiKey`, and `dangerouslyAllowInsecureRemoteHttp: true`. Approve the
    join request; Hermes claims its key.
-7. Put an execution policy with a review stage (participant: the reviewer)
-   on the projects or issues the worker takes, and mark them private.
+7. Optionally put an execution policy with a review stage (participant: the
+   reviewer) on the projects or issues the workers take.
 
 ```bash
 sudo paperclip-compose logs -f server

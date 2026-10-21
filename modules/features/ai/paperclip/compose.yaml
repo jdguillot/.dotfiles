@@ -51,6 +51,13 @@ services:
       # to Anthropic, around the proxy.
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
 
+      # Local models for opencode_local agents. The adapter falls back to the
+      # server env for both, which covers CEO-hired workers: agents may not
+      # set arbitrary env on the agents they hire.
+      PAPERCLIP_OPENCODE_PROVIDERS: '@OPENCODE_PROVIDERS@'
+      PAPERCLIP_OPENCODE_SMALL_MODEL: "@OPENCODE_SMALL_MODEL@"
+      PAPERCLIP_LITELLM_KEY: "${PAPERCLIP_LITELLM_KEY:-}"
+
     # host-gateway = the host on this project's bridge, where the Hermes
     # API server's port is opened (ai.hermes.apiServer.interfaces).
     extra_hosts:
