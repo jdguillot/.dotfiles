@@ -531,6 +531,8 @@ in
       (lib.mkIf (sopsEnabled && cfg.secrets.envSecret != null) {
         sops.secrets.${cfg.secrets.envSecret} = {
           sopsFile = lib.mkIf (cfg.secrets.sopsFile != null) cfg.secrets.sopsFile;
+          # The gateway reads $HERMES_HOME/.env only at startup.
+          restartUnits = [ "hermes-agent.service" ];
         };
       })
 
