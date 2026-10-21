@@ -521,6 +521,14 @@ in
                   find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chown "$owner"
                   find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chmod g+rwX
                 done
+                # The gateway user's own dotdirs: tools it runs (git, uv, the
+                # CLI's state) write there, and other users' files break them.
+                home=${lib.escapeShellArg cfg.stateDir}
+                for sub in .config .cache .local; do
+                  [ -d "$home/$sub" ] || continue
+                  find "$home/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chown "$owner"
+                  find "$home/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chmod g+rwX
+                done
                 exit 0
               ''
             );

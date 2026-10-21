@@ -693,6 +693,12 @@ The gateway owns `/var/lib/hermes` as `hermes:hermes` mode 2770.
 `groupMembers` adds users to the `hermes` group so that shared `HERMES_HOME` is
 actually writable. Without the group membership you get the CLI but not access.
 
+Interactive sessions no longer run in the CLI: since upstream's "one gateway
+owns every local session" change, `hermes` attaches to the gateway's socket and
+refuses (`unsafe_control_path`) unless the caller's uid owns `HERMES_HOME`. Run
+it as the gateway user -- `sudo -u hermes -H hermes` -- to share the service's
+sessions; group membership still covers reading and editing its files.
+
 Group membership alone is not enough, hence `sharedHomePermissions` (on by
 default when both of the above are set). Upstream's `save_config_value`
 re-chmods `config.yaml` to `0600` on every runtime persist -- `/model`,
@@ -718,7 +724,9 @@ group (`users`) instead of `hermes`, so the gateway cannot even traverse them --
 `platforms/pairing` crash-looped it. The fixer therefore also regroups the whole
 tree to `hermes` and makes every directory `g+rwxs`; file modes are left alone,
 so a `0600` file stays private to its owner. `pending_messages/` is taken back
-like `logs/`, since the gateway chmods it on recovery and only the owner may.
+like `logs/`, since the gateway chmods it on recovery and only the owner may. The gateway user's
+home dotdirs (`.config`, `.cache`, `.local` under `stateDir`) are taken back
+the same way, since the tools it runs write there.
 
 #### Backend and container mode
 
@@ -1135,7 +1143,7 @@ curl -s http://127.0.0.1:3100/api/health
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
 | `gaming` | `enable`, `steam.enable`, `steam.remotePlay`, `steam.localNetworkGameTransfers`, `steam.gamescopeSession`, `gamemode`, `mangohud`, `protonup`, `extraPackages` | desktop gaming stack | <https://mynixos.com/search?q=programs.steam.enable> |
-| `sunshine` | `enable`, `capture`, `encoder`, `csrfAllowedOrigins`, `openFirewall`, `keepDisplayOn`, `settings` | Sunshine game-stream host for Moonlight (wraps `services.sunshine`). `capture` defaults to `kms`, which reads the DRM scanout framebuffer with no compositor consent dialog and can grab the lock screen — the right backend for a headless seat (a dummy plug); on an NVIDIA host the package is rebuilt with `cudaSupport` so `encoder` (default `nvenc`) is hardware-encode rather than software x264, which `keepDisplayOn` (default on when `capture = "kms"`) protects by stopping Plasma's power management from dropping the CRTC a KMS capture needs. `csrfAllowedOrigins` whitelists the `https://host:47990` web-UI origin so the panel is reachable beyond localhost; `settings` merges extra `sunshine.conf` keys (e.g. `back_button_timeout`) — the config is declarative, so changes made in the web UI do not persist. Pairs with `gaming`'s `steam.gamescopeSession` on a Big Picture stream target | <https://github.com/LizardByte/Sunshine> |
+| `sunshine` | `enable`, `capture`, `encoder`, `csrfAllowedOrigins`, `openFirewall`, `keepDisplayOn`, `settings` | Sunshine game-stream host for Moonlight (wraps `services.sunshine`). `capture` defaults to `kms`, which reads the DRM scanout framebuffer with no compositor consent dialog and can grab the lock screen — the right backend for a headless seat (a dummy plug); on an NVIDIA host the package is rebuilt with `cudaSupport` so `encoder` (default `nvenc`) is hardware-encode rather than software x264, which `keepDisplayOn` (default on when `capture = "kms"`) protects by stopping Plasma's power management from dropping the CRTC a KMS capture needs. `csrfAllowedOrigins` whitelists the `https://host:47990` web-UI origin so the panel is reachable beyond localhost; `settings` merges extra `sunshine.conf` keys (e.g. `back_button_timeout`) — the config is declarative, so changes made in the web UI do not persist. The user unit carries `ConditionUser` for the host's primary user: upstream wants it by `default.target`, so a lingering service user (`hermes`) would otherwise start its own instance at boot and take the ports. Pairs with `gaming`'s `steam.gamescopeSession` on a Big Picture stream target | <https://github.com/LizardByte/Sunshine> |
 | `gameserver` | `enable`, `ludusavi.enable`, `ludusavi.schedule`, `ludusavi.path`, `ludusavi.games`, `ludusavi.roots`, `ludusavi.customGames` | backup-aware game server plumbing | <https://mynixos.com/search?q=systemd.timers> |
 | `gameserver.astroneer` | `enable`, `serverName`, `gamePort`, `maxPlayers`, `autoSaveInterval`, `openFirewall`, `publicIpFile`, `serverPasswordFile` | AstroTuxLauncher-based Astroneer server | <https://github.com/CreeperHost/AstroTuxLauncher> |
 | `gameserver.playit` | `enable`, `package`, `secretPath` | Playit tunnel helper module; note that `vm-gameserver-nix` currently uses `services.playit` directly in the host config | <https://mynixos.com/search?q=playit> |
