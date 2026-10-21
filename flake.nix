@@ -185,6 +185,7 @@
             nix-flatpak.homeManagerModules.nix-flatpak
             catppuccin.homeModules.catppuccin
             sops-nix.homeManagerModules.sops
+            inputs.hermes-agent.homeManagerModules.default
             noctalia.homeModules.default
             dms.homeModules.dank-material-shell
             danksearch.homeModules.dsearch

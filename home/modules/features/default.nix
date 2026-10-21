@@ -12,6 +12,7 @@
     ./themes/default.nix
     ./desktop/default.nix
     ./kdeconnect/default.nix
+    ./hermes/default.nix
     ./ssh/default.nix
     ./tools/default.nix
     ./tools/btop/default.nix

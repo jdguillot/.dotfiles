@@ -231,31 +231,12 @@
         publicHost = "\${LITELLM_PUBLIC_HOST}";
       };
 
-      ai.hermes = {
-        enable = true;
-
-        configFile = ./hermes-config.yaml;
-
-        # Cloud fallback for vision and for anything the local model cannot
-        # handle. Dotenv blob in secrets/secrets.yaml.
-        secrets.envSecret = "hermes-env";
-
-        addToSystemPackages = true;
-        groupMembers = [ "cyberfighter" ];
-
-        # For paperclip's hermes_gateway worker. Idle until API_SERVER_KEY
-        # is in hermes-env; the port opens on paperclip's bridge only.
-        apiServer.enable = true;
-      };
-
-      # Agent org chart over the local stack: Qwen manager and Hermes
-      # worker local, a Claude Code reviewer reaching Anthropic only through
-      # litellm's claude-verify key. Hostname and secrets from paperclip-env;
-      # onboarding checklist in docs/MODULES.md.
+      # Agent org chart: Claude CEO from onboarding, OpenCode workers on
+      # litellm's local models, each bound only the secrets it needs.
+      # Hostname and secrets from paperclip-env; docs/MODULES.md.
       ai.paperclip = {
         enable = true;
         publicHost = "\${PAPERCLIP_PUBLIC_HOST}";
-        hermesGateway = true;
       };
 
       # Loopback publish for the openai-api shim; browser access goes through
@@ -477,6 +458,16 @@
     };
   };
 
+  # Hermes runs as this user through Home Manager (home/cyberfighter). The
+  # dotenv stays a host-key secret handed to the user; the user gateway
+  # reads it at its next start.
+  sops.secrets.hermes-env = {
+    owner = config.cyberfighter.system.username;
+    mode = "0400";
+  };
+  # The gateway is a user service: keep the manager up without a login.
+  users.users.${config.cyberfighter.system.username}.linger = true;
+
   virtualisation.waydroid.enable = true; # For Android gaming
 
   # Never sleep: this box serves the tailnet, and a resume killed UVM once.
@@ -532,7 +523,8 @@
   # The unit ships wantedBy graphical-session.target, which only Plasma ever
   # reached. KMS capture needs no compositor socket, so the user manager's
   # default.target is the right anchor: autologin starts user@1000, which
-  # starts Sunshine, whatever session is on the seat.
+  # starts Sunshine, whatever session is on the seat. The sunshine module's
+  # ConditionUser keeps other lingering managers from starting it.
   #
   # `wants` is cleared with it: the unit pulls graphical-session.target in
   # otherwise, and that target owns the DankMaterialShell units (dcal), which
