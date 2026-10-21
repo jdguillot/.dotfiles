@@ -514,8 +514,9 @@ in
                 find "$d" -maxdepth 1 -type f -print0 | xargs -0 -r chmod g+rw
                 # Upstream's activation fixes only the directories' modes;
                 # rotated logs and config backups inside them keep the owner of
-                # whichever process wrote them.
-                for sub in logs backups; do
+                # whichever process wrote them. The gateway chmods
+                # pending_messages on recovery, which only the owner may do.
+                for sub in logs backups pending_messages; do
                   [ -d "$d/$sub" ] || continue
                   find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chown "$owner"
                   find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chmod g+rwX

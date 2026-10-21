@@ -717,7 +717,8 @@ Subdirectories carried over from a private `~/.hermes` keep the user's primary
 group (`users`) instead of `hermes`, so the gateway cannot even traverse them --
 `platforms/pairing` crash-looped it. The fixer therefore also regroups the whole
 tree to `hermes` and makes every directory `g+rwxs`; file modes are left alone,
-so a `0600` file stays private to its owner.
+so a `0600` file stays private to its owner. `pending_messages/` is taken back
+like `logs/`, since the gateway chmods it on recovery and only the owner may.
 
 #### Backend and container mode
 
