@@ -75,6 +75,12 @@ only needs `cyberfighter.features.sops.enable = true` plus
 `cyberfighter.features.ai.hermes.secrets.envSecret = "hermes-env"`. Add or edit
 the blob with `sops secrets/secrets.yaml`.
 
+A personal Hermes (Home Manager `cyberfighter.features.hermes`, as on
+ryzn-server) reads the same blob, but the host declares it: a host-key secret
+with `owner` set to the user, passed as `environmentFiles =
+[ "/run/secrets/hermes-env" ]`. The user's age key stays off
+`secrets/secrets.yaml`. The user gateway picks up a change at its next start.
+
 ### Dotenv blobs for the agent stack on ryzn-server
 
 Compose projects take the same shape, staged into `/run/<project>/env` and
@@ -91,9 +97,6 @@ paperclip-env: |
 litellm-env: |
   # existing keys, plus the provider key for the claude-verify route
   ANTHROPIC_API_KEY=sk-ant-...
-hermes-env: |
-  # existing keys, plus the API server key paperclip's hermes_gateway uses
-  API_SERVER_KEY=<32+ random chars>
 ```
 
 `PAPERCLIP_LITELLM_KEY` is the shared `paperclip-local` LiteLLM key every

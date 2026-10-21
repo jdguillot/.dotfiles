@@ -17,7 +17,6 @@
 {
   config,
   lib,
-  pkgs,
   inputs,
   ...
 }:
@@ -116,43 +115,12 @@ in
 
     addToSystemPackages = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = ''
         Put the `hermes` CLI on the system PATH and export HERMES_HOME
-        system-wide, so interactive shells share sessions, skills and cron with
-        the gateway service instead of creating a private ~/.hermes.
-      '';
-    };
-
-    groupMembers = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      example = [ "cyberfighter" ];
-      description = ''
-        Users added to the hermes group. The state directory is 2770
-        hermes:hermes, so this is what lets a human actually use the shared
-        HERMES_HOME that `addToSystemPackages` points them at.
-      '';
-    };
-
-    sharedHomePermissions = lib.mkOption {
-      type = lib.types.bool;
-      default = cfg.addToSystemPackages && cfg.groupMembers != [ ];
-      defaultText = lib.literalExpression "addToSystemPackages && groupMembers != [ ]";
-      description = ''
-        Keep the files directly under HERMES_HOME group-owned and group-rw.
-
-        Needed because upstream re-chmods config.yaml to 0600 on every runtime
-        persist (`save_config_value` in cli.py, unconditional -- unlike
-        `_secure_file`, it does not honour managed mode). One `/model` or
-        `/approvals always` locks every other group member out of the shared
-        home: the CLI then silently falls back to the default config, which
-        among other things drops `model.base_url` and hides the local Ollama
-        catalog from the model picker. The reverse happens too -- caches a
-        group member writes come out 0600 and the gateway cannot read them.
-
-        Everyone in the hermes group can already read the 2770 state
-        directory, so this grants nothing new.
+        system-wide. Upstream's CLI attaches only to a gateway of its own uid,
+        so this serves `sudo -u <service user>` operation; a person's own agent
+        belongs in the Home Manager module (`cyberfighter.features.hermes`).
       '';
     };
 
@@ -447,93 +415,6 @@ in
           lib.optionalAttrs (cfg.model != null) { model = cfg.model; }
         );
         services.hermes-agent.mcpServers = cfg.mcpServers;
-      })
-
-      (lib.mkIf (cfg.groupMembers != [ ]) {
-        users.users = lib.genAttrs cfg.groupMembers (_: {
-          extraGroups = [ config.services.hermes-agent.group ];
-        });
-      })
-
-      (lib.mkIf cfg.sharedHomePermissions {
-        # inotify on the directory: every writer here replaces files by
-        # rename, so the create/move lands as a directory event and the fixer
-        # runs after the offending chmod rather than racing it.
-        systemd.paths.hermes-shared-home = {
-          description = "Watch HERMES_HOME for files that lost group access";
-          wantedBy = [ "multi-user.target" ];
-          pathConfig = {
-            PathModified = "${cfg.stateDir}/.hermes";
-            # PathChanged, not PathModified: log handlers hold their file
-            # open, so this fires on rotation (create/rename), not every line.
-            PathChanged = "${cfg.stateDir}/.hermes/logs";
-            Unit = "hermes-shared-home.service";
-          };
-        };
-
-        # A CLI run as a group member leaves its files owned by that user;
-        # the gateway then dies on open() at startup, so repair first.
-        systemd.services.hermes-agent = {
-          wants = [ "hermes-shared-home.service" ];
-          after = [ "hermes-shared-home.service" ];
-        };
-
-        systemd.services.hermes-shared-home = {
-          description = "Restore group access to HERMES_HOME";
-          # Also on boot and on every activation, so a file broken while the
-          # watcher was down is repaired without waiting for the next write.
-          wantedBy = [ "multi-user.target" ];
-          # No start rate limit: the gateway rewrites its state file
-          # continuously, so the default 5-per-10s trips within seconds of
-          # normal use and leaves both this and the .path unit failed for
-          # good -- which then fails every deploy-rs activation check. The
-          # unit is idempotent and cheap, and systemd will not run two at
-          # once, so unbounded triggering is the correct setting here.
-          startLimitIntervalSec = 0;
-          path = [
-            pkgs.coreutils
-            pkgs.findutils
-          ];
-
-          serviceConfig = {
-            Type = "oneshot";
-            ExecStart = toString (
-              pkgs.writeShellScript "hermes-shared-home" ''
-                set -uo pipefail
-                d=${lib.escapeShellArg "${cfg.stateDir}/.hermes"}
-                [ -d "$d" ] || exit 0
-                group=${config.services.hermes-agent.group}
-                owner=${config.services.hermes-agent.user}:$group
-                # Subdirectories carried over from a private ~/.hermes keep the
-                # user's primary group and lock the gateway out of the whole
-                # subtree; file modes stay, so 0600 files remain private.
-                find "$d" -mindepth 1 ! -group "$group" -print0 | xargs -0 -r chgrp -h "$group"
-                find "$d" -mindepth 1 -type d ! -perm -2070 -print0 | xargs -0 -r chmod g+rwxs
-                # Top level: regular files only, so gateway.sock keeps its mode.
-                find "$d" -maxdepth 1 -type f -print0 | xargs -0 -r chown "$owner"
-                find "$d" -maxdepth 1 -type f -print0 | xargs -0 -r chmod g+rw
-                # Upstream's activation fixes only the directories' modes;
-                # rotated logs and config backups inside them keep the owner of
-                # whichever process wrote them. The gateway chmods
-                # pending_messages on recovery, which only the owner may do.
-                for sub in logs backups pending_messages; do
-                  [ -d "$d/$sub" ] || continue
-                  find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chown "$owner"
-                  find "$d/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chmod g+rwX
-                done
-                # The gateway user's own dotdirs: tools it runs (git, uv, the
-                # CLI's state) write there, and other users' files break them.
-                home=${lib.escapeShellArg cfg.stateDir}
-                for sub in .config .cache .local; do
-                  [ -d "$home/$sub" ] || continue
-                  find "$home/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chown "$owner"
-                  find "$home/$sub" \( -type f -o -type d \) -print0 | xargs -0 -r chmod g+rwX
-                done
-                exit 0
-              ''
-            );
-          };
-        };
       })
 
       (lib.mkIf (sopsEnabled && cfg.secrets.envSecret != null) {

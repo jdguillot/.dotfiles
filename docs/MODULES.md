@@ -512,7 +512,7 @@ N copies of the weights resident on one GPU.
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
 | `ai.ollama` | `enable`, `acceleration`, `modelsDir`, `models`, `syncModels`, `host`, `port`, `exposeToContainers`, `keepAlive`, `maxLoadedModels`, `numParallel`, `flashAttention`, `kvCacheType`, `groupMembers`, `environmentVariables` | local OpenAI-compatible inference server at `/v1` | <https://mynixos.com/search?q=services.ollama> |
-| `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `groupMembers`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `apiServer.*`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a systemd service | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
+| `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `apiServer.*`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a system service for a service-driven agent; a person's own agent uses the Home Manager `hermes` module | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
 | `ai.paperclip` | `enable`, `publicHost`, `port`, `stateDir`, `bridgeName`, `disableSignUp`, `anthropicBaseUrl`, `localGateway.{baseUrl,models,smallModel}`, `hermesGateway`, `secrets.envSecret`, `secrets.sopsFile` | agent org chart, tickets, budgets and review stages; compose project behind traefik, Claude reached only through LiteLLM | <https://docs.paperclip.ing> |
 | `ai.odysseus` | `enable`, `src`, `patches`, `researchProbeTimeout`, `projectName`, `stateDir`, `bind`, `port`, `auth`, `allowedOrigins`, `ollamaBaseUrl`, `llmHost`, `bundledSearxng`, `searxngInstance`, `bridgeName`, `puid`, `pgid`, `extraEnv`, `secrets.envSecret`, `secrets.sopsFile` | self-hosted AI workspace; a systemd oneshot drives `docker compose` off a pinned source tree | <https://github.com/odysseus-dev/odysseus> |
 | `searxng` | `enable`, `package`, `listen`, `port`, `baseUrl`, `jsonApi`, `limiter`, `openFirewall`, `exposeToContainers`, `secretKeyFile`, `settings` | host-native metasearch (lives outside `ai.*` -- the AI stack is just one client), usable on its own and as the search backend for `ai.odysseus` | <https://mynixos.com/search?q=services.searx> |
@@ -686,47 +686,15 @@ The module declares the `sops.secrets` entry itself, so the host only needs
 `config.yaml`, `settings`, or `environment` -- those all land in the
 world-readable Nix store.
 
-#### Sharing state with your shell
+#### Personal use runs as the user (`cyberfighter.features.hermes`)
 
-The gateway owns `/var/lib/hermes` as `hermes:hermes` mode 2770.
-`addToSystemPackages = true` puts `hermes` on `PATH` and exports `HERMES_HOME`;
-`groupMembers` adds users to the `hermes` group so that shared `HERMES_HOME` is
-actually writable. Without the group membership you get the CLI but not access.
-
-Interactive sessions no longer run in the CLI: since upstream's "one gateway
-owns every local session" change, `hermes` attaches to the gateway's socket and
-refuses (`unsafe_control_path`) unless the caller's uid owns `HERMES_HOME`. Run
-it as the gateway user -- `sudo -u hermes -H hermes` -- to share the service's
-sessions; group membership still covers reading and editing its files.
-
-Group membership alone is not enough, hence `sharedHomePermissions` (on by
-default when both of the above are set). Upstream's `save_config_value`
-re-chmods `config.yaml` to `0600` on every runtime persist -- `/model`,
-`/approvals always`, TUI toggles -- unconditionally, unlike `_secure_file`,
-which does honour managed mode. The activation script installs the file `0660`,
-so the first runtime write undoes it and every other group member is locked out.
-
-The failure is silent and misleading: the CLI prints a parse warning, falls back
-to the built-in default config, and therefore loses `model.base_url`. The model
-picker then shows cloud providers and **no local Ollama models at all**, because
-`curated_models_for_provider("custom")` has no endpoint left to probe. A
-`systemd.path` unit on `HERMES_HOME` re-applies group ownership after each write.
-
-The other direction breaks the gateway itself. A CLI run as a group member
-rotates `logs/agent.log` and writes `backups/` as that user, mode 0660, which
-the `hermes` user cannot open. The gateway holds its log open and keeps running
-until its next restart (a deploy, say), then dies on `open()` in a loop. So the
-fixer also takes `logs/` and `backups/` back recursively, the path unit watches
-`logs/` for rotations, and `hermes-agent` runs the fixer before every start.
-
-Subdirectories carried over from a private `~/.hermes` keep the user's primary
-group (`users`) instead of `hermes`, so the gateway cannot even traverse them --
-`platforms/pairing` crash-looped it. The fixer therefore also regroups the whole
-tree to `hermes` and makes every directory `g+rwxs`; file modes are left alone,
-so a `0600` file stays private to its owner. `pending_messages/` is taken back
-like `logs/`, since the gateway chmods it on recovery and only the owner may. The gateway user's
-home dotdirs (`.config`, `.cache`, `.local` under `stateDir`) are taken back
-the same way, since the tools it runs write there.
+Upstream's CLI no longer runs sessions itself: it attaches to the gateway's
+socket and refuses (`unsafe_control_path`) unless the caller's uid owns
+`HERMES_HOME`. A system gateway under its own user therefore cannot back a
+person's interactive use, and sharing its home through a group is no longer
+possible. A person's agent runs through the Home Manager module instead (see
+[HOME-MANAGER](HOME-MANAGER.md)); this NixOS module is for a gateway that only
+services drive, operated with `sudo -u hermes -H hermes`.
 
 #### Backend and container mode
 
@@ -1063,6 +1031,10 @@ sudo litellm-keys generate paperclip-local --models team-coder,team-small
 
 ##### Hermes as a worker (`hermesGateway`)
 
+Needs the system `ai.hermes` gateway, i.e. a Hermes only services drive.
+ryzn-server leaves it off: its Hermes is personal and runs as the user, and
+a worker that can reach it would inherit everything that user can do.
+
 The `hermes_gateway` adapter calls a running Hermes API server
 (`POST /v1/runs` + SSE), so Hermes keeps its own tools, memory and
 local-model config and Paperclip only dispatches tickets. Hermes runs
@@ -1087,8 +1059,11 @@ approval (Hermes -> Paperclip, at `http://127.0.0.1:3100`).
   It plans, hires and delegates; enable board approval for hires so it cannot
   bind a company secret to a new agent unreviewed.
 - **Workers:** `opencode_local` on `litellm/team-coder` (see `localGateway`).
-- **Worker:** Hermes via `hermes_gateway`, for homelab work that needs its
-  tools and memory. Stays local end to end.
+- **Credentialed workers:** each gets only the secrets you bind to it -- the
+  CEO cannot bind arbitrary secrets on hires. Git access, for example, is a
+  Forgejo bot-account token as a Paperclip secret plus `GIT_CONFIG_*` env
+  that turns it into a credential helper, so nothing lands on disk.
+  Hermes is not a worker: it runs as the user (`hermesGateway` stays off).
 - **Reviewer:** a `claude_local` agent, model `claude-verify`, with only the
   `paperclip-claude` key bound. It is the review-stage participant on the
   worker's issues, so it reads finished work and never executes it.
@@ -1103,8 +1078,8 @@ approval (Hermes -> Paperclip, at `http://127.0.0.1:3100`).
 
 ##### First run
 
-After `paperclip-env` (and the `hermes-env`/`litellm-env` additions in
-[SOPS](SOPS.md)) are in place and the host is deployed:
+After `paperclip-env` (and the `litellm-env` addition in [SOPS](SOPS.md)) is
+in place and the host is deployed:
 
 1. DNS: point the `PAPERCLIP_PUBLIC_HOST` name at the host, as for other
    traefik routes. Do not add it to the Cloudflare tunnel.
@@ -1123,12 +1098,11 @@ After `paperclip-env` (and the `hermes-env`/`litellm-env` additions in
    to `claude-verify` (Claude Code's background calls otherwise name models
    the key cannot reach). Set its monthly budget. **Test Environment**
    should pass the hello probe.
-6. Hermes: add an agent from the sidebar, generate the onboarding prompt and
-   give it to `hermes` on the host. The join payload needs
-   `apiBaseUrl: http://host.docker.internal:8642`,
-   `paperclipApiUrl: http://127.0.0.1:3100`, the `API_SERVER_KEY` value as
-   `apiKey`, and `dangerouslyAllowInsecureRemoteHttp: true`. Approve the
-   join request; Hermes claims its key.
+6. Per-worker credentials: add each token in **Company Settings > Secrets**
+   and bind it in that agent's env only. For Forgejo:
+   `FORGEJO_TOKEN` (secret ref), `GIT_CONFIG_COUNT=1`,
+   `GIT_CONFIG_KEY_0=credential.https://<forgejo-host>.helper`,
+   `GIT_CONFIG_VALUE_0=!f() { echo username=<bot>; echo "password=$FORGEJO_TOKEN"; }; f`.
 7. Optionally put an execution policy with a review stage (participant: the
    reviewer) on the projects or issues the workers take.
 
@@ -1143,7 +1117,7 @@ curl -s http://127.0.0.1:3100/api/health
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
 | `gaming` | `enable`, `steam.enable`, `steam.remotePlay`, `steam.localNetworkGameTransfers`, `steam.gamescopeSession`, `gamemode`, `mangohud`, `protonup`, `extraPackages` | desktop gaming stack | <https://mynixos.com/search?q=programs.steam.enable> |
-| `sunshine` | `enable`, `capture`, `encoder`, `csrfAllowedOrigins`, `openFirewall`, `keepDisplayOn`, `settings` | Sunshine game-stream host for Moonlight (wraps `services.sunshine`). `capture` defaults to `kms`, which reads the DRM scanout framebuffer with no compositor consent dialog and can grab the lock screen — the right backend for a headless seat (a dummy plug); on an NVIDIA host the package is rebuilt with `cudaSupport` so `encoder` (default `nvenc`) is hardware-encode rather than software x264, which `keepDisplayOn` (default on when `capture = "kms"`) protects by stopping Plasma's power management from dropping the CRTC a KMS capture needs. `csrfAllowedOrigins` whitelists the `https://host:47990` web-UI origin so the panel is reachable beyond localhost; `settings` merges extra `sunshine.conf` keys (e.g. `back_button_timeout`) — the config is declarative, so changes made in the web UI do not persist. The user unit carries `ConditionUser` for the host's primary user: upstream wants it by `default.target`, so a lingering service user (`hermes`) would otherwise start its own instance at boot and take the ports. Pairs with `gaming`'s `steam.gamescopeSession` on a Big Picture stream target | <https://github.com/LizardByte/Sunshine> |
+| `sunshine` | `enable`, `capture`, `encoder`, `csrfAllowedOrigins`, `openFirewall`, `keepDisplayOn`, `settings` | Sunshine game-stream host for Moonlight (wraps `services.sunshine`). `capture` defaults to `kms`, which reads the DRM scanout framebuffer with no compositor consent dialog and can grab the lock screen — the right backend for a headless seat (a dummy plug); on an NVIDIA host the package is rebuilt with `cudaSupport` so `encoder` (default `nvenc`) is hardware-encode rather than software x264, which `keepDisplayOn` (default on when `capture = "kms"`) protects by stopping Plasma's power management from dropping the CRTC a KMS capture needs. `csrfAllowedOrigins` whitelists the `https://host:47990` web-UI origin so the panel is reachable beyond localhost; `settings` merges extra `sunshine.conf` keys (e.g. `back_button_timeout`) — the config is declarative, so changes made in the web UI do not persist. The user unit carries `ConditionUser` for the host's primary user: upstream wants it by `default.target`, so any other lingering user manager would otherwise start its own instance at boot and take the ports. Pairs with `gaming`'s `steam.gamescopeSession` on a Big Picture stream target | <https://github.com/LizardByte/Sunshine> |
 | `gameserver` | `enable`, `ludusavi.enable`, `ludusavi.schedule`, `ludusavi.path`, `ludusavi.games`, `ludusavi.roots`, `ludusavi.customGames` | backup-aware game server plumbing | <https://mynixos.com/search?q=systemd.timers> |
 | `gameserver.astroneer` | `enable`, `serverName`, `gamePort`, `maxPlayers`, `autoSaveInterval`, `openFirewall`, `publicIpFile`, `serverPasswordFile` | AstroTuxLauncher-based Astroneer server | <https://github.com/CreeperHost/AstroTuxLauncher> |
 | `gameserver.playit` | `enable`, `package`, `secretPath` | Playit tunnel helper module; note that `vm-gameserver-nix` currently uses `services.playit` directly in the host config | <https://mynixos.com/search?q=playit> |
