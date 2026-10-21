@@ -502,7 +502,13 @@ in
                 set -uo pipefail
                 d=${lib.escapeShellArg "${cfg.stateDir}/.hermes"}
                 [ -d "$d" ] || exit 0
-                owner=${config.services.hermes-agent.user}:${config.services.hermes-agent.group}
+                group=${config.services.hermes-agent.group}
+                owner=${config.services.hermes-agent.user}:$group
+                # Subdirectories carried over from a private ~/.hermes keep the
+                # user's primary group and lock the gateway out of the whole
+                # subtree; file modes stay, so 0600 files remain private.
+                find "$d" -mindepth 1 ! -group "$group" -print0 | xargs -0 -r chgrp -h "$group"
+                find "$d" -mindepth 1 -type d ! -perm -2070 -print0 | xargs -0 -r chmod g+rwxs
                 # Top level: regular files only, so gateway.sock keeps its mode.
                 find "$d" -maxdepth 1 -type f -print0 | xargs -0 -r chown "$owner"
                 find "$d" -maxdepth 1 -type f -print0 | xargs -0 -r chmod g+rw

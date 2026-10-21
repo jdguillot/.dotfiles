@@ -713,6 +713,12 @@ until its next restart (a deploy, say), then dies on `open()` in a loop. So the
 fixer also takes `logs/` and `backups/` back recursively, the path unit watches
 `logs/` for rotations, and `hermes-agent` runs the fixer before every start.
 
+Subdirectories carried over from a private `~/.hermes` keep the user's primary
+group (`users`) instead of `hermes`, so the gateway cannot even traverse them --
+`platforms/pairing` crash-looped it. The fixer therefore also regroups the whole
+tree to `hermes` and makes every directory `g+rwxs`; file modes are left alone,
+so a `0600` file stays private to its owner.
+
 #### Backend and container mode
 
 `backend.mode` (`none`/`serve`/`dashboard`) starts a second unit,
