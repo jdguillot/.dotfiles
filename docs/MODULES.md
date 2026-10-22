@@ -513,7 +513,7 @@ N copies of the weights resident on one GPU.
 | --- | --- | --- | --- |
 | `ai.ollama` | `enable`, `acceleration`, `modelsDir`, `models`, `syncModels`, `host`, `port`, `exposeToContainers`, `keepAlive`, `maxLoadedModels`, `numParallel`, `flashAttention`, `kvCacheType`, `groupMembers`, `environmentVariables` | local OpenAI-compatible inference server at `/v1` | <https://mynixos.com/search?q=services.ollama> |
 | `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `apiServer.*`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a system service for a service-driven agent; a person's own agent uses the Home Manager `hermes` module | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
-| `ai.paperclip` | `enable`, `publicHost`, `port`, `stateDir`, `bridgeName`, `disableSignUp`, `anthropicBaseUrl`, `localGateway.{baseUrl,models,smallModel}`, `hermesGateway`, `secrets.envSecret`, `secrets.sopsFile` | agent org chart, tickets, budgets and review stages; compose project behind traefik, Claude reached only through LiteLLM | <https://docs.paperclip.ing> |
+| `ai.paperclip` | `enable`, `publicHost`, `port`, `stateDir`, `bridgeName`, `disableSignUp`, `localGateway.{baseUrl,models,smallModel}`, `hermesGateway`, `secrets.envSecret`, `secrets.sopsFile` | agent org chart, tickets, budgets and review stages; compose project behind traefik; Claude via a subscription sign-in or a per-agent LiteLLM key | <https://docs.paperclip.ing> |
 | `ai.odysseus` | `enable`, `src`, `patches`, `researchProbeTimeout`, `projectName`, `stateDir`, `bind`, `port`, `auth`, `allowedOrigins`, `ollamaBaseUrl`, `llmHost`, `bundledSearxng`, `searxngInstance`, `bridgeName`, `puid`, `pgid`, `extraEnv`, `secrets.envSecret`, `secrets.sopsFile` | self-hosted AI workspace; a systemd oneshot drives `docker compose` off a pinned source tree | <https://github.com/odysseus-dev/odysseus> |
 | `searxng` | `enable`, `package`, `listen`, `port`, `baseUrl`, `jsonApi`, `limiter`, `openFirewall`, `exposeToContainers`, `secretKeyFile`, `settings` | host-native metasearch (lives outside `ai.*` -- the AI stack is just one client), usable on its own and as the search backend for `ai.odysseus` | <https://mynixos.com/search?q=services.searx> |
 | `ai.comfyui` | `enable`, `modelsDir`, `user`, `group`, `hfTokenFile`, `models` | declarative checkpoint downloads only; the runtime itself is `ai.comfyui.server` | <https://github.com/comfyanonymous/ComfyUI> |
@@ -1005,21 +1005,23 @@ selects `litellm/team-coder` or `litellm/team-small` with no per-agent setup.
 The key is visible to every process in the container; it names local models
 only.
 
-##### Claude behind LiteLLM (secret-bound agents)
+##### Claude: subscription or LiteLLM (per agent)
 
-An agent on a managed Claude connection (subscription or API key signed in
-through the UI) has `ANTHROPIC_BASE_URL` stripped and talks to Anthropic
-directly. The rest of this section applies to `claude_local` agents that
-authenticate with a LiteLLM key bound as a Paperclip secret instead.
+Nothing sets `ANTHROPIC_BASE_URL` container-wide. Claude Code honours it
+whatever the credential, so a container-wide proxy URL also sent agents on a
+managed Claude connection (subscription signed in through the UI) to LiteLLM:
+the sign-in succeeded and every run then failed, because the proxy does not
+accept an Anthropic OAuth token. Subscription agents therefore talk to
+Anthropic directly.
 
-`ANTHROPIC_BASE_URL` is set container-wide to `anthropicBaseUrl`
-(`http://litellm:4000`, the litellm container by name over the shared traefik
-network -- no host firewall hole), and no Anthropic key exists anywhere in
-Paperclip's environment. A `claude_local` agent authenticates with a LiteLLM
-virtual key bound to that agent alone as a Paperclip secret, and LiteLLM's
-`claude-verify` route (`hosts/ryzn-server/litellm-config.yaml`) holds the real
-Anthropic key. So the key's model allowlist decides who can reach Claude, its
-`--budget` caps spend independently of Paperclip's own budgets, and
+A `claude_local` agent that should be metered by LiteLLM instead sets
+`ANTHROPIC_BASE_URL=http://litellm:4000` (proxy root, no /v1; the litellm
+container by name over the shared traefik network -- no host firewall hole)
+in its own env, and authenticates with a LiteLLM virtual key bound to that
+agent alone as a Paperclip secret. LiteLLM's `claude-verify` route
+(`hosts/ryzn-server/litellm-config.yaml`) holds the real Anthropic key, so
+the key's model allowlist decides who can reach that route, its `--budget`
+caps spend independently of Paperclip's own budgets, and
 `litellm-keys block <key>` is the kill switch.
 
 ```bash
@@ -1092,9 +1094,10 @@ in place and the host is deployed:
    `PAPERCLIP_LITELLM_KEY`, and deploy. OpenCode agents then use
    `litellm/team-coder`; the CEO can hire them without extra config.
 5. Optional: create the reviewer (`claude_local`, model `claude-verify`, cwd under
-   `/paperclip/workspaces/`), env: `ANTHROPIC_API_KEY` from the
-   `paperclip-claude` secret, and `ANTHROPIC_DEFAULT_HAIKU_MODEL`,
-   `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_OPUS_MODEL` all set
+   `/paperclip/workspaces/`), env: `ANTHROPIC_BASE_URL=http://litellm:4000`,
+   `ANTHROPIC_API_KEY` from the `paperclip-claude` secret, and
+   `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`,
+   `ANTHROPIC_DEFAULT_OPUS_MODEL` all set
    to `claude-verify` (Claude Code's background calls otherwise name models
    the key cannot reach). Set its monthly budget. **Test Environment**
    should pass the hello probe.

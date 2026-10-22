@@ -15,7 +15,6 @@ let
   cfg = config.cyberfighter.features.ai.paperclip;
   traefikCfg = config.cyberfighter.features.traefik;
   hermesCfg = config.cyberfighter.features.ai.hermes;
-  litellmCfg = config.cyberfighter.features.ai.litellm;
 
   runtimeEnv = "/run/paperclip/env";
 
@@ -26,7 +25,6 @@ let
     STATE_DIR = cfg.stateDir;
     PUBLIC_HOST = cfg.publicHost;
     DISABLE_SIGN_UP = lib.boolToString cfg.disableSignUp;
-    ANTHROPIC_BASE_URL = cfg.anthropicBaseUrl;
     OPENCODE_PROVIDERS = builtins.toJSON {
       litellm = {
         npm = "@ai-sdk/openai-compatible";
@@ -100,17 +98,6 @@ in
         PAPERCLIP_AUTH_DISABLE_SIGN_UP. The first admin signs up and claims
         the instance from the browser, so this starts false; turn it on once
         the board is claimed, after which people join by invite only.
-      '';
-    };
-
-    anthropicBaseUrl = lib.mkOption {
-      type = lib.types.str;
-      default = "http://litellm:4000";
-      description = ''
-        ANTHROPIC_BASE_URL for every Claude Code run in the container: the
-        LiteLLM proxy root (no /v1), reached by container name over the
-        shared traefik network. Keeps Claude behind the proxy's keys and
-        budgets instead of a provider key inside Paperclip.
       '';
     };
 
@@ -193,14 +180,6 @@ in
             message = "cyberfighter.features.ai.paperclip.hermesGateway needs ai.hermes.enable and ai.hermes.apiServer.enable.";
           }
         ];
-
-        warnings =
-          lib.optional (cfg.anthropicBaseUrl == "http://litellm:4000" && !litellmCfg.enable)
-            ''
-              cyberfighter.features.ai.paperclip: `anthropicBaseUrl` points at the
-              litellm container, but ai.litellm is not enabled here; Claude Code
-              agents will fail to connect.
-            '';
 
         # postgres/: the image chowns PGDATA at init; `+C`, databases
         # fragment under CoW. data/: the server's entrypoint chowns it to

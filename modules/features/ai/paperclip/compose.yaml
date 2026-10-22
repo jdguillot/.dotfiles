@@ -43,12 +43,10 @@ services:
       DO_NOT_TRACK: "1"
       PAPERCLIP_ANNOUNCEMENTS_ENABLED: "false"
 
-      # Every claude_local agent reaches Anthropic through LiteLLM (proxy
-      # root, no /v1) with its own virtual key, bound per agent as a
-      # Paperclip secret. No provider key is set container-wide.
-      ANTHROPIC_BASE_URL: "@ANTHROPIC_BASE_URL@"
-      # Claude Code otherwise sends telemetry and error reports straight
-      # to Anthropic, around the proxy.
+      # No ANTHROPIC_BASE_URL here: a container-wide value also redirects
+      # subscription (OAuth) agents, whose token the proxy rejects. Agents
+      # that go through LiteLLM set it in their own env.
+      # Claude Code telemetry and error reports.
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
 
       # Local models for opencode_local agents. The adapter falls back to the
@@ -80,7 +78,7 @@ services:
         max-file: "3"
 
     # @NETWORK@ also carries the litellm container, which is how
-    # ANTHROPIC_BASE_URL resolves without a host firewall hole.
+    # http://litellm:4000 resolves without a host firewall hole.
     networks:
       - default
       - "@NETWORK@"
