@@ -192,7 +192,7 @@ Notes:
 - `includeDev` defaults to `config.cyberfighter.traits.dev` — hosts declare the trait in `hosts/default.nix` instead of setting this per host.
 - Base packages include a troubleshooting toolkit: `htpasswd` (Apache), `openssl`, `curl`, `bind` (dig/host), `netcat`, `socat`, `tcpdump`, `strace`.
 - Development packages include tooling such as `deploy-rs`, `github-copilot-cli`, `claude-code`, `nixd`, language servers, and Node tooling.
-- Desktop packages include `kitty`, `wofi`, `bitwarden-desktop`, and `1Password` GUI packages.
+- Desktop packages include `kitty`, `wofi`, `wineWow64Packages.stable`, and `1Password` GUI (`_1password-gui`) packages.
 
 Upstream references:
 

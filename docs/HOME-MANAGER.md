@@ -90,7 +90,7 @@ Notes:
 | `shell` | `enable`, `bash.enable`, `fish.enable`, `fish.plugins`, `extraSessionVariables`, `extraAliases` | shared shell entry point |
 | `terminal` | `enable` | shared terminal entry point |
 | `editor` | `enable`, `vim.enable`, `vim.plugins`, `neovim.enable`, `vscode.enable`, `vscode.extensions` | shared editor entry point |
-| `desktop` | `enable`, `firefox.enable`, `firefox.package`, `bitwarden.enable`, `extraPackages` | desktop applications for user environments |
+| `desktop` | `enable`, `firefox.enable`, `firefox.package`, `extraPackages` | desktop applications for user environments |
 | `ssh` | `enable`, `onepass`, `extraConfig`, `hosts` | SSH client config plus optional encrypted host snippets |
 | `sops` | `enable` | enables the Home Manager `sops-nix` wrapper |
 | `tools` | `enable`, `enableDefault`, `extraPackages` | shared CLI/tool bundle |
@@ -262,7 +262,6 @@ See [`SOPS.md`](SOPS.md) for the full secrets workflow.
       desktop = {
         enable = true;
         firefox.enable = true;
-        bitwarden.enable = true;
       };
 
       tools = {
@@ -307,7 +306,7 @@ See [`SOPS.md`](SOPS.md) for the full secrets workflow.
 
 The checked-in home configs currently show three broad patterns:
 
-- `home/cyberfighter/home.nix`: full desktop-oriented setup with SSH, Fish/Zsh, LazyVim, Zed, Ghostty, Alacritty, Bitwarden, Noctalia, and several tool submodules
+- `home/cyberfighter/home.nix`: full desktop-oriented setup with SSH, Fish/Zsh, LazyVim, Zed, Ghostty, Alacritty, Noctalia, and several tool submodules
 - `home/jdguillot/home.nix`: work-oriented WSL setup with SSH, LazyVim, Firefox, Direnv, tmux, zellij, `mc`, and work Git include files
 - `home/minimal/home.nix`: smaller server/VM setup with SSH, Zsh, Neovim/LazyVim, tmux, Yazi, and a lighter tool set
 
