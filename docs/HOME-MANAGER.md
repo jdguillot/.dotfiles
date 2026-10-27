@@ -169,6 +169,7 @@ without per-user lines.
 | `jujutsu` | `enable`, `userName`, `userEmail`, `useSecretsForIdentity`, `extraSettings` | can consume SOPS identity data |
 | `carapace` | `enable`, `enableZshIntegration`, `enableBashIntegration`, `enableFishIntegration` | shell completion helpers |
 | `direnv` | `enable` | direnv integration |
+| `cargoSweep` | `enable`, `paths`, `days`, `frequency` | weekly systemd user timer running `cargo sweep --recursive --time` over `~/projects`; uses `--time` because `--installed` asks rustup, which has no Nix toolchains |
 | `rofi` | `enable` | app launcher |
 | `sesh` | `enable` | session helper |
 | `fastfetch` | `enable` | system info output |
@@ -308,7 +309,7 @@ See [`SOPS.md`](SOPS.md) for the full secrets workflow.
 The checked-in home configs currently show three broad patterns:
 
 - `home/cyberfighter/home.nix`: full desktop-oriented setup with SSH, Fish/Zsh, LazyVim, Zed, Ghostty, Alacritty, Bitwarden, Noctalia, and several tool submodules
-- `home/jdguillot/home.nix`: work-oriented WSL setup with SSH, LazyVim, Firefox, Direnv, tmux, zellij, `mc`, and work Git include files
+- `home/jdguillot/home.nix`: work-oriented WSL setup with SSH, LazyVim, Firefox, Direnv, cargo-sweep timer, tmux, zellij, `mc`, and work Git include files
 - `home/minimal/home.nix`: smaller server/VM setup with SSH, Zsh, Neovim/LazyVim, tmux, Yazi, and a lighter tool set
 
 ## Further reading

@@ -34,6 +34,7 @@
     ./tools/zellij/default.nix
     ./tools/yazi/default.nix
     ./tools/direnv/default.nix
+    ./tools/cargo-sweep/default.nix
     ./tools/fastfetch/default.nix
   ];
 }
