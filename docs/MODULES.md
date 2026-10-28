@@ -166,7 +166,7 @@ Key options:
 
 Notes:
 
-- When `enableDevenv = true`, the module enables the Cachix/substituter set used by this repo, including `devenv`, `jdguillot`, `nix-community`, `niri`, `noctalia`, and `proxmox-nixos` caches.
+- When `enableDevenv = true`, the module enables the Cachix/substituter set used by this repo, including `devenv`, `jdguillot`, `nix-community`, `niri`, and `proxmox-nixos` caches.
 - The module also creates a SOPS-backed GitHub access-token include for `nix.conf`.
 
 Upstream references:

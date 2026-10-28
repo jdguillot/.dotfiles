@@ -1,6 +1,6 @@
 # Desktop Styles: niri + noctalia
 
-The niri and noctalia configs now have switchable looks, researched from
+The niri config has switchable looks, researched from
 popular community setups (YaLTeR's own dotfiles, linkfrg, saatvik333,
 snowarch/iNiR, nickjj) and omarchy's design conventions.
 
@@ -50,7 +50,7 @@ each layer only has to state what it changes.
 
 | Shell      | What it is                                                         |
 | ---------- | ------------------------------------------------------------------ |
-| `noctalia` | The Noctalia shell (the previous, unchanged setup)                 |
+| `noctalia` | Noctalia v5, kept as the fallback shell                            |
 | `dank`     | DankMaterialShell, from the `dms` flake input, on its stock keymap |
 
 Two ways to switch:
@@ -81,13 +81,13 @@ Module wiring, for reference:
 
 - `cyberfighter.features.niri.shells` — which layers get installed; both on
   `desktop` hosts, noctalia only elsewhere, so minimal hosts don't carry a
-  second Quickshell closure. `"dank"` in this list is what enables
+  second shell. `"dank"` in this list is what enables
   `programs.dank-material-shell` (systemd unit off — niri spawns it, so a
   unit would double-spawn).
 - `cyberfighter.features.niri.shell` — the layer seeded on first activation,
   before anything has picked one.
 - `"noctalia"` still needs `cyberfighter.features.noctalia.enable`, which
-  owns that package and its presets.
+  owns that package and its config.
 
 ## The dank suite: apps, plugins, greeter
 
@@ -242,8 +242,7 @@ So the repo tracks `settings.json`, via
   drag produces one snapshot rather than a dozen.
 - On a fresh home, activation seeds `settings.json` from the tracked copy if
   the file doesn't exist yet. It is never a store symlink — that would make
-  the file read-only and the Settings GUI could no longer save, the same trap
-  documented for noctalia below.
+  the file read-only and the Settings GUI could no longer save.
 
 `session.json` is deliberately **not** captured: it holds your weather
 location, launcher history and other local state that does not belong in a
@@ -254,23 +253,15 @@ One wrinkle to know about: the bar-xray toggle is the exception to
 "fragments are derived" — DMS reads it back out of `dms/layout.kdl` rather
 than storing it in settings.json, so that one setting is not captured.
 
-## noctalia presets
+## noctalia (v5, the fallback shell)
 
-Noctalia's `settings.json` stays runtime-managed (declarative management
-would make it a read-only symlink and break the settings GUI). Instead, the
-`noctalia-preset` command jq-merges a preset into the live settings file;
-noctalia hot-reloads it.
-
-```sh
-noctalia-preset list
-noctalia-preset floating-island   # floating bar + rounded screen corners
-noctalia-preset framed-bento      # frame around the whole screen
-noctalia-preset simple-top        # the previous look
-noctalia-preset wallpaper-colors  # Material-You colors from the wallpaper
-noctalia-preset catppuccin-static # back to the static Catppuccin scheme
-```
-
-These also have launcher entries — `Mod+Space`, type "preset".
+DMS is the daily shell; noctalia v5 stays installed as the fallback
+(`niri-shell noctalia`, or the "Niri (Noctalia)" greeter session). It comes
+from nixpkgs through Home Manager's `programs.noctalia`. The base config is
+`home/modules/features/noctalia/config.toml`, validated at build time by
+`noctalia config validate`; anything changed in the settings GUI is saved to
+`~/.local/state/noctalia/settings.toml`, which overrides it. Delete that
+file to fall back to the declared config.
 
 ## Launcher A/B test: noctalia vs rofi
 
@@ -278,20 +269,15 @@ Both launchers are bound while comparing:
 
 | Bind              | Launcher                                          |
 | ----------------- | ------------------------------------------------- |
-| `Mod+Space`       | noctalia launcher (quickshell)                    |
+| `Mod+Space`       | noctalia launcher                                 |
 | `Mod+Shift+Space` | rofi (mocha `launcher.rasi` theme, drun + window) |
 | `Mod+Ctrl+Space`  | `style-menu` — rofi dmenu picker for niri styles  |
-|                   | and noctalia presets (dmenu scripting demo)       |
+|                   | (dmenu scripting demo)                            |
 
 The rofi theme lives in `home/modules/features/tools/rofi/rofi-config/`
 (`launcher.rasi` + `catppuccin-mocha.rasi`). `style-menu` shows the rofi
 side of the scripting story: pipe lines into `rofi -dmenu`, act on the
-selection — the equivalent of the desktop-entry approach used for the
-noctalia launcher.
-
-Presets live in `home/modules/features/noctalia/presets/*.json` — add a new
-JSON fragment there to create a preset (only include the keys you want to
-override).
+selection.
 
 ## Keybind changes (omarchy-inspired, noctalia IPC instead of rofi/swaylock)
 
@@ -318,12 +304,9 @@ password managers (1Password/KeePassXC/Bitwarden) are blocked from screen
 capture, PiP windows float bottom-right, and utility popups (pavucontrol,
 network/bluetooth editors, file choosers) open floating.
 
-## Trying other shells (quickshell)
+## Trying other shells
 
-Noctalia is itself quickshell-based. If you want to experiment beyond it,
-the strongest alternative with first-class niri support is
-[DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell)
-(flake `github:AvengeMedia/DankMaterialShell/stable`, home-manager modules
-`homeModules.dank-material-shell` + `homeModules.niri`). Note that noctalia
-`legacy-v4` is EOL — the eventual upgrade path is noctalia v5
-(`programs.noctalia`, TOML settings, `noctalia msg` IPC).
+Noctalia v5 is a native C++ shell; DankMaterialShell is Quickshell-based
+(flake `github:AvengeMedia/DankMaterialShell/stable`, home-manager module
+`homeModules.dank-material-shell`). Other Quickshell configs can be tried
+the same way DMS is wired in.
