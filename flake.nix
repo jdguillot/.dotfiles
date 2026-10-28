@@ -39,10 +39,6 @@
     #    tasmotizer.url = "path:./programs/tasmotizer";
     deploy-rs.url = "github:serokell/deploy-rs";
     deptui.url = "github:jdguillot/deptui";
-    noctalia = {
-      url = "github:noctalia-dev/noctalia/legacy-v4";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     dms = {
       url = "github:AvengeMedia/DankMaterialShell/stable";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -95,7 +91,6 @@
       catppuccin,
       proxmox-nixos,
       deploy-rs,
-      noctalia,
       dms,
       dank-greeter,
       danksearch,
@@ -185,7 +180,6 @@
             nix-flatpak.homeManagerModules.nix-flatpak
             catppuccin.homeModules.catppuccin
             sops-nix.homeManagerModules.sops
-            noctalia.homeModules.default
             dms.homeModules.dank-material-shell
             danksearch.homeModules.dsearch
             dankcalendar.homeModules.dank-calendar

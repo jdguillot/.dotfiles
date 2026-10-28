@@ -15,12 +15,13 @@ let
   capitalize = s: lib.toUpper (builtins.substring 0 1 s) + builtins.substring 1 (-1) s;
 
   # niri only spawns the chosen shell at session start, so a live swap has to
-  # stop and start them by hand. Both shells ship their own kill subcommand.
+  # stop and start them by hand. noctalia v5 has no quit command, so it is
+  # signalled; DMS ships its own kill subcommand.
   shellCommands = {
     noctalia = {
       label = "Noctalia";
-      start = "noctalia-shell";
-      stop = "noctalia-shell kill";
+      start = "noctalia";
+      stop = "${pkgs.procps}/bin/pkill -x noctalia";
     };
     dank = {
       label = "DankMaterialShell";

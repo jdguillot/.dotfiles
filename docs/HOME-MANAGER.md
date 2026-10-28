@@ -94,7 +94,7 @@ Notes:
 | `ssh` | `enable`, `onepass`, `extraConfig`, `hosts` | SSH client config plus optional encrypted host snippets |
 | `sops` | `enable` | enables the Home Manager `sops-nix` wrapper |
 | `tools` | `enable`, `enableDefault`, `extraPackages` | shared CLI/tool bundle |
-| `noctalia` | `enable` | Noctalia shell/home styling module |
+| `noctalia` | `enable` | Noctalia v5, the fallback shell beside DMS: Home Manager's `programs.noctalia` with nixpkgs' package and a native `config.toml` (validated at build time); GUI changes go to `~/.local/state/noctalia/settings.toml` and override it |
 | `dank` | `enable`, `apps.{monitor,search,calendar}`, `extraQtPackages`, `capture.{enable,repo,target,watch}`, `plugins.{enable,exclude,extra}` | DankMaterialShell plus dgop/dsearch/dcal; `extraQtPackages` puts QML modules that DMS plugins need on the shell's import path; `capture` mirrors DMS's settings.json back into the checkout when the GUI saves; `plugins` deploys the npins-pinned plugin set — see [DESKTOP-STYLES.md](DESKTOP-STYLES.md) |
 | `kdeconnect` | `enable`, `package`, `indicator` | runs `kdeconnectd` in the graphical session for phone pairing. The host must also set `cyberfighter.features.kdeconnect.enable` — a standalone home configuration cannot open 1714-1764 itself |
 | `niri` | `enable`, `style`, `shells`, `shell` | niri config deploy; `style` sets the visual variant, `shells` installs the desktop shell layers (`noctalia`, `dank`), `shell` seeds which one a fresh home starts on. Switch at login via the `Niri (…)` greeter sessions or in place with `niri-shell <name>` — see [DESKTOP-STYLES.md](DESKTOP-STYLES.md) |

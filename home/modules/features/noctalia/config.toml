@@ -1,0 +1,8 @@
+# Noctalia v5 base config, kept small: noctalia is the fallback shell, DMS
+# the daily one. GUI changes land in ~/.local/state/noctalia/settings.toml,
+# which overrides this file. Reference: https://docs.noctalia.dev/noctalia/configuration/
+
+[theme]
+mode = "dark"
+source = "builtin"
+builtin = "Catppuccin"

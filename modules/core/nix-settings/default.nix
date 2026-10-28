@@ -138,7 +138,6 @@ in
           "https://devenv.cachix.org"
           "https://jdguillot.cachix.org"
           "https://nix-community.cachix.org"
-          "https://noctalia.cachix.org"
           "https://cache.saumon.network/proxmox-nixos"
           # Hydra never builds unfree CUDA variants; without this cache
           # every CUDA package is a local compile.
@@ -149,7 +148,6 @@ in
           "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
           "jdguillot.cachix.org-1:2blGoWA4jRj/xDiez3FqPE5S/RBNtD8uJUCz7weHNcs="
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-          "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
           "proxmox-nixos:D9RYSWpQQC/msZUWphOY2I5RLH5Dd6yQcaHIuug7dWM="
           "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
         ];
