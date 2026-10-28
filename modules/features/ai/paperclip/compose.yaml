@@ -10,7 +10,7 @@ services:
     # pattern would freeze bumps at the new year. Stable tags only; the
     # `-cloud` variant bundles sandbox plugins and Sentry.
     # bump: pattern=^[0-9]+\.[0-9]+\.[0-9]+$
-    image: ghcr.io/paperclipai/paperclip:2026.1012.0
+    image: ghcr.io/paperclipai/paperclip:2026.1023.0
     container_name: paperclip
     # "no", not unless-stopped: docker would otherwise restore this at
     # boot before the unit's ExecStartPre stages secrets into /run.
