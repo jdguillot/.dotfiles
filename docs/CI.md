@@ -423,7 +423,8 @@ image's release: Immich's Postgres build carries extension versions the
 server checks at start and updates one way, so the right tag is what
 `docker/docker-compose.yml` says at the server release being taken, never
 the registry's newest. `pattern=`, `repo=`, `min-age=` override the derived
-values; `notes-start=` drops a preamble from the release notes (litellm's
+values (paperclip's CalVer tag widens `pattern=`, since its first number is
+the year); `notes-start=` drops a preamble from the release notes (litellm's
 signing instructions); `context=` adds files, such as a host's own config
 for the service; `skip` excludes the line.
 

@@ -11,5 +11,6 @@
     ./litellm/default.nix
     ./odysseus/default.nix
     ./ollama/default.nix
+    ./paperclip/default.nix
   ];
 }

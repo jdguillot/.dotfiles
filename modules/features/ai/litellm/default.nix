@@ -56,7 +56,9 @@ let
     usage() {
       cat >&2 <<'EOF'
     usage: litellm-keys generate <alias> --models m1,m2 [--rpm N] [--tpm N] [--parallel N]
+                                [--budget USD] [--budget-duration D]
            litellm-keys update <key> [--models m1,m2] [--rpm N] [--tpm N] [--parallel N]
+                                [--budget USD] [--budget-duration D]
            litellm-keys list
            litellm-keys info <key>
            litellm-keys block <key>
@@ -68,6 +70,8 @@ let
     update: change only the flags given; <key> is the sk-... key or its hash
     (the form rate-limit errors report). Other settings keep their values.
     A limit flag value of `none` removes that limit from the key.
+    --budget caps the key's spend in USD (LiteLLM prices cloud routes; local
+    models cost 0); --budget-duration (30d, 1mo, ...) resets it periodically.
     block/unblock suspend a key keeping its config; delete is permanent.
     EOF
       exit 1
@@ -86,48 +90,58 @@ let
       generate)
         [ $# -ge 1 ] || usage
         alias=$1; shift
-        models="" rpm="" tpm="" parallel=""
+        models="" rpm="" tpm="" parallel="" budget="" duration=""
         while [ $# -gt 0 ]; do
           case "$1" in
             --models) models=$2; shift 2 ;;
             --rpm) rpm=$2; shift 2 ;;
             --tpm) tpm=$2; shift 2 ;;
             --parallel) parallel=$2; shift 2 ;;
+            --budget) budget=$2; shift 2 ;;
+            --budget-duration) duration=$2; shift 2 ;;
             *) usage ;;
           esac
         done
         [ -n "$models" ] || usage
         body=$(jq -n --arg alias "$alias" --arg models "$models" \
-          --arg rpm "$rpm" --arg tpm "$tpm" --arg parallel "$parallel" '
+          --arg rpm "$rpm" --arg tpm "$tpm" --arg parallel "$parallel" \
+          --arg budget "$budget" --arg duration "$duration" '
           { key_alias: $alias, user_id: $alias, models: ($models | split(",")) }
           + (if $rpm != "" then { rpm_limit: ($rpm | tonumber) } else {} end)
           + (if $tpm != "" then { tpm_limit: ($tpm | tonumber) } else {} end)
-          + (if $parallel != "" then { max_parallel_requests: ($parallel | tonumber) } else {} end)')
+          + (if $parallel != "" then { max_parallel_requests: ($parallel | tonumber) } else {} end)
+          + (if $budget != "" then { max_budget: ($budget | tonumber) } else {} end)
+          + (if $duration != "" then { budget_duration: $duration } else {} end)')
         req POST /key/generate -d "$body" | jq .
         ;;
       update)
         [ $# -ge 2 ] || usage
         target=$1; shift
-        models="" rpm="" tpm="" parallel=""
+        models="" rpm="" tpm="" parallel="" budget="" duration=""
         while [ $# -gt 0 ]; do
           case "$1" in
             --models) models=$2; shift 2 ;;
             --rpm) rpm=$2; shift 2 ;;
             --tpm) tpm=$2; shift 2 ;;
             --parallel) parallel=$2; shift 2 ;;
+            --budget) budget=$2; shift 2 ;;
+            --budget-duration) duration=$2; shift 2 ;;
             *) usage ;;
           esac
         done
         # /key/update only touches the fields present in the body; an
         # explicit null unsets that limit on the key.
         body=$(jq -n --arg key "$target" --arg models "$models" \
-          --arg rpm "$rpm" --arg tpm "$tpm" --arg parallel "$parallel" '
+          --arg rpm "$rpm" --arg tpm "$tpm" --arg parallel "$parallel" \
+          --arg budget "$budget" --arg duration "$duration" '
           def limit: if . == "none" then null else tonumber end;
           { key: $key }
           + (if $models != "" then { models: ($models | split(",")) } else {} end)
           + (if $rpm != "" then { rpm_limit: ($rpm | limit) } else {} end)
           + (if $tpm != "" then { tpm_limit: ($tpm | limit) } else {} end)
-          + (if $parallel != "" then { max_parallel_requests: ($parallel | limit) } else {} end)')
+          + (if $parallel != "" then { max_parallel_requests: ($parallel | limit) } else {} end)
+          + (if $budget != "" then { max_budget: ($budget | limit) } else {} end)
+          + (if $duration != "" then { budget_duration: (if $duration == "none" then null else $duration end) } else {} end)')
         req POST /key/update -d "$body" | jq .
         ;;
       list) req GET '/key/list?return_full_object=true' | jq . ;;
@@ -190,7 +204,8 @@ in
           Key in the SOPS file holding a dotenv blob with POSTGRES_PASSWORD,
           LITELLM_MASTER_KEY and LITELLM_SALT_KEY (all required; generate
           with `openssl rand -hex 32`). The salt key must never change once
-          the DB exists.
+          the DB exists. Optional: ANTHROPIC_API_KEY, for `anthropic/`
+          routes in the config file (`os.environ/ANTHROPIC_API_KEY`).
         '';
       };
 

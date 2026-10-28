@@ -75,6 +75,30 @@ only needs `cyberfighter.features.sops.enable = true` plus
 `cyberfighter.features.ai.hermes.secrets.envSecret = "hermes-env"`. Add or edit
 the blob with `sops secrets/secrets.yaml`.
 
+### Dotenv blobs for the agent stack on ryzn-server
+
+Compose projects take the same shape, staged into `/run/<project>/env` and
+interpolated by compose. Generate values with `openssl rand -hex 32`.
+
+```yaml
+# secrets/secrets.yaml
+paperclip-env: |
+  POSTGRES_PASSWORD=...
+  BETTER_AUTH_SECRET=...
+  PAPERCLIP_TOOL_ACTION_SIGNING_SECRET=...
+  PAPERCLIP_PUBLIC_HOST=<private hostname traefik routes>
+litellm-env: |
+  # existing keys, plus the provider key for the claude-verify route
+  ANTHROPIC_API_KEY=sk-ant-...
+hermes-env: |
+  # existing keys, plus the API server key paperclip's hermes_gateway uses
+  API_SERVER_KEY=<32+ random chars>
+```
+
+The LiteLLM virtual keys Paperclip agents use are minted with `litellm-keys`
+and stored in Paperclip's own encrypted secret store, bound per agent -- not
+in SOPS. See [MODULES](MODULES.md#paperclip-aipaperclip).
+
 ### When to use `deployUserAgeKey`
 
 Use `deployUserAgeKey = true` on hosts where the main user should be able to work with age-backed Home Manager or local SOPS workflows without manually copying a key out of the host.
@@ -232,7 +256,7 @@ Current hosts use SOPS for things like:
 - Playit and Astroneer secrets on `vm-gameserver-nix`
 - shared personal identity values for Home Manager
 - encrypted SSH host aliases consumed by the Home Manager SSH module
-- dotenv blobs for compose projects (`litellm-env`, `immich-env`, `attic-env`), staged into the unit's runtime directory and interpolated by compose
+- dotenv blobs for compose projects (`litellm-env`, `immich-env`, `attic-env`, `paperclip-env`), staged into the unit's runtime directory and interpolated by compose
 
 ## If a secret reaches the public repo
 

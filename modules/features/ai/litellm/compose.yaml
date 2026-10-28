@@ -26,6 +26,10 @@ services:
       LITELLM_SALT_KEY: "${LITELLM_SALT_KEY}"
       # Keys are managed with `litellm-keys` from the host shell.
       DISABLE_ADMIN_UI: "True"
+      # Read by `anthropic/` routes as os.environ/ANTHROPIC_API_KEY. The
+      # env file only feeds interpolation, so it has to be listed here.
+      # Empty when unset: those routes then fail per request, not at boot.
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
 
     # host-gateway = the host on this project's bridge, where the module
     # opens the Ollama port.
