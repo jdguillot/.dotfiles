@@ -327,7 +327,7 @@ Each entry also reports what this flake *installs*, read through a host's
 ships, the package is pinned here and the digest says so. Without it the
 section reports a version nothing on these machines runs — and invites the
 model to recommend a fix that is already in the tree. `opencode` is exactly
-that case today: nixpkgs ships 1.18.30, these machines run 1.18.21.
+that case today: nixpkgs ships 2.x, these machines run 1.19.0.
 
 The long form goes into `digest.md` for the model; a compact table goes to
 `packages.md`, which the scan's job summary and the pull request body both

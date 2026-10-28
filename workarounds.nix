@@ -52,68 +52,61 @@
   };
   # END WORKAROUND(immich-ocr-vram)
 
-  # WORKAROUND(opencode-1-18-30-prompt-crash)
-  opencode-1-18-30-prompt-crash = {
-    title = "opencode held at 1.18.21: 1.18.30+ crashes before every prompt";
-    added = "2026-09-15";
+  # WORKAROUND(opencode-v2-no-lsp)
+  opencode-v2-no-lsp = {
+    title = "opencode held on 1.x (1.19.0): OpenCode 2 does not run language servers";
+    added = "2026-10-28";
     hosts = [
       "razer-nixos"
       "ryzn-server"
       "work-nix-wsl"
     ];
     problem = ''
-      opencode 1.18.30 throws `TypeError: undefined is not an object
-      (evaluating 'a.name')` inside SystemPrompt.environment, on every
-      prompt, before any request reaches the model provider. Reporters trace
-      it to an undefined node in an Effect layer graph assembled while
-      booting the session directory's location service. The TUI and `run`
-      both surface it as `UnknownError: Unexpected server error`, which reads
-      like the model endpoint failed -- it is opencode's own local server
-      reporting its crash, and it sent the operator here chasing a healthy
-      Ollama on ryzn-server. Reproduces on an empty project with a stub
-      config, an isolated HOME, and any provider. 1.18.31 does not fix it.
+      nixpkgs moved opencode to 2.x on 2026-10-19. OpenCode 2 reads the
+      `lsp` block of opencode.json but starts no servers until upstream
+      ports the LSP and formatter services, so the server table
+      home/modules/features/tools/lsp feeds it would go dead. 2.x is also
+      still churning: 2.2.0 shipped breaking changes in a minor, and nixpkgs
+      needed two startup fixes after the 2.0.32 bump.
     '';
     workaround = ''
-      The `pin` below takes `opencode` from nixpkgs c27cdad4 (1.18.21, the
-      last packaged version before the regression); package-pins.nix turns
-      it into an overlay on every host and home. Verified by running
-      `opencode run -m ollama/qwen3.8:27b-q4_K_M` against ryzn-server.
+      The `pin` below takes `opencode` from nixos-unstable 09063bd1 (1.19.0,
+      the last channel release on 1.x; 1.19.1-1.19.3 only reached master);
+      package-pins.nix turns it into an overlay on every host and home.
+      Upstream still ships 1.x, and from 1.19.2 its update check never
+      offers 2.x.
     '';
     files = [ ];
     pin = {
       attr = "opencode";
-      rev = "c27cdad491a991b11ed731760aa2ef8db0cb0410";
-      narHash = "sha256-PYZq1qzCJXC2zGI0mH07vrZBsw6DRBAOX0jN1pPtqOQ=";
-      version = "1.18.21";
+      rev = "09063bd1f2b36fd9fd793c36dfade7bd40a93dfc";
+      narHash = "sha256-Mh0PUaIv4nFY+8wAGonaEh8iBzwsmdNlwjVHmFg1Biw=";
+      version = "1.19.0";
     };
     upstream = {
-      issue = "https://github.com/anomalyco/opencode/issues/48372";
+      issue = "https://github.com/anomalyco/opencode/issues/38528";
     };
-    # Watches nixpkgs, not upstream's releases: the workaround is a pin of
-    # nixpkgs, so an upstream tag says nothing about whether the fix is
-    # reachable from here -- 1.18.32 was cut 2026-09-21 while nixpkgs still
-    # carried 1.18.30, the broken one. `input` reads the unoverlaid nixpkgs;
-    # the host's own pkgs would report the pinned 1.18.21 forever.
     resolved = {
-      kind = "package";
-      attr = "opencode";
-      input = "nixpkgs";
-      minVersion = "1.18.32";
+      kind = "issue";
+      url = "https://github.com/anomalyco/opencode/issues/38528";
     };
+    # Closing the issue says LSP landed in some 2.x, not that the migration
+    # is done: the move needs hand work this entry cannot do.
     retire = "manual";
     removal = ''
-      The probe only says upstream cut a release past the two known-broken
-      ones -- it cannot say the crash is gone, and the issue reports are
-      scattered across half a dozen duplicates with no canonical one to
-      close, so no probe can. When it fires, re-test by hand: build the
-      candidate (`nix build nixpkgs#opencode`) and run `opencode run -m
-      <any model> "Reply with exactly: PONG"` in an empty directory. A PONG
-      means the fix shipped: delete this entry, and the pin goes with it. A
-      crash instead means the release is another broken one: leave the pin
-      and note the version here.
+      Check the release that closed the issue is what nixpkgs ships
+      (`nix eval --raw nixpkgs#opencode.version`), then in one commit:
+      delete this entry; in home/modules/features/tools/opencode, replace
+      `tui` with `cli = { theme.name = cfg.theme; }` (check the shape
+      against https://opencode.ai/v2/docs/cli/config) and set
+      `validateFiles.cli = true`; decide on `mutableSettings`, since
+      OpenCode 2 rewrites cli.json from the TUI. Then verify an LSP
+      diagnostic shows up, run `opencode run -m <any model> "Reply with
+      exactly: PONG"` in an empty directory, and re-check the CI fix agent
+      on ryzn-server with .github/opencode/opencode.json.
     '';
   };
-  # END WORKAROUND(opencode-1-18-30-prompt-crash)
+  # END WORKAROUND(opencode-v2-no-lsp)
 
   # WORKAROUND(pin-mcp-nixos)
   pin-mcp-nixos = {

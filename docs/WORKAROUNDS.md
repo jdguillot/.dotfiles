@@ -172,8 +172,8 @@ adapt"); it works the same by hand.
 Retiring a pin is deleting its entry: `files` is empty because nothing
 outside the register is fenced, so the weekly run's `auto` retirement, or a
 person, removes the block and the overlay loses the attribute. The first
-entry of this kind is `opencode-1-18-30-prompt-crash`, which is `manual`
-because the crash it waits out has no version to test for.
+entry of this kind is `opencode-v2-no-lsp`, which is `manual`
+because the migration it waits on needs hand work no probe can do.
 
 ## Doing it by hand
 
