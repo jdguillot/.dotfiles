@@ -126,8 +126,10 @@ in
 
         programs.opencode = {
           enable = true;
-          # Installed system-wide via cyberfighter.packages; only manage config here.
-          package = null;
+          # Also installed system-wide (same store path). Set here because the
+          # module keys tui.json vs OpenCode 2's cli.json off this version, and
+          # assumes 2.x when it is null.
+          package = pkgs.opencode;
           themes = ./themes;
 
           # Authored as a real JSON file so editors can use the opencode schema.
