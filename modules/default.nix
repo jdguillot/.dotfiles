@@ -48,6 +48,7 @@
     ./features/sunshine/default.nix
     ./features/syncthing/default.nix
     ./features/kdeconnect/default.nix
+    ./features/helixnotes/default.nix
 
     inputs.nix-flatpak.nixosModules.nix-flatpak
   ];

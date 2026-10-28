@@ -91,7 +91,8 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
   `bluetooth`, `printing`, `gaze`
 - Connectivity and access: `networking`, `ssh`, `tailscale`, `vpn`,
   `kdeconnect`
-- Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
+- Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`,
+  `helixnotes`
 - Services and infrastructure: `docker`, `compose`, `traefik`, `attic`,
   `immich`, `github-runner`, `security`, `sops`, `proxmox`, `autoReboot`
 - Gaming and hosting: `gaming`, `sunshine`, `gameserver`,

@@ -43,6 +43,7 @@ modules/
     ├── gaming/
     ├── gaze/
     ├── graphics/
+    ├── helixnotes/
     ├── kdeconnect/
     ├── networking/
     ├── packages/
@@ -269,6 +270,7 @@ Example:
 | `onepassword` | `enable` | system-side 1Password integration | <https://mynixos.com/search?q=1password> |
 | `vscode` | `enable` | system package integration for VS Code | <https://mynixos.com/search?q=vscode> |
 | `wine` | `enable` | Wine support for Windows apps | <https://mynixos.com/search?q=wine> |
+| `helixnotes` | `enable`, `package`, `syncthing.{enable,path,id,label,devices}` | HelixNotes, a local Markdown notes app (Tauri; vaults are plain `.md` folders with app state in `.helixnotes/`). `syncthing.enable` declares the vault as a folder of the `syncthing` module, which it asserts is on, and applies upstream's ignore list from `stignore` beside the module — the per-device `state.json`, `sync_state.json`, `history/` and `trash/`, which conflict when synced. Shares are declared: `devices` must name entries of `services.syncthing.settings.devices`, because syncthing-init re-posts the folder on every start and would reset shares added in the web UI. App settings (`~/.config/helixnotes/`) are device-local and never synced | <https://helixnotes.com/docs>, <https://gitlab.com/ArkHost/HelixNotes> |
 
 ### Services and infrastructure
 
