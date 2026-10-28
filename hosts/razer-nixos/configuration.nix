@@ -158,7 +158,6 @@
   programs.fish.enable = true;
   boot = {
     initrd = {
-      systemd.enable = true;
       systemd.tpm2.enable = true;
       luks.devices."luks-be0e35d9-246c-4ac4-a166-f5fedaf87f29".crypttabExtraOpts = [
         "tpm2-device=auto"
