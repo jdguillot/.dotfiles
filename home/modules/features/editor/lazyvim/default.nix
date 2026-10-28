@@ -147,6 +147,7 @@ in
             cmp_luasnip
             conform-nvim
             dashboard-nvim
+            diffview-nvim
             dressing-nvim
             flash-nvim
             friendly-snippets

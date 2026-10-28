@@ -5,7 +5,9 @@ return {
 	opts = {
 		default_mappings = false,
 		default_commands = true,
-		disable_diagnostics = false,
+		-- Conflict markers break the parser for the rest of the file; diagnostics
+		-- return once the last conflict in the buffer is resolved.
+		disable_diagnostics = true,
 		list_opener = "copen",
 		highlights = {
 			incoming = "DiffAdd",
