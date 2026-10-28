@@ -104,6 +104,11 @@ in
       // cfg.settings;
     };
 
+    # Upstream's user unit is wantedBy default.target, which every user
+    # manager reaches -- a lingering service user's starts first at boot and
+    # takes the ports.
+    systemd.user.services.sunshine.unitConfig.ConditionUser = config.cyberfighter.system.username;
+
     # hardware.uinput (enabled by services.sunshine) creates the group, but
     # nothing puts the streaming user in it -- without this the virtual
     # mouse/keyboard/gamepads fail with EACCES.

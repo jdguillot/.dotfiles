@@ -75,6 +75,12 @@ only needs `cyberfighter.features.sops.enable = true` plus
 `cyberfighter.features.ai.hermes.secrets.envSecret = "hermes-env"`. Add or edit
 the blob with `sops secrets/secrets.yaml`.
 
+A personal Hermes (Home Manager `cyberfighter.features.hermes`, as on
+ryzn-server) reads the same blob, but the host declares it: a host-key secret
+with `owner` set to the user, passed as `environmentFiles =
+[ "/run/secrets/hermes-env" ]`. The user's age key stays off
+`secrets/secrets.yaml`. The user gateway picks up a change at its next start.
+
 ### Dotenv blobs for the agent stack on ryzn-server
 
 Compose projects take the same shape, staged into `/run/<project>/env` and
@@ -87,17 +93,16 @@ paperclip-env: |
   BETTER_AUTH_SECRET=...
   PAPERCLIP_TOOL_ACTION_SIGNING_SECRET=...
   PAPERCLIP_PUBLIC_HOST=<private hostname traefik routes>
+  PAPERCLIP_LITELLM_KEY=<litellm-keys generate paperclip-local ...>
 litellm-env: |
   # existing keys, plus the provider key for the claude-verify route
   ANTHROPIC_API_KEY=sk-ant-...
-hermes-env: |
-  # existing keys, plus the API server key paperclip's hermes_gateway uses
-  API_SERVER_KEY=<32+ random chars>
 ```
 
-The LiteLLM virtual keys Paperclip agents use are minted with `litellm-keys`
-and stored in Paperclip's own encrypted secret store, bound per agent -- not
-in SOPS. See [MODULES](MODULES.md#paperclip-aipaperclip).
+`PAPERCLIP_LITELLM_KEY` is the shared `paperclip-local` LiteLLM key every
+OpenCode agent uses. Per-agent LiteLLM keys (a secret-bound Claude reviewer)
+live in Paperclip's own encrypted secret store instead -- not in SOPS. See
+[MODULES](MODULES.md#paperclip-aipaperclip).
 
 ### When to use `deployUserAgeKey`
 

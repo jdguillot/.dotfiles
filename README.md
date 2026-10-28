@@ -140,7 +140,7 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 
 - `cyberfighter.features.git`, `shell`, `terminal`, `editor`,
   `desktop`, `ssh`, `sops`, `tools`, `noctalia`, `dank`, `niri`,
-  `kdeconnect`
+  `kdeconnect`, `hermes`
 - Shell toggles: `bash`, `fish`, `zsh`, `starship`
 - Terminal submodules: `terminal.alacritty`, `terminal.ghostty`
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`

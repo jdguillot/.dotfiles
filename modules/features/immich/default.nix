@@ -495,6 +495,8 @@ in
 
       sops.secrets.${cfg.secrets.envSecret} = {
         mode = "0400";
+        # prepare re-stages the dotenv only when the unit starts.
+        restartUnits = [ "immich.service" ];
         sopsFile = lib.mkIf (cfg.secrets.sopsFile != null) cfg.secrets.sopsFile;
       };
     })

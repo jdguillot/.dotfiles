@@ -15,7 +15,6 @@ let
   cfg = config.cyberfighter.features.ai.paperclip;
   traefikCfg = config.cyberfighter.features.traefik;
   hermesCfg = config.cyberfighter.features.ai.hermes;
-  litellmCfg = config.cyberfighter.features.ai.litellm;
 
   runtimeEnv = "/run/paperclip/env";
 
@@ -26,7 +25,19 @@ let
     STATE_DIR = cfg.stateDir;
     PUBLIC_HOST = cfg.publicHost;
     DISABLE_SIGN_UP = lib.boolToString cfg.disableSignUp;
-    ANTHROPIC_BASE_URL = cfg.anthropicBaseUrl;
+    OPENCODE_PROVIDERS = builtins.toJSON {
+      litellm = {
+        npm = "@ai-sdk/openai-compatible";
+        name = "LiteLLM";
+        options = {
+          baseURL = cfg.localGateway.baseUrl;
+          # The adapter resolves this from the server env before each run.
+          apiKey = "{env:PAPERCLIP_LITELLM_KEY}";
+        };
+        models = lib.genAttrs cfg.localGateway.models (m: { name = m; });
+      };
+    };
+    OPENCODE_SMALL_MODEL = "litellm/${cfg.localGateway.smallModel}";
   };
 
   secretPath = lib.optionalString (
@@ -90,15 +101,35 @@ in
       '';
     };
 
-    anthropicBaseUrl = lib.mkOption {
-      type = lib.types.str;
-      default = "http://litellm:4000";
-      description = ''
-        ANTHROPIC_BASE_URL for every Claude Code run in the container: the
-        LiteLLM proxy root (no /v1), reached by container name over the
-        shared traefik network. Keeps Claude behind the proxy's keys and
-        budgets instead of a provider key inside Paperclip.
-      '';
+    localGateway = {
+      baseUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "http://litellm:4000/v1";
+        description = ''
+          OpenAI-compatible endpoint registered as the `litellm` provider for
+          every opencode_local agent, so agents select `litellm/<model>`
+          without per-agent env. The key is PAPERCLIP_LITELLM_KEY from the
+          envSecret dotenv.
+        '';
+      };
+
+      models = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [
+          "team-coder"
+          "team-small"
+        ];
+        description = "LiteLLM model names opencode may select; it rejects ids missing from this map.";
+      };
+
+      smallModel = lib.mkOption {
+        type = lib.types.str;
+        default = "team-small";
+        description = ''
+          OpenCode's helper model (session titles). Its built-in default names
+          a cloud model the gateway does not serve, which aborts the run.
+        '';
+      };
     };
 
     hermesGateway = lib.mkOption {
@@ -150,14 +181,6 @@ in
           }
         ];
 
-        warnings =
-          lib.optional (cfg.anthropicBaseUrl == "http://litellm:4000" && !litellmCfg.enable)
-            ''
-              cyberfighter.features.ai.paperclip: `anthropicBaseUrl` points at the
-              litellm container, but ai.litellm is not enabled here; Claude Code
-              agents will fail to connect.
-            '';
-
         # postgres/: the image chowns PGDATA at init; `+C`, databases
         # fragment under CoW. data/: the server's entrypoint chowns it to
         # its runtime uid. `- -` leaves both owners alone on activation.
@@ -202,6 +225,8 @@ in
 
         sops.secrets.${cfg.secrets.envSecret} = {
           mode = "0400";
+          # prepare re-stages the dotenv only when the unit starts.
+          restartUnits = [ "paperclip.service" ];
           sopsFile = lib.mkIf (cfg.secrets.sopsFile != null) cfg.secrets.sopsFile;
         };
       }

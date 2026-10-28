@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   inputs,
   hostMeta,
@@ -61,6 +62,14 @@
       # transfer. Desktops only, and each host has to open 1714-1764
       # itself (cyberfighter.features.kdeconnect on the system side).
       kdeconnect.enable = hostMeta.profile == "desktop";
+
+      # Personal agent as this user; the dotenv is a system sops secret
+      # owned by this user (hosts/ryzn-server/configuration.nix).
+      hermes = lib.mkIf (hostMeta.system.hostname == "ryzn-server") {
+        enable = true;
+        configFile = ../../hosts/ryzn-server/hermes-config.yaml;
+        environmentFiles = [ "/run/secrets/hermes-env" ];
+      };
 
       # DankMaterialShell and the rest of the dank suite (dgop, dsearch,
       # dcal). Desktops only — it is a second Quickshell closure.

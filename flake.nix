@@ -7,7 +7,6 @@
 
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
 
-
     # Home-manager using the same nixpkgs
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -180,6 +179,7 @@
             nix-flatpak.homeManagerModules.nix-flatpak
             catppuccin.homeModules.catppuccin
             sops-nix.homeManagerModules.sops
+            inputs.hermes-agent.homeManagerModules.default
             dms.homeModules.dank-material-shell
             danksearch.homeModules.dsearch
             dankcalendar.homeModules.dank-calendar
