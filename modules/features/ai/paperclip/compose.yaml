@@ -1,0 +1,118 @@
+# Paperclip -- agent org chart, tickets, budgets and review stages. Shape
+# follows upstream's docker/docker-compose.yml (server + Postgres 17) with
+# the published image instead of `build:`. Placeholders are filled by the
+# module; ${VAR} interpolates from the SOPS dotenv staged at
+# /run/paperclip/env. Day-2 ops: `paperclip-compose`.
+
+services:
+  server:
+    # CalVer (YYYY.MDD.N): the first number is the year, so the derived
+    # pattern would freeze bumps at the new year. Stable tags only; the
+    # `-cloud` variant bundles sandbox plugins and Sentry.
+    # bump: pattern=^[0-9]+\.[0-9]+\.[0-9]+$
+    image: ghcr.io/paperclipai/paperclip:2026.1023.0
+    container_name: paperclip
+    # "no", not unless-stopped: docker would otherwise restore this at
+    # boot before the unit's ExecStartPre stages secrets into /run.
+    restart: "no"
+    # Upstream's backstop against leaked agent processes (tini is PID 1).
+    pids_limit: 2048
+    # Upstream uses 90s (adapter settlement + cleanup); kept under systemd's
+    # default 90s stop timeout, which bounds the unit's `compose down`.
+    stop_grace_period: 75s
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    environment:
+      DATABASE_URL: "postgres://paperclip:${POSTGRES_PASSWORD}@db:5432/paperclip"
+      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
+      # Source of the auth base URL and the hostname allowlist.
+      PAPERCLIP_PUBLIC_URL: "https://@PUBLIC_HOST@"
+      PAPERCLIP_AUTH_DISABLE_SIGN_UP: "@DISABLE_SIGN_UP@"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+      # Signs approval-gated tool actions; independent of the auth secret.
+      PAPERCLIP_TOOL_ACTION_SIGNING_SECRET: "${PAPERCLIP_TOOL_ACTION_SIGNING_SECRET:?PAPERCLIP_TOOL_ACTION_SIGNING_SECRET must be set}"
+      # Sensitive agent env (*_API_KEY, *_TOKEN) must be secret refs.
+      PAPERCLIP_SECRETS_STRICT_MODE: "true"
+
+      # No phone-home: usage telemetry and the announcements feed.
+      PAPERCLIP_TELEMETRY_DISABLED: "1"
+      DO_NOT_TRACK: "1"
+      PAPERCLIP_ANNOUNCEMENTS_ENABLED: "false"
+
+      # Every claude_local agent reaches Anthropic through LiteLLM (proxy
+      # root, no /v1) with its own virtual key, bound per agent as a
+      # Paperclip secret. No provider key is set container-wide.
+      ANTHROPIC_BASE_URL: "@ANTHROPIC_BASE_URL@"
+      # Claude Code otherwise sends telemetry and error reports straight
+      # to Anthropic, around the proxy.
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+
+    # host-gateway = the host on this project's bridge, where the Hermes
+    # API server's port is opened (ai.hermes.apiServer.interfaces).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    ports:
+      # Loopback only: the host-side Hermes gateway calls back here, and
+      # local checks. Browsers come through traefik over @NETWORK@.
+      - "127.0.0.1:@PORT@:3100"
+
+    volumes:
+      # PAPERCLIP_HOME: instance config, the secrets master key, uploads,
+      # agent workspaces and DB backups. The entrypoint chowns it to 1000.
+      - "@STATE_DIR@/data:/paperclip"
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # @NETWORK@ also carries the litellm container, which is how
+    # ANTHROPIC_BASE_URL resolves without a host firewall hole.
+    networks:
+      - default
+      - "@NETWORK@"
+
+  db:
+    # postgres 18+ moves PGDATA; keep the pin and the volume path in sync.
+    image: postgres:17-alpine
+    container_name: paperclip-db
+    restart: "no"
+
+    environment:
+      POSTGRES_USER: paperclip
+      POSTGRES_DB: paperclip
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+
+    volumes:
+      - "@STATE_DIR@/postgres:/var/lib/postgresql/data"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperclip -d paperclip"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - default
+
+networks:
+  # Fixed bridge name: the Hermes API firewall hole needs a stable interface.
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: "@BRIDGE@"
+  # Traefik's network, created on boot by the docker module.
+  "@NETWORK@":
+    external: true

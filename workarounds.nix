@@ -114,4 +114,44 @@
     '';
   };
   # END WORKAROUND(opencode-1-18-30-prompt-crash)
+
+  # WORKAROUND(pin-mcp-nixos)
+  pin-mcp-nixos = {
+    title = "mcp-nixos 3.0.1 pinned from nixpkgs 151fa4e: python3Packages.fastmcp-slim is marked broken once nixpkgs' mcp reaches v2 ";
+    added = "2026-10-28";
+    hosts = [
+      "razer-nixos"
+      "ryzn-server"
+      "work-nix-wsl"
+    ];
+    problem = ''
+      python3Packages.fastmcp-slim is marked broken once nixpkgs' mcp reaches v2 (meta.broken = versionAtLeast mcp.version "2"), and mcp-nixos depends on it through fastmcp; the top-level attribute is the narrowest pin that keeps the hosts that install it evaluating
+    '';
+    workaround = ''
+      The `pin` below takes `mcp-nixos` from nixpkgs 151fa4e, the revision main
+      built last, so every host keeps the 3.0.1 it already runs while the
+      rest of nixpkgs moves; package-pins.nix turns it into an overlay.
+      Added by pin-package.sh from the weekly bump's fix stage.
+    '';
+    files = [ ];
+    upstream = { };
+    pin = {
+      attr = "mcp-nixos";
+      rev = "151fa4e8ddfdd8dd25d945ad94ed54a13de9f6e4";
+      narHash = "sha256-Miqqk/ammqnTUxaoCyvtwoPeLbI1ksFyLxi/CazZpWY=";
+      version = "3.0.1";
+    };
+    resolved = {
+      kind = "builds";
+      attr = "mcp-nixos";
+      input = "nixpkgs";
+    };
+    retire = "auto";
+    removal = ''
+      Retired by the weekly run once
+      `mcp-nixos` builds again at the revision nixpkgs is locked to.
+      Deleting this entry is the whole removal; nothing else is fenced.
+    '';
+  };
+  # END WORKAROUND(pin-mcp-nixos)
 }

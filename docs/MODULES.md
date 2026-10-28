@@ -166,7 +166,7 @@ Key options:
 
 Notes:
 
-- When `enableDevenv = true`, the module enables the Cachix/substituter set used by this repo, including `devenv`, `jdguillot`, `nix-community`, `niri`, `noctalia`, and `proxmox-nixos` caches.
+- When `enableDevenv = true`, the module enables the Cachix/substituter set used by this repo, including `devenv`, `jdguillot`, `nix-community`, `niri`, and `proxmox-nixos` caches.
 - The module also creates a SOPS-backed GitHub access-token include for `nix.conf`.
 
 Upstream references:
@@ -275,7 +275,7 @@ Example:
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
 | `docker` | `enable`, `rootless`, `enableOnBoot`, `networks` | Docker engine plus optional named bridge networks | <https://mynixos.com/search?q=virtualisation.docker.enable> |
-| `compose` | `projects.<name>` (`files`, `networks`, `envFile`, `prepare`, `runtimeDirectory`, `timeout`, `extraUpFlags`, `restartTriggers`, `snapshot.{dir,days}`) | shared scaffolding for compose projects as boot-time systemd oneshots — owns the unit ordering/lifecycle invariants and a `<name>-compose` day-2 wrapper; traefik, litellm, comfyui, immich, and odysseus declare their projects through it. With `snapshot.dir` set, a read-only btrfs snapshot of that directory is taken before every start (after `down`, so the data is quiescent) and kept `snapshot.days` days beside it in `<dir>.snapshots`: the manual rollback for an image bump whose migration went wrong (see [Immich](#immich-immich), "Rollback"); the directory has to be a subvolume (`v` tmpfiles rule), and elsewhere the step only logs. systemd owns project lifecycle end to end: containers carry `restart: "no"` so docker never restores a project at boot behind the unit's back (which would race `ExecStartPre` and start containers before secrets are staged), and `PartOf=docker.service` brings projects back with the daemon since `Requires=` propagates stop but not restart. Units retry on failure (`on-failure`, 30s, bounded by a 5-in-600s start limit): a project that builds or pulls needs a registry, and no ordering edge expresses “the internet is up”. Trade-off of `restart: "no"`: nothing restarts a container that crashes while the unit sits `active` — docker's policy used to cover that, and now does not | <https://docs.docker.com/compose/> |
+| `compose` | `projects.<name>` (`files`, `networks`, `envFile`, `prepare`, `runtimeDirectory`, `timeout`, `extraUpFlags`, `restartTriggers`, `snapshot.{dir,days}`) | shared scaffolding for compose projects as boot-time systemd oneshots — owns the unit ordering/lifecycle invariants and a `<name>-compose` day-2 wrapper; traefik, litellm, comfyui, immich, odysseus, and paperclip declare their projects through it. With `snapshot.dir` set, a read-only btrfs snapshot of that directory is taken before every start (after `down`, so the data is quiescent) and kept `snapshot.days` days beside it in `<dir>.snapshots`: the manual rollback for an image bump whose migration went wrong (see [Immich](#immich-immich), "Rollback"); the directory has to be a subvolume (`v` tmpfiles rule), and elsewhere the step only logs. systemd owns project lifecycle end to end: containers carry `restart: "no"` so docker never restores a project at boot behind the unit's back (which would race `ExecStartPre` and start containers before secrets are staged), and `PartOf=docker.service` brings projects back with the daemon since `Requires=` propagates stop but not restart. Units retry on failure (`on-failure`, 30s, bounded by a 5-in-600s start limit): a project that builds or pulls needs a registry, and no ordering edge expresses “the internet is up”. Trade-off of `restart: "no"`: nothing restarts a container that crashes while the unit sits `active` — docker's policy used to cover that, and now does not | <https://docs.docker.com/compose/> |
 | `traefik` | `enable`, `dnsDomain`, `email`, `network`, `routes.<name>` (`host`, `port`, `url`, `auth`, `rateLimit`, `backend`, `extraHosts`, `network`), `claimedRoutes`, `dnsResolvers`, `rateLimit`, `dynamicFiles`, `secrets.*` | TLS-terminating reverse proxy as a compose project; declares its own sops secrets (name-style, `*File` escape hatches); `routes` declares a routed service once and the module renders it as docker labels (`routeLabels`/`routeLabelFiles`) or a file-provider fragment (`backend = "host"` for a host port, `"url"` for a service on another machine), owning the entrypoint/cert-resolver/middleware-chain spelling; `dynamicFiles` stays as the escape hatch for routing `routes` cannot express; `backend` defaults to `"docker"`, whose labels reach traefik only if a module attaches them, so whichever module reads `routeLabels`/`routeLabelFiles` must also name the route in `claimedRoutes` — an unclaimed docker route is a build-time assertion rather than a route that silently never appears | <https://doc.traefik.io/traefik/> |
 | `attic` | `enable`, `port`, `apiEndpoint`, `storage`, `localPath`, `s3.endpoint`, `s3.bucket`, `s3.region`, `retentionPeriod`, `openFirewall`, `secrets.environment`, `environmentFile` | self-hosted Nix binary cache server (`services.atticd`, monolithic); chunks go to a local path — typically an NFS mount from TrueNAS, with atticd pinned to uid 568 (`apps`) for stable NFS ownership — or an S3 bucket; one sops env file carries the RS256 JWT secret (plus `AWS_*` keys for s3); pair with a traefik `routes` entry (`backend = "host"`, `auth = "none"`) for TLS | <https://docs.attic.rs/> |
 | `immich` | `enable`, `version`, `publicHost`, `dataDir`, `libraries.<label>`, `stateDir`, `storageTemplate`, `transcoding`, `transcodingDevice`, `jobConcurrency.<queue>`, `machineLearning.{urls,modelTtl,ocr,local.{enable,device,memory}}`, `memory.{server,database}`, `tailnetService.{enable,name}`, `secrets.envSecret`, `mlServer.{enable,device,port,bind,allowedClients,memory,stateDir}` | self-hosted photo/video library as a compose project (server + VectorChord Postgres + Valkey, optional local ML container) behind a traefik `routes` entry; `/data` is a NAS export, each user's originals are a separate mount bound at `/data/library/<label>` so the NAS can `mapall` writes to that user's uid, and Postgres/thumbnails stay on local disk; system settings come from a native `immich-config.yaml` (admin settings pages turn read-only); `mlServer` is the standalone GPU role for a server elsewhere, with a `DOCKER-USER` client allowlist since the ML API has no auth; see [Immich](#immich-immich) below | <https://docs.immich.app/> |
@@ -512,7 +512,8 @@ N copies of the weights resident on one GPU.
 | Module | Main options | Notes | Upstream refs |
 | --- | --- | --- | --- |
 | `ai.ollama` | `enable`, `acceleration`, `modelsDir`, `models`, `syncModels`, `host`, `port`, `exposeToContainers`, `keepAlive`, `maxLoadedModels`, `numParallel`, `flashAttention`, `kvCacheType`, `groupMembers`, `environmentVariables` | local OpenAI-compatible inference server at `/v1` | <https://mynixos.com/search?q=services.ollama> |
-| `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `groupMembers`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a systemd service | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
+| `ai.hermes` | `enable`, `configFile`, `model`, `settings`, `mcpServers`, `stateDir`, `workingDirectory`, `addToSystemPackages`, `groupMembers`, `extraPackages`, `environment`, `extraEnvironmentFiles`, `secrets.envSecret`, `secrets.sopsFile`, `apiServer.*`, `backend.*`, `container.*` | wraps `hermes-agent.nixosModules.default`; runs the Hermes gateway as a systemd service | <https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup> |
+| `ai.paperclip` | `enable`, `publicHost`, `port`, `stateDir`, `bridgeName`, `disableSignUp`, `anthropicBaseUrl`, `hermesGateway`, `secrets.envSecret`, `secrets.sopsFile` | agent org chart, tickets, budgets and review stages; compose project behind traefik, Claude reached only through LiteLLM | <https://docs.paperclip.ing> |
 | `ai.odysseus` | `enable`, `src`, `patches`, `researchProbeTimeout`, `projectName`, `stateDir`, `bind`, `port`, `auth`, `allowedOrigins`, `ollamaBaseUrl`, `llmHost`, `bundledSearxng`, `searxngInstance`, `bridgeName`, `puid`, `pgid`, `extraEnv`, `secrets.envSecret`, `secrets.sopsFile` | self-hosted AI workspace; a systemd oneshot drives `docker compose` off a pinned source tree | <https://github.com/odysseus-dev/odysseus> |
 | `searxng` | `enable`, `package`, `listen`, `port`, `baseUrl`, `jsonApi`, `limiter`, `openFirewall`, `exposeToContainers`, `secretKeyFile`, `settings` | host-native metasearch (lives outside `ai.*` -- the AI stack is just one client), usable on its own and as the search backend for `ai.odysseus` | <https://mynixos.com/search?q=services.searx> |
 | `ai.comfyui` | `enable`, `modelsDir`, `user`, `group`, `hfTokenFile`, `models` | declarative checkpoint downloads only; the runtime itself is `ai.comfyui.server` | <https://github.com/comfyanonymous/ComfyUI> |
@@ -976,6 +977,129 @@ journalctl -u odysseus | grep -i password
 # same project, for everything else -- needs root, like the unit itself
 sudo odysseus-compose logs -f
 sudo odysseus-compose exec odysseus sh
+```
+
+#### Paperclip (`ai.paperclip`)
+
+[Paperclip](https://github.com/paperclipai/paperclip) is the management
+surface over the rest of this stack: an org chart of agents, tickets with
+atomic checkout, heartbeats, per-agent budgets, and review stages the runtime
+enforces (an executor's `done` is intercepted and handed to a reviewer, who
+approves or requests changes). It never calls a model itself -- each agent is
+a harness (Claude Code, opencode, Hermes) that Paperclip wakes, so which model
+does what is decided by which agent gets the ticket.
+
+The module runs upstream's `docker/docker-compose.yml` shape (server +
+`postgres:17-alpine`) with the published `ghcr.io/paperclipai/paperclip` image
+pinned by tag, in `authenticated`/`private` mode, behind a traefik route
+(`publicHost`, `chain-no-auth`: Paperclip has its own login). The server also
+publishes `127.0.0.1:<port>` for the host-side Hermes gateway's callbacks.
+Telemetry (`PAPERCLIP_TELEMETRY_DISABLED`, `DO_NOT_TRACK`), the announcements
+feed and Claude Code's non-essential traffic are switched off in the compose
+file, and `PAPERCLIP_SECRETS_STRICT_MODE` forces agent API keys to be secret
+references rather than inline values.
+
+State is `stateDir` (default `/var/lib/paperclip`): `postgres/` and `data/`
+(`PAPERCLIP_HOME`, holding the secrets master key, uploads and agent
+workspaces). Paperclip's encrypted secrets restore only with both the
+database and that key, so one `snapshot.dir` covers the pair.
+
+The image tag is CalVer (`2026.1012.0`). The weekly bump's derived pattern
+freezes the first number, which here is the year, so the `# bump:` comment
+widens it to `^[0-9]+\.[0-9]+\.[0-9]+$` (stable tags, no `-cloud`).
+
+##### Claude behind LiteLLM
+
+`ANTHROPIC_BASE_URL` is set container-wide to `anthropicBaseUrl`
+(`http://litellm:4000`, the litellm container by name over the shared traefik
+network -- no host firewall hole), and no Anthropic key exists anywhere in
+Paperclip's environment. A `claude_local` agent authenticates with a LiteLLM
+virtual key bound to that agent alone as a Paperclip secret, and LiteLLM's
+`claude-verify` route (`hosts/ryzn-server/litellm-config.yaml`) holds the real
+Anthropic key. So the key's model allowlist decides who can reach Claude, its
+`--budget` caps spend independently of Paperclip's own budgets, and
+`litellm-keys block <key>` is the kill switch.
+
+```bash
+# on ryzn-server: a key that can name only the cloud route, $15 per 30 days
+sudo litellm-keys generate paperclip-claude --models claude-verify --budget 15 --budget-duration 30d
+# a separate key for the local agents (manager, opencode workers)
+sudo litellm-keys generate paperclip-local --models team-coder,team-small
+```
+
+##### Hermes as a worker (`hermesGateway`)
+
+The `hermes_gateway` adapter calls a running Hermes API server
+(`POST /v1/runs` + SSE), so Hermes keeps its own tools, memory and
+local-model config and Paperclip only dispatches tickets. Hermes runs
+natively and Paperclip in a container, so loopback is not shared:
+`ai.hermes.apiServer.enable` binds the API server on `0.0.0.0` and
+`hermesGateway = true` opens its port on `br-paperclip` only (the LAN and the
+tailnet are still firewalled). The API server stays off until `API_SERVER_KEY`
+(16+ characters) is in `hermes-env`.
+
+The adapter refuses plain HTTP to anything but loopback unless the agent's
+config sets `dangerouslyAllowInsecureRemoteHttp: true`. Set it: the hop is
+`host.docker.internal` across a local bridge and never leaves the kernel. The
+alternative the adapter wants, HTTPS through a reverse proxy, would put an API
+that runs terminal commands as the hermes user on the LAN-facing traefik --
+a strictly larger exposure than the flag. Two keys stay distinct:
+`API_SERVER_KEY` (Paperclip -> Hermes) and the agent key Hermes claims after
+approval (Hermes -> Paperclip, at `http://127.0.0.1:3100`).
+
+##### Intended org chart
+
+- **Manager:** a local Qwen agent (`opencode_local`, model `team-coder` via a
+  *Custom Gateway* AI connection to `http://litellm:4000/v1` with the
+  `paperclip-local` key). Its `AGENTS.md` tells it to split goals into
+  issues, assign them, and set review stages on them.
+- **Worker:** Hermes via `hermes_gateway`, for homelab work that needs its
+  tools and memory. Stays local end to end.
+- **Reviewer:** a `claude_local` agent, model `claude-verify`, with only the
+  `paperclip-claude` key bound. It is the review-stage participant on the
+  worker's issues, so it reads finished work and never executes it.
+- **Privacy:** worker issues are private (`PAPERCLIP_ISSUE_PRIVACY_MODE`
+  defaults to `enforce`) and the reviewer gets a self-contained review issue
+  written by the manager. Paperclip enforces what an agent can *fetch*, not
+  what the manager *writes*; content filtering would be a LiteLLM guardrail on
+  the `claude-verify` route.
+- **Cost:** a monthly budget on the reviewer agent in Paperclip, and the
+  LiteLLM key budget underneath it as the hard cap.
+
+##### First run
+
+After `paperclip-env` (and the `hermes-env`/`litellm-env` additions in
+[SOPS](SOPS.md)) are in place and the host is deployed:
+
+1. DNS: point the `PAPERCLIP_PUBLIC_HOST` name at the host, as for other
+   traefik routes. Do not add it to the Cloudflare tunnel.
+2. Open the URL, sign up, choose **Claim this instance**. Then set
+   `disableSignUp = true` and redeploy.
+3. Create the company. In **Company Settings > Secrets** add the two LiteLLM
+   keys; in **AI connections** add a Custom Gateway at
+   `http://litellm:4000/v1` bound to `paperclip-local`.
+4. Create the manager (`opencode_local`, `team-coder`, cwd under
+   `/paperclip/workspaces/`), with delegation in its `AGENTS.md`.
+5. Create the reviewer (`claude_local`, model `claude-verify`, cwd under
+   `/paperclip/workspaces/`), env: `ANTHROPIC_API_KEY` from the
+   `paperclip-claude` secret, and `ANTHROPIC_DEFAULT_HAIKU_MODEL`,
+   `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_OPUS_MODEL` all set
+   to `claude-verify` (Claude Code's background calls otherwise name models
+   the key cannot reach). Set its monthly budget. **Test Environment**
+   should pass the hello probe.
+6. Hermes: add an agent from the sidebar, generate the onboarding prompt and
+   give it to `hermes` on the host. The join payload needs
+   `apiBaseUrl: http://host.docker.internal:8642`,
+   `paperclipApiUrl: http://127.0.0.1:3100`, the `API_SERVER_KEY` value as
+   `apiKey`, and `dangerouslyAllowInsecureRemoteHttp: true`. Approve the
+   join request; Hermes claims its key.
+7. Put an execution policy with a review stage (participant: the reviewer)
+   on the projects or issues the worker takes, and mark them private.
+
+```bash
+sudo paperclip-compose logs -f server
+sudo paperclip-compose exec server npx paperclipai doctor
+curl -s http://127.0.0.1:3100/api/health
 ```
 
 ### Gaming and game hosting

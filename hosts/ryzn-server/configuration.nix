@@ -242,6 +242,20 @@
 
         addToSystemPackages = true;
         groupMembers = [ "cyberfighter" ];
+
+        # For paperclip's hermes_gateway worker. Idle until API_SERVER_KEY
+        # is in hermes-env; the port opens on paperclip's bridge only.
+        apiServer.enable = true;
+      };
+
+      # Agent org chart over the local stack: Qwen manager and Hermes
+      # worker local, a Claude Code reviewer reaching Anthropic only through
+      # litellm's claude-verify key. Hostname and secrets from paperclip-env;
+      # onboarding checklist in docs/MODULES.md.
+      ai.paperclip = {
+        enable = true;
+        publicHost = "\${PAPERCLIP_PUBLIC_HOST}";
+        hermesGateway = true;
       };
 
       # Loopback publish for the openai-api shim; browser access goes through

@@ -40,6 +40,17 @@ model_list:
       api_key: ollama
       keepalive_seconds: 30
 
+  # Cloud verifier for paperclip's Claude Code reviewer, the one route that
+  # leaves the host. Only a key minted with `--models claude-verify` can
+  # name it, so blocking that key (`litellm-keys block`) shuts Claude off.
+  # Claude Code needs the unified /v1/messages endpoint: clients set
+  # ANTHROPIC_BASE_URL to the proxy root, no /v1.
+  - model_name: claude-verify
+    litellm_params:
+      model: anthropic/claude-sonnet-5-5
+      # From the litellm-env dotenv; never in this file.
+      api_key: os.environ/ANTHROPIC_API_KEY
+
 general_settings:
   # config.yaml is the source of truth; the DB holds keys and spend only.
   store_model_in_db: false

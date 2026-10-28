@@ -243,7 +243,7 @@ in
         };
         services.upower.enable = true;
         services.udisks2.enable = true;
-        # Note: noctalia-shell is now configured via home-manager, not NixOS
+        # The shells themselves (noctalia, DMS) come from Home Manager.
         environment.systemPackages = with pkgs; [
           mako
           quickshell
