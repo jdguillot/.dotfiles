@@ -494,41 +494,32 @@
 
   # Headless (dummy plug on the 5090's DP-1); the session exists only to host
   # Steam Remote Play, which cannot start a session of its own from the
-  # client. So SDDM auto-logs-in at boot -- but into the gamescope session
-  # from features.gaming, NOT Plasma: idle Plasma held ~4-5GiB of the VRAM
-  # the models need, gamescope plus Big Picture costs a few hundred MiB.
-  # That is why graphical.target is the default unit again (it hard-Wants
-  # display-manager); `systemctl stop display-manager` still frees the card.
-  #
-  # Consequences of dropping Plasma from the boot path:
-  #   - Sunshine's user unit is wantedBy graphical-session.target, which the
-  #     bare steam-gamescope script never reaches, so it is rebound to the
-  #     user manager's default.target below.
-  #   - "Switch to Desktop" is SteamOS-only. Plasma means flipping
-  #     defaultSession back, or starting it by hand from a VT.
+  # client. So SDDM auto-logs-in at boot -- into Plasma, NOT the gamescope
+  # session: gamescope's "Desktop PipeWire" capture publishes zeroed
+  # (solid-green) frames on this NVIDIA host while KWin's compositor capture
+  # carries real ones, so Remote Play only works under a real compositor.
+  # The ~4-5GiB of VRAM idle Plasma holds on the 32GiB 5090 is accepted;
+  # `systemctl stop display-manager` still frees the card for the models.
+  # The Big Picture gamescope session stays installed (features.gaming) for
+  # anyone who still wants it from the greeter.
   services.displayManager = {
     autoLogin = {
       enable = true;
       user = config.cyberfighter.system.username;
     };
-    defaultSession = "steam"; # gamescope + Steam Big Picture, Wayland
+    defaultSession = "plasma"; # KWin, Wayland
   };
 
-  # Moonlight is the streaming path, not Steam Remote Play: gamescope's NV12
-  # PipeWire capture publishes zeroed (solid green) frames on this NVIDIA
-  # host, while Sunshine's KMS capture reads the scanout framebuffer and so
-  # is unaffected -- and it gets real NVENC on the 5090, which the 32-bit
-  # Steam client cannot (no 32-bit CUDA).
-  #
-  # The unit ships wantedBy graphical-session.target, which only Plasma ever
-  # reached. KMS capture needs no compositor socket, so the user manager's
-  # default.target is the right anchor: autologin starts user@1000, which
-  # starts Sunshine, whatever session is on the seat. The sunshine module's
-  # ConditionUser keeps other lingering managers from starting it.
+  # Alternative streaming path: Sunshine's KMS capture reads the scanout
+  # framebuffer (unaffected by the compositing stack) and gets real NVENC,
+  # which the 32-bit Steam client cannot. The unit ships wantedBy
+  # graphical-session.target, which Plasma reaches; it is rebound to the
+  # user manager's default.target so a manually started gamescope session
+  # (no graphical-session.target) also gets it.
   #
   # `wants` is cleared with it: the unit pulls graphical-session.target in
-  # otherwise, and that target owns the DankMaterialShell units (dcal), which
-  # crash-loop on a gamescope seat with no niri -- each crash feeding a
+  # otherwise, and that target owns the DankMaterialShell units (dcal,
+  # niri-only), which crash-loop on this seat -- each crash feeding a
   # drkonqi launcher that also crashes. `partOf` goes for the same reason:
   # nothing here should stop Sunshine when that target does.
   systemd.user.services.sunshine = {
