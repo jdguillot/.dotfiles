@@ -5,7 +5,7 @@ machines, servers, and VMs. The repo is organized around a shared
 `cyberfighter.*` option namespace so hosts mostly declare intent and let
 modules handle the underlying NixOS or Home Manager settings.
 
-The flake follows `nixos-unstable`, keeps `nixos-25.11` available for
+The flake follows `nixos-unstable`, keeps `nixos-26.05` available for
 selected packages, and wires in shared tooling such as `sops-nix`,
 `disko`, `deploy-rs`, `nixos-wsl`, `vscode-server`, `niri`,
 `proxmox-nixos`, the dank desktop suite (`dms`, `dank-greeter`,
@@ -93,10 +93,12 @@ Feature modules live under `cyberfighter.features.*` and currently cover:
   `kdeconnect`
 - Packaging and apps: `flatpak`, `cachix`, `onepassword`, `vscode`, `wine`
 - Services and infrastructure: `docker`, `compose`, `traefik`, `attic`,
-  `immich`, `github-runner`, `security`, `sops`, `proxmox`, `autoReboot`
+  `immich`, `github-runner`, `security`, `sops`, `proxmox`, `autoReboot`,
+  `cloudflared`, `syncthing`
 - Gaming and hosting: `gaming`, `sunshine`, `gameserver`,
   `gameserver.astroneer`, `gameserver.playit`
-- AI agents: `ai.hermes`, `ai.paperclip`
+- AI agents: `ai.ollama`, `ai.hermes`, `ai.litellm`, `ai.odysseus`,
+  `ai.comfyui`, `ai.paperclip`
 
 Common host shape:
 
