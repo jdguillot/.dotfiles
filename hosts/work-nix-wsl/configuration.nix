@@ -13,6 +13,14 @@
     inputs.vscode-server.nixosModules.default
   ];
 
+  # WORKAROUND(zulu8-gtk2-removal)
+  # NixOS/nixpkgs#410814: gtk2 (2.24.33) is flagged broken this week and
+  # nixpkgs now *refuses to evaluate* it. work-nix-wsl's `zulu8` (Java 8,
+  # AWT) transitively needs gtk2; Java 8 has no gtk3 alternative. Tolerate
+  # the known-broken package only on this host. Retire when zulu8 migrates.
+  nixpkgs.config.problems.handlers."gtk+".broken = "warn";
+  # END WORKAROUND(zulu8-gtk2-removal)
+
   cyberfighter = {
     system = {
       extraGroups = [ "docker" ];
