@@ -85,6 +85,7 @@
 
       # Opens 1714-1764 for the daemon that the cyberfighter home runs.
       kdeconnect.enable = true;
+      helixnotes.enable = true;
       printing.enable = true;
 
       onepassword.enable = true;

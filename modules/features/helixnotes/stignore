@@ -1,0 +1,7 @@
+// Per-device state HelixNotes keeps inside the vault; syncing it causes
+// conflicts. Upstream's list: https://helixnotes.com/docs (Sync section).
+// Notes, attachments and notebook/tag styling still sync.
+.helixnotes/state.json
+.helixnotes/sync_state.json
+.helixnotes/history/
+.helixnotes/trash/

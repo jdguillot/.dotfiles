@@ -53,6 +53,7 @@
       };
 
       docker.enable = true;
+      helixnotes.enable = true;
       tailscale = {
         enable = true;
         # WSL shares one network namespace across all distros, so anything Tailscale
