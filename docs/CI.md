@@ -597,6 +597,26 @@ hold, and two broken packages are two pins. `hold-input.sh` is the only
 supported way to move the lock files from this step; a hand edit does not
 survive the replay.
 
+A package nixpkgs *refuses to evaluate* (marked broken, insecure or
+removed) is neither: the prompt sends the agent to the package that pulls
+it in, to look for a feature flag that drops the dependency
+(`.override { gtkSupport = false; }` is configuration, and permanent).
+The `problems.handlers` escape hatch the error suggests is the fallback,
+because it stops working once the package is deleted. Before it runs, the
+step writes `changed-inputs.txt` (`.github/scripts/changed-inputs.sh`):
+every root input and npins pin the bump moved, so the notes name what moved
+from the lock's root rather than from whichever `nixpkgs` node the agent
+found first.
+
+The re-check after the fix does two things for the register first. A
+retirement that was *blocked* -- the host did not evaluate with the
+workaround either, usually for the reason the agent was fixing -- is
+retried (`check-workarounds.sh --retry-blocked`); if the rebuild then
+fails, the tree goes back to a `git stash create` snapshot taken before the
+retry, the entry is reported as failed (`--undo-retry`), and the build runs
+again, so a retry can never cost the week its bump. Then `--add-new` adds the
+entries the agent wrote to the report, which was generated before it ran.
+
 The attempt is bounded: `fix-timeout-minutes` (default 60, changeable on a
 manual dispatch) is both a `timeout` around the run and a line in the prompt,
 so the agent can wind down and write its notes rather than only being killed.

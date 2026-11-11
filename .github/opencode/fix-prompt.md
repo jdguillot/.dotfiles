@@ -12,6 +12,11 @@ failed, in the form the build script uses:
 
 Then read AGENTS.md for how this repository is organised.
 
+`changed-inputs.txt` lists every root flake input and npins pin the bump
+moved, with old and new revisions. Take revisions and "what changed" from
+it, not from the failure or from `flake.lock` by hand: the lock has several
+nodes named like `nixpkgs`, and only the root's input is the one hosts use.
+
 ## Decide which kind of failure this is before you edit anything
 
 **Ours — adapt the repository.** The error names a file in this repo, and
@@ -69,9 +74,32 @@ Do not hold because adapting looks like work. Specifically, do not hold for:
   you cannot name it and say what is broken in *its* tree, you do not have a
   hold, you have an unfinished diagnosis. Write that up instead.
 
+## A package nixpkgs refuses to evaluate
+
+`Refusing to evaluate package '<name>' … because it has problems: broken`
+(or insecure, or removed) is not a build failure, so it is not a pin, and
+the `problems.handlers` / `allowBroken` escape hatch the message suggests is
+the last resort, not the first. A handler only works while the package still
+exists, and a package marked broken for removal is about to stop existing.
+
+Find the package that pulls it in (the `while evaluating derivation` lines
+above the error), read its `package.nix` arguments, and look for a feature
+flag that drops the dependency: `gtkSupport`, `withX`, `enableFoo`. Setting
+a documented argument with `.override { fooSupport = false; }` is this
+repository's configuration, not an edit to upstream's description, and it is
+permanent. Apply it everywhere this repository references the package (an
+environment variable naming its store path counts), and check that no host
+loses something it uses. Only when no such flag exists, or the dropped
+feature is needed, fall back to a handler scoped to the one host, recorded
+in `workarounds.nix`.
+
 ## Pinning one package
 
     .github/scripts/pin-package.sh <attr> "<what is broken upstream>" [<issue or PR url>]
+
+Describe the failure in the reason (the error, the step that fails) without
+revisions; the script records main's and this bump's nixpkgs itself and
+refuses a reason that names one.
 
 `<attr>` is the package's top-level nixpkgs attribute, exactly as `nix build
 nixpkgs#<attr>` would take it. The script adds a `pin` entry to
@@ -185,11 +213,15 @@ the human reading the run sees your error instead of the real one.
   requires. Following one rename across four hosts is a small diff repeated
   four times, not a big change; a diff that grows past what the failure
   named is a sign you are fixing something else.
-- `workarounds-report.md`, when present, says whether this run retired a
-  workaround before the build: a marker-fenced block deleted from the files
-  it names, verified by evaluation but not yet by a build. If the failure
+- `workarounds-report.md`, when present, is this run's check of the
+  register, made just before the build you are fixing. It says whether a
+  workaround was retired: a marker-fenced block deleted from the files it
+  names, verified by evaluation but not yet by a build. If the failure
   points at one of those files, `git checkout origin/main -- <file>
-  workarounds.nix` puts the workaround back; say so in `fix-notes.md`.
+  workarounds.nix` puts the workaround back; say so in `fix-notes.md`. An
+  entry marked "removal blocked by an unrelated failure" was stopped by the
+  same breakage you are fixing; leave it alone, the workflow retries it once
+  your fix makes the tree evaluate.
 - If an adaptation you make is itself temporary — it works around an
   upstream bug that is reported or being fixed and should go when that
   lands — record it in `workarounds.nix` with the marker pair, as

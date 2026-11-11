@@ -13,6 +13,10 @@
 # host, if it names none) before it is kept. An edit that does not evaluate
 # is put back exactly as it was, so the weekly build never sees it.
 #
+# Exit 3 means the entry was not the problem: a host failed to evaluate with
+# the entry back in place too, so something else is broken and the removal
+# can be tried again once it is fixed. Any other non-zero exit is a refusal.
+#
 # Usage: retire-workaround.sh <id>
 set -euo pipefail
 
@@ -103,10 +107,20 @@ mapfile -t hosts < <(jq -r '.hosts[]?' <<<"$entry")
 if [ ${#hosts[@]} -eq 0 ]; then
   mapfile -t hosts < <(nix eval .#nixosConfigurations --apply builtins.attrNames --json | jq -r '.[]')
 fi
+evaluates() {
+  nix eval --raw ".#nixosConfigurations.$1.config.system.build.toplevel.drvPath" > /dev/null 2>"$2"
+}
+last_error() { grep -E '^ *error: +[^ ]' "$1" | tail -n 1 | sed -E 's/^ *error: +//'; }
 for h in "${hosts[@]}"; do
-  if ! nix eval --raw ".#nixosConfigurations.$h.config.system.build.toplevel.drvPath" > /dev/null; then
-    echo "retire-workaround.sh: $h does not evaluate without '$id'; restored" >&2
+  if ! evaluates "$h" "$backup/.without"; then
     restore
+    # Only blame the entry if putting it back makes the host evaluate again.
+    if ! evaluates "$h" "$backup/.with"; then
+      echo "retire-workaround.sh: $h does not evaluate with '$id' either; blocked by: $(last_error "$backup/.with")" >&2
+      exit 3
+    fi
+    cat "$backup/.without" >&2
+    echo "retire-workaround.sh: $h does not evaluate without '$id' ($(last_error "$backup/.without")); restored" >&2
     exit 1
   fi
 done
