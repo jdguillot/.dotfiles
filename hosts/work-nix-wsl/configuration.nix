@@ -5,6 +5,10 @@
   pkgs,
   ...
 }:
+let
+  # gtk2 only backs Swing's GTK look-and-feel, and nixpkgs marks it broken.
+  jdk8 = pkgs.zulu8.override { gtkSupport = false; };
+in
 {
   imports = [
     ../../modules
@@ -12,14 +16,6 @@
     inputs.nix-index-database.nixosModules.nix-index
     inputs.vscode-server.nixosModules.default
   ];
-
-  # WORKAROUND(zulu8-gtk2-removal)
-  # NixOS/nixpkgs#410814: gtk2 (2.24.33) is flagged broken this week and
-  # nixpkgs now *refuses to evaluate* it. work-nix-wsl's `zulu8` (Java 8,
-  # AWT) transitively needs gtk2; Java 8 has no gtk3 alternative. Tolerate
-  # the known-broken package only on this host. Retire when zulu8 migrates.
-  nixpkgs.config.problems.handlers."gtk+".broken = "warn";
-  # END WORKAROUND(zulu8-gtk2-removal)
 
   cyberfighter = {
     system = {
@@ -40,7 +36,7 @@
       extraPackages = with pkgs; [
         moonlight-qt
         nil
-        zulu8
+        jdk8
         gradle
       ];
     };
@@ -168,7 +164,7 @@
   environment = {
 
     variables = {
-      JAVA_HOME = "${pkgs.zulu8}";
+      JAVA_HOME = "${jdk8}";
       SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
       NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
     };

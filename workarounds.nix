@@ -108,49 +108,9 @@
   };
   # END WORKAROUND(opencode-v2-no-lsp)
 
-  # WORKAROUND(pin-mcp-nixos)
-  pin-mcp-nixos = {
-    title = "mcp-nixos 3.0.1 pinned from nixpkgs 151fa4e: python3Packages.fastmcp-slim is marked broken once nixpkgs' mcp reaches v2 ";
-    added = "2026-10-28";
-    hosts = [
-      "razer-nixos"
-      "ryzn-server"
-      "work-nix-wsl"
-    ];
-    problem = ''
-      python3Packages.fastmcp-slim is marked broken once nixpkgs' mcp reaches v2 (meta.broken = versionAtLeast mcp.version "2"), and mcp-nixos depends on it through fastmcp; the top-level attribute is the narrowest pin that keeps the hosts that install it evaluating
-    '';
-    workaround = ''
-      The `pin` below takes `mcp-nixos` from nixpkgs 151fa4e, the revision main
-      built last, so every host keeps the 3.0.1 it already runs while the
-      rest of nixpkgs moves; package-pins.nix turns it into an overlay.
-      Added by pin-package.sh from the weekly bump's fix stage.
-    '';
-    files = [ ];
-    upstream = { };
-    pin = {
-      attr = "mcp-nixos";
-      rev = "151fa4e8ddfdd8dd25d945ad94ed54a13de9f6e4";
-      narHash = "sha256-Miqqk/ammqnTUxaoCyvtwoPeLbI1ksFyLxi/CazZpWY=";
-      version = "3.0.1";
-    };
-    resolved = {
-      kind = "builds";
-      attr = "mcp-nixos";
-      input = "nixpkgs";
-    };
-    retire = "auto";
-    removal = ''
-      Retired by the weekly run once
-      `mcp-nixos` builds again at the revision nixpkgs is locked to.
-      Deleting this entry is the whole removal; nothing else is fenced.
-    '';
-  };
-  # END WORKAROUND(pin-mcp-nixos)
-
   # WORKAROUND(pin-rainfrog)
   pin-rainfrog = {
-    title = "rainfrog 0.4.6 pinned from nixpkgs 3ec6363: rainfrog 0.4.6's sqlx/sqlx-macros fails to build on nixpkgs 6dadaf43: 'canno";
+    title = "rainfrog 0.4.6 pinned from nixpkgs 3ec6363: its sqlx-macros proc-macro cannot link -lsqlite3 on f4a03c0";
     added = "2026-11-10";
     hosts = [
       "razer-nixos"
@@ -158,7 +118,10 @@
       "work-nix-wsl"
     ];
     problem = ''
-      rainfrog 0.4.6's sqlx/sqlx-macros fails to build on nixpkgs 6dadaf43: 'cannot find -lsqlite3' linking the sqlx-macros proc-macro (sqlite backend) after this week's bump; nixpkgs 6dadaf43 is the revision that broke it, b6c8664 (main) built it
+      rainfrog 0.4.6 fails to build on nixpkgs f4a03c0: the sqlx-macros
+      proc-macro (sqlite backend) cannot find -lsqlite3 at link time. The
+      source is the same 0.4.6 that builds on 3ec6363, so the regression is
+      in the nixpkgs build environment, not in rainfrog itself.
     '';
     workaround = ''
       The `pin` below takes `rainfrog` from nixpkgs 3ec6363, the revision main
@@ -187,45 +150,4 @@
     '';
   };
   # END WORKAROUND(pin-rainfrog)
-
-  # WORKAROUND(zulu8-gtk2-removal)
-  zulu8-gtk2-removal = {
-    title = "work-nix-wsl tolerates the now-broken gtk2 package that Zulu JDK 8 (Java 8) needs for AWT";
-    added = "2026-11-10";
-    hosts = [
-      "work-nix-wsl"
-    ];
-    problem = ''
-      nixpkgs has flagged gtk2 (gtk+-2.24.33, its last release in December
-      2020) as broken, and this week switched on the gate that *refuses to
-      evaluate* a broken package instead of warning. work-nix-wsl installs
-      `zulu8` (a Zulu JDK 8), whose AWT on a graphical session pulls gtk2;
-      Java 8 has no gtk3/gtk4 alternative, so the JDK cannot simply migrate.
-    '';
-    workaround = ''
-      hosts/work-nix-wsl/configuration.nix sets
-      `nixpkgs.config.problems.handlers."gtk+".broken = "warn"` with the
-      marker pair, so the known-broken gtk2 evaluates on this host only.
-    '';
-    files = [ "hosts/work-nix-wsl/configuration.nix" ];
-    upstream = {
-      issue = "https://github.com/NixOS/nixpkgs/issues/410814";
-    };
-    # The fix is gtk2's *removal* plus migrating the JDK off it; an issue
-    # closing or a removal landing says nothing about the JDK having moved,
-    # so no probe can fire. Reported until a person removes it.
-    resolved = {
-      kind = "issue";
-      url = "https://github.com/NixOS/nixpkgs/issues/410814";
-    };
-    retire = "manual";
-    removal = ''
-      Delete the fenced `nixpkgs.config.problems.handlers."gtk+".broken =
-      "warn";` line (and its marker pair) in hosts/work-nix-wsl/configuration.nix.
-      Only if the JDK work is done: bump `zulu8` to a line that no longer
-      links gtk2 (or add a gtk3-capable JDK), confirm the AWT of a real
-      Java 8 app still renders, deploy, and drop the handler.
-    '';
-  };
-  # END WORKAROUND(zulu8-gtk2-removal)
 }
