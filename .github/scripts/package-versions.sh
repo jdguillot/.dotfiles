@@ -83,6 +83,9 @@ compare() {
     # of the bump, so a mismatch means an evaluation failed, and reporting
     # every package on that host as added or removed would be noise.
     | ([ $b | keys[] | select(. as $t | $a | has($t)) ] | sort) as $targets
+    # Hosts, not targets: a home target `user@host` counts for its host.
+    | def hostof: sub("^[^@]*@"; "");
+      ($targets | map(hostof) | unique) as $hosts
     | ([ $targets[] as $t | ($a[$t] | keys[]), ($b[$t] | keys[]) ] | unique) as $names
     | [ $names[]
         | . as $n
@@ -106,8 +109,9 @@ compare() {
                   | map( "| `\(.name)` "
                        + "| \(.olds | join(", ")) "
                        + "| \(.news | join(", ")) "
-                       + "| " + (if (.moved | length) == (.present | length)
-                                 then "all" else (.moved | map("`" + . + "`") | join(", ")) end)
+                       + "| " + ((.moved | map(hostof) | unique) as $m
+                                 | if $m == $hosts then "all"
+                                   else ($m | map("`" + . + "`") | join(", ")) end)
                        + " |")
                   | join("\n") )
               + "\n"

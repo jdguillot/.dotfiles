@@ -112,9 +112,13 @@ component.
   fenced block in `files` and the entry's own block in the register, then
   evaluates each host in `hosts` (every host, when the list is empty). If
   anything fails to evaluate the files are put back exactly as they were
-  and the report says so. What survives evaluation is built by the same
-  gate as the bump, and lands in the weekly pull request with a
-  "Workarounds" section explaining the removal.
+  and the report says so. A host that fails to evaluate with the entry
+  back in place too is broken by something else: the removal is reported
+  as *blocked* (exit 3) rather than failed, and the weekly run retries it
+  after the fix stage makes the tree evaluate, keeping it only if the
+  rebuild passes. What survives evaluation is built by the same gate as the
+  bump, and lands in the weekly pull request with a "Workarounds" section
+  explaining the removal.
 - `manual`: the run reports the entry as fixed upstream, prints `removal`,
   and raises a warning annotation, every week until the entry is deleted.
   For a fix that the markers cannot capture, and for anything outside this
@@ -159,12 +163,16 @@ version than the one that wrote that state. `nixpkgs-stable` is not an
 anchor for the same reason: its version may be older than what runs.
 
 `.github/scripts/pin-package.sh <attr> "<reason>" [<url>]` writes the
-entry: it reads the revision and narHash from `origin/main`'s lock, checks
+entry: it reads the revision and narHash of the root's `nixpkgs` input from
+`origin/main`'s lock (and this bump's revision from the working tree's, for
+the problem text), checks
 with `closure-has.sh` that some host or home actually installs the package
 (a failure in a package nothing installs is a failure in something else),
 appends the entry with a `builds` probe and `retire = "auto"`, and proves
 the pin took by evaluating the package's version through the flake before
-keeping the edit. `--min-version <v>` swaps the probe for `package` with
+keeping the edit. The reason describes the failure only; one that names a
+revision is refused, because the lock has several `nixpkgs` nodes and a
+hand-copied hash is easily the wrong one. `--min-version <v>` swaps the probe for `package` with
 that version, for a release that builds but is broken at run time. The fix
 stage of the weekly bump runs it (`docs/CI.md`, "update — apply, prove, and
 adapt"); it works the same by hand.

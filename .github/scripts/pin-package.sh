@@ -17,6 +17,8 @@
 #
 # <attr> is a top-level nixpkgs attribute (`go-mockery`, never
 # `python3Packages.foo`): the overlay replaces top-level attributes only.
+# The reason says what fails, without revisions: the script reads both from
+# the locks and records them itself.
 set -euo pipefail
 
 REGISTER="${REGISTER:-workarounds.nix}"
@@ -45,6 +47,13 @@ case "$attr" in
 esac
 id="pin-$attr"
 
+# A hand-typed revision is how a transitive input's `nixpkgs` node ends up in
+# the register as if it were the root's.
+if hex=$(grep -oiE '\b[0-9a-f]{7,40}\b' <<<"$reason" | grep -E '[0-9]' | grep -iE '[a-f]' | head -n 1); then
+  echo "pin-package.sh: the reason names '$hex'; leave revisions out, the script records main's and this bump's" >&2
+  exit 2
+fi
+
 if nix eval --json --file "$REGISTER" \
      --apply "r: (r ? \"$id\") || builtins.any (e: (e.pin.attr or null) == \"$attr\") (builtins.attrValues r)" \
      2>/dev/null | grep -qx true; then
@@ -55,14 +64,18 @@ fi
 # The revision main's lock has: what every host built and runs today. The
 # root's own nixpkgs node, not `.nodes.nixpkgs` -- that name belongs to
 # whichever transitive input claimed it first.
+root_nixpkgs() {
+  jq -r --arg f "$1" '(.nodes[.root].inputs.nixpkgs | if type == "string" then . else .[0] end) as $n
+    | .nodes[$n].locked[$f] // empty'
+}
 lock=$(git show "$BASE:flake.lock")
-node=$(jq -r '.nodes[.root].inputs.nixpkgs | if type == "string" then . else .[0] end' <<<"$lock")
-rev=$(jq -r --arg n "$node" '.nodes[$n].locked.rev // empty' <<<"$lock")
-narHash=$(jq -r --arg n "$node" '.nodes[$n].locked.narHash // empty' <<<"$lock")
+rev=$(root_nixpkgs rev <<<"$lock")
+narHash=$(root_nixpkgs narHash <<<"$lock")
 if [ -z "$rev" ] || [ -z "$narHash" ]; then
   echo "pin-package.sh: no locked nixpkgs revision in $BASE's flake.lock" >&2
   exit 1
 fi
+newRev=$(root_nixpkgs rev < flake.lock)
 
 version=$(nix eval --raw "github:NixOS/nixpkgs/$rev#$attr.version" 2>/dev/null) || {
   echo "pin-package.sh: '$attr' has no version in nixpkgs ${rev:0:12}; is it a top-level package?" >&2
@@ -91,7 +104,16 @@ ind() { sed -e "s/''/'''/g" -e 's/\${/'"''"'${/g' <<<"$1"; }
 dq() { sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\${/\\${/g' <<<"$1"; }
 today=$(date -u +%Y-%m-%d)
 short=${rev:0:7}
-title=$(cut -c1-120 <<<"$attr $version pinned from nixpkgs $short: $reason")
+# The reason's first sentence, cut at a word rather than mid-word.
+title="$attr $version pinned from nixpkgs $short: ${reason%%. *}"
+title="${title%%$'\n'*}"
+if [ "${#title}" -gt 120 ]; then
+  title="${title:0:119}"
+  title="${title% *}…"
+fi
+problem="$reason
+
+Builds at nixpkgs $short (main); fails at ${newRev:0:7} (this bump)."
 
 if [ -n "$min" ]; then
   until="nixpkgs ships \`$attr\` $min or later"
@@ -122,7 +144,7 @@ block="  # WORKAROUND($id)
 $(printf '      "%s"\n' $hosts)
     ];
     problem = ''
-      $(ind "$reason")
+$(ind "$problem" | sed 's/^\(.\)/      \1/')
     '';
     workaround = ''
       The \`pin\` below takes \`$attr\` from nixpkgs $short, the revision main

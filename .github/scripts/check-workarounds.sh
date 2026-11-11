@@ -14,24 +14,34 @@
 # the revision the bump moved to, and a retirement is covered by the same
 # build gate as the bump.
 #
+# A removal blocked by a host's unrelated evaluation failure is retried once
+# the fix stage has made the tree evaluate:
+#   --retry-blocked   retries every `retire-blocked` entry in workarounds.json
+#   --undo-retry      marks those retries failed, after the workflow put the
+#                     tree back because the rebuild without them failed
+#   --add-new         adds the entries the fix stage wrote, unprobed, so the
+#                     report lists every workaround the pull request carries
+#
 # Writes:
-#   workarounds.json        [{id, state, detail, retire, ...}] per entry
+#   workarounds.json        [{id, state, detail, retire, action, note, ...}]
 #   workarounds-report.md   for the job summary and the pull request body
 set -euo pipefail
 
 REGISTER="${REGISTER:-workarounds.nix}"
 REPORT="${WORKAROUNDS_REPORT:-workarounds-report.md}"
 RESULTS="${WORKAROUNDS_JSON:-workarounds.json}"
+MODE="${1:-}"
 
-: > "$REPORT"
-echo '[]' > "$RESULTS"
-
-if [ ! -f "$REGISTER" ]; then
-  exit 0
-fi
-register=$(nix eval --json --file "$REGISTER")
-if [ "$(jq 'length' <<<"$register")" -eq 0 ]; then
-  exit 0
+if [ -z "$MODE" ]; then
+  : > "$REPORT"
+  echo '[]' > "$RESULTS"
+  if [ ! -f "$REGISTER" ]; then
+    exit 0
+  fi
+  register=$(nix eval --json --file "$REGISTER")
+  if [ "$(jq 'length' <<<"$register")" -eq 0 ]; then
+    exit 0
+  fi
 fi
 
 # A version is an array of numbers so jq compares it element-wise.
@@ -140,6 +150,116 @@ probe_builds() {
   fi
 }
 
+# Sets `action` and `note`: retire-workaround.sh's own last word on it.
+retire_one() {
+  local id="$1" out rc=0
+  echo "::group::retire $id"
+  out=$(.github/scripts/retire-workaround.sh "$id" 2>&1) || rc=$?
+  echo "$out"
+  note=$(tail -n 1 <<<"$out" | sed 's/^retire-workaround\.sh: //')
+  case "$rc" in
+    0) action="retired" ;;
+    3) action="retire-blocked"
+       echo "::notice::$id is fixed upstream; its removal waits on an unrelated evaluation failure" ;;
+    *) action="retire-failed"
+       echo "::warning::$id is fixed upstream but could not be retired automatically" ;;
+  esac
+  echo "::endgroup::"
+}
+
+# The report. Upstream URLs stay real here: the job summary raises no
+# events, and the pull request body passes through sanitize-refs.sh.
+write_report() {
+  {
+    echo "### Workarounds"
+    echo ""
+    echo "| Workaround | Since | Hosts | Waiting on | This week |"
+    echo "|---|---|---|---|---|"
+    jq -r '
+      def cell: gsub("\n"; " ") | gsub("\\|"; "&#124;");
+      .[] |
+      (if .resolved.kind == "release" then
+          "a " + (if .resolved.prerelease then "" else "stable " end) + "`" + .resolved.repo + "` release ≥ " + .resolved.minVersion
+       elif .resolved.kind == "pr" then "merge of " + .resolved.url
+       elif .resolved.kind == "issue" then "close of " + .resolved.url
+       elif .resolved.kind == "commit" then "`" + .resolved.input + "` to contain " + (.resolved.sha[0:12])
+       elif .resolved.kind == "package" then "`" + .resolved.attr + "` ≥ " + .resolved.minVersion
+          + (if .resolved.input then " in `" + .resolved.input + "`" else "" end)
+       elif .resolved.kind == "builds" then "`" + .resolved.attr + "` to build again in `" + (.resolved.input // "nixpkgs") + "`"
+       else "nothing tracked" end) as $on |
+      (if .state == "resolved" and .action == "retired" then "**fixed upstream, retired in this run**"
+       elif .state == "resolved" and .action == "retire-blocked" then "**fixed upstream; removal blocked by an unrelated failure, see below**"
+       elif .state == "resolved" and .action == "retire-failed" then "**fixed upstream; automatic removal failed, see below**"
+       elif .state == "resolved" then "**fixed upstream, needs a hand**"
+       elif .state == "added" then "**added in this run** by the fix below"
+       elif .state == "unknown" then "unknown (" + .detail + ")"
+       else .detail end) as $week |
+      "| `\(.id)` \(.title | cell) | \(.added) | \(.hosts // [] | join(", ")) | \($on) | \($week | cell) |"' "$RESULTS"
+    echo ""
+
+    jq -r '.[] | select(.state == "resolved") |
+      "#### `\(.id)` is fixed upstream\n\n" +
+      "\(.detail)\n\n" +
+      (if .action == "retired" then
+         "Its block was removed from " + (if (.files | length) > 0 then ((.files | map("`" + . + "`") | join(", ")) + " and ") else "" end)
+         + "`workarounds.nix` in this run"
+         + (if .retriedAfterFix then ", after the fix below made the tree evaluate" else "" end)
+         + "; every host it names still evaluated, and the build below is the proof.\n"
+       elif .action == "retire-blocked" then
+         "Removing it was blocked by something else: " + .note + "\n\n"
+         + "The entry was not the problem, so nothing was changed and the next run tries again.\n"
+       elif .action == "retire-failed" then
+         "Removing it automatically failed and nothing was changed: " + .note + "\n\nThe removal notes:\n\n" + .removal + "\n"
+       else
+         "Nothing here is automatic for this entry. What to do:\n\n" + .removal + "\n" end)' "$RESULTS"
+  } > "$REPORT"
+
+  local n
+  n=$(jq '[.[] | select(.state == "resolved" and .action != "retired")] | length' "$RESULTS")
+  if [ "$n" -gt 0 ]; then
+    echo "::warning::$n workaround(s) are fixed upstream and still in the tree: $(jq -r '[.[] | select(.state == "resolved" and .action != "retired") | .id] | join(", ")' "$RESULTS")"
+  fi
+}
+
+case "$MODE" in
+  --retry-blocked)
+    [ -s "$RESULTS" ] || exit 0
+    results=$(cat "$RESULTS")
+    while read -r id; do
+      retire_one "$id"
+      results=$(jq --arg id "$id" --arg a "$action" --arg n "$note" \
+        'map(if .id == $id then . + { action: $a, note: $n, retriedAfterFix: ($a == "retired") } else . end)' <<<"$results")
+    done < <(jq -r '.[] | select(.action == "retire-blocked") | .id' <<<"$results")
+    printf '%s\n' "$results" | jq . > "$RESULTS"
+    write_report
+    echo "retired after the fix: $(jq -r '[.[] | select(.retriedAfterFix == true) | .id] | join(", ") | if . == "" then "none" else . end' "$RESULTS")"
+    exit 0 ;;
+  --undo-retry)
+    [ -s "$RESULTS" ] || exit 0
+    jq 'map(if .retriedAfterFix == true then . + {
+          action: "retire-failed", retriedAfterFix: false,
+          note: "it was removed after the fix made the tree evaluate, but the rebuild failed with it gone, so it was put back"
+        } else . end)' "$RESULTS" > "$RESULTS.new"
+    mv "$RESULTS.new" "$RESULTS"
+    write_report
+    exit 0 ;;
+  --add-new)
+    [ -f "$REGISTER" ] || exit 0
+    [ -s "$RESULTS" ] || echo '[]' > "$RESULTS"
+    nix eval --json --file "$REGISTER" > "$RESULTS.register"
+    jq --slurpfile r "$RESULTS.register" '
+      (map(.id)) as $seen
+      | . + [ $r[0] | to_entries[] | select(.key as $k | $seen | index($k) | not)
+              | .value + { id: .key, state: "added", detail: "", action: "", note: "" } ]' \
+      "$RESULTS" > "$RESULTS.new"
+    mv "$RESULTS.new" "$RESULTS"
+    rm -f "$RESULTS.register"
+    write_report
+    exit 0 ;;
+  "") ;;
+  *) echo "usage: check-workarounds.sh [--retry-blocked | --undo-retry | --add-new]" >&2; exit 2 ;;
+esac
+
 results='[]'
 while read -r id; do
   entry=$(jq -c --arg i "$id" '.[$i]' <<<"$register")
@@ -163,67 +283,15 @@ while read -r id; do
   state=${line%%	*}
   detail=${line#*	}
 
-  action=""
+  action="" note=""
   if [ "$state" = "resolved" ] && [ "$(jq -r '.retire // "manual"' <<<"$entry")" = "auto" ]; then
-    echo "::group::retire $id"
-    if out=$(.github/scripts/retire-workaround.sh "$id" 2>&1); then
-      action="retired"
-      echo "$out"
-    else
-      action="retire-failed"
-      echo "$out"
-      echo "::warning::$id is fixed upstream but could not be retired automatically"
-    fi
-    echo "::endgroup::"
+    retire_one "$id"
   fi
 
-  results=$(jq --argjson e "$entry" --arg id "$id" --arg s "$state" --arg d "$detail" --arg a "$action" \
-    '. += [$e + { id: $id, state: $s, detail: $d, action: $a }]' <<<"$results")
+  results=$(jq --argjson e "$entry" --arg id "$id" --arg s "$state" --arg d "$detail" --arg a "$action" --arg n "$note" \
+    '. += [$e + { id: $id, state: $s, detail: $d, action: $a, note: $n }]' <<<"$results")
 done < <(jq -r 'keys[]' <<<"$register")
 
 printf '%s\n' "$results" | jq . > "$RESULTS"
-
-# The report. Upstream URLs stay real here: the job summary raises no
-# events, and the pull request body passes through sanitize-refs.sh.
-{
-  echo "### Workarounds"
-  echo ""
-  echo "| Workaround | Since | Hosts | Waiting on | This week |"
-  echo "|---|---|---|---|---|"
-  jq -r '
-    def cell: gsub("\n"; " ") | gsub("\\|"; "&#124;");
-    .[] |
-    (if .resolved.kind == "release" then
-        "a " + (if .resolved.prerelease then "" else "stable " end) + "`" + .resolved.repo + "` release ≥ " + .resolved.minVersion
-     elif .resolved.kind == "pr" then "merge of " + .resolved.url
-     elif .resolved.kind == "issue" then "close of " + .resolved.url
-     elif .resolved.kind == "commit" then "`" + .resolved.input + "` to contain " + (.resolved.sha[0:12])
-     elif .resolved.kind == "package" then "`" + .resolved.attr + "` ≥ " + .resolved.minVersion
-        + (if .resolved.input then " in `" + .resolved.input + "`" else "" end)
-     elif .resolved.kind == "builds" then "`" + .resolved.attr + "` to build again in `" + (.resolved.input // "nixpkgs") + "`"
-     else "nothing tracked" end) as $on |
-    (if .state == "resolved" and .action == "retired" then "**fixed upstream, retired in this run**"
-     elif .state == "resolved" and .action == "retire-failed" then "**fixed upstream; automatic removal failed, see below**"
-     elif .state == "resolved" then "**fixed upstream, needs a hand**"
-     elif .state == "unknown" then "unknown (" + .detail + ")"
-     else .detail end) as $week |
-    "| `\(.id)` \(.title | cell) | \(.added) | \(.hosts // [] | join(", ")) | \($on) | \($week | cell) |"' "$RESULTS"
-  echo ""
-
-  jq -r '.[] | select(.state == "resolved") |
-    "#### `\(.id)` is fixed upstream\n\n" +
-    "\(.detail)\n\n" +
-    (if .action == "retired" then
-       "Its block was removed from " + (if (.files | length) > 0 then ((.files | map("`" + . + "`") | join(", ")) + " and ") else "" end)
-       + "`workarounds.nix` in this run; every host it names still evaluated, and the build below is the proof.\n"
-     elif .action == "retire-failed" then
-       "Removing it automatically failed (the run log says why) and nothing was changed. The removal notes:\n\n" + .removal + "\n"
-     else
-       "Nothing here is automatic for this entry. What to do:\n\n" + .removal + "\n" end)' "$RESULTS"
-} >> "$REPORT"
-
-n=$(jq '[.[] | select(.state == "resolved" and .action != "retired")] | length' "$RESULTS")
-if [ "$n" -gt 0 ]; then
-  echo "::warning::$n workaround(s) are fixed upstream and waiting on a person: $(jq -r '[.[] | select(.state == "resolved" and .action != "retired") | .id] | join(", ")' "$RESULTS")"
-fi
+write_report
 echo "checked $(jq 'length' "$RESULTS") workaround(s): $(jq -r 'map(.state) | group_by(.) | map("\(length) \(.[0])") | join(", ")' "$RESULTS")"

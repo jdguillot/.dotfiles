@@ -335,6 +335,7 @@ jobs:
           /hold-report.md
           /workarounds-report.md
           /workarounds.json
+          /changed-inputs.txt
           /containers-applied.json
           EOF
 
@@ -455,6 +456,7 @@ jobs:
             echo "::warning::mcp-nixos absent; running the agent without the nixos MCP"
           fi
           echo "attempted=true" >> "$GITHUB_OUTPUT"
+          .github/scripts/changed-inputs.sh > changed-inputs.txt
           # The agent reads this; the head of a Nix trace is the useful part,
           # but the error itself is at the tail, so keep both ends.
           if [ "$(wc -c < build-failure.log)" -gt 120000 ]; then
@@ -514,7 +516,24 @@ jobs:
             git --no-pager diff --stat
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          .github/scripts/check-and-build.sh
+          # A removal the breakage blocked may go through now that the tree
+          # evaluates. `stash create` snapshots the tree without touching it,
+          # so a retry the rebuild rejects comes out and the agent's fix stays.
+          snap=$(git stash create)
+          retried=false
+          if [ -s workarounds.json ] && jq -e 'any(.[]; .action == "retire-blocked")' workarounds.json >/dev/null; then
+            .github/scripts/check-workarounds.sh --retry-blocked
+            jq -e 'any(.[]; .retriedAfterFix == true)' workarounds.json >/dev/null && retried=true
+          fi
+          if ! .github/scripts/check-and-build.sh; then
+            [ "$retried" = true ] || exit 1
+            git restore --source="${snap:-HEAD}" --worktree -- .
+            .github/scripts/check-workarounds.sh --undo-retry
+            .github/scripts/check-and-build.sh
+          fi
+          # The report was written before the agent ran; list what it added.
+          .github/scripts/check-workarounds.sh --add-new
+          cat workarounds-report.md >> "$GITHUB_STEP_SUMMARY"
           echo "hosts=$(cat build-hosts.json)" >> "$GITHUB_OUTPUT"
           echo "green=true" >> "$GITHUB_OUTPUT"
 
