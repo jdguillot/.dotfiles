@@ -5,6 +5,10 @@
   pkgs,
   ...
 }:
+let
+  # gtk2 only backs Swing's GTK look-and-feel, and nixpkgs marks it broken.
+  jdk8 = pkgs.zulu8.override { gtkSupport = false; };
+in
 {
   imports = [
     ../../modules
@@ -32,7 +36,7 @@
       extraPackages = with pkgs; [
         moonlight-qt
         nil
-        zulu8
+        jdk8
         gradle
       ];
     };
@@ -53,6 +57,7 @@
       };
 
       docker.enable = true;
+      helixnotes.enable = true;
       tailscale = {
         enable = true;
         # WSL shares one network namespace across all distros, so anything Tailscale
@@ -159,7 +164,7 @@
   environment = {
 
     variables = {
-      JAVA_HOME = "${pkgs.zulu8}";
+      JAVA_HOME = "${jdk8}";
       SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
       NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle-with-work.crt";
     };

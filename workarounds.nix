@@ -108,43 +108,46 @@
   };
   # END WORKAROUND(opencode-v2-no-lsp)
 
-  # WORKAROUND(pin-mcp-nixos)
-  pin-mcp-nixos = {
-    title = "mcp-nixos 3.0.1 pinned from nixpkgs 151fa4e: python3Packages.fastmcp-slim is marked broken once nixpkgs' mcp reaches v2 ";
-    added = "2026-10-28";
+  # WORKAROUND(pin-rainfrog)
+  pin-rainfrog = {
+    title = "rainfrog 0.4.6 pinned from nixpkgs 3ec6363: its sqlx-macros proc-macro cannot link -lsqlite3 on f4a03c0";
+    added = "2026-11-10";
     hosts = [
       "razer-nixos"
       "ryzn-server"
       "work-nix-wsl"
     ];
     problem = ''
-      python3Packages.fastmcp-slim is marked broken once nixpkgs' mcp reaches v2 (meta.broken = versionAtLeast mcp.version "2"), and mcp-nixos depends on it through fastmcp; the top-level attribute is the narrowest pin that keeps the hosts that install it evaluating
+      rainfrog 0.4.6 fails to build on nixpkgs f4a03c0: the sqlx-macros
+      proc-macro (sqlite backend) cannot find -lsqlite3 at link time. The
+      source is the same 0.4.6 that builds on 3ec6363, so the regression is
+      in the nixpkgs build environment, not in rainfrog itself.
     '';
     workaround = ''
-      The `pin` below takes `mcp-nixos` from nixpkgs 151fa4e, the revision main
-      built last, so every host keeps the 3.0.1 it already runs while the
+      The `pin` below takes `rainfrog` from nixpkgs 3ec6363, the revision main
+      built last, so every host keeps the 0.4.6 it already runs while the
       rest of nixpkgs moves; package-pins.nix turns it into an overlay.
       Added by pin-package.sh from the weekly bump's fix stage.
     '';
     files = [ ];
     upstream = { };
     pin = {
-      attr = "mcp-nixos";
-      rev = "151fa4e8ddfdd8dd25d945ad94ed54a13de9f6e4";
-      narHash = "sha256-Miqqk/ammqnTUxaoCyvtwoPeLbI1ksFyLxi/CazZpWY=";
-      version = "3.0.1";
+      attr = "rainfrog";
+      rev = "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504";
+      narHash = "sha256-rZLrzrC6i+jnTAlvPZHogKDulY7WWDEv9hJeHieO7Zw=";
+      version = "0.4.6";
     };
     resolved = {
       kind = "builds";
-      attr = "mcp-nixos";
+      attr = "rainfrog";
       input = "nixpkgs";
     };
     retire = "auto";
     removal = ''
       Retired by the weekly run once
-      `mcp-nixos` builds again at the revision nixpkgs is locked to.
+      `rainfrog` builds again at the revision nixpkgs is locked to.
       Deleting this entry is the whole removal; nothing else is fenced.
     '';
   };
-  # END WORKAROUND(pin-mcp-nixos)
+  # END WORKAROUND(pin-rainfrog)
 }
