@@ -95,7 +95,18 @@
         # Moonlight has no Guide button of its own, and this session is Big
         # Picture, where it is the way back out of a game. Holding
         # Back/Select for two seconds stands in for it.
-        settings.back_button_timeout = 2000;
+        settings = {
+          back_button_timeout = 2000;
+
+          # Stream from the virtual 4K output at the client's mode, and
+          # hand the desk back to the monitor afterwards.
+          global_prep_cmd = builtins.toJSON [
+            {
+              do = "/run/current-system/sw/bin/stream-display on";
+              undo = "/run/current-system/sw/bin/stream-display off";
+            }
+          ];
+        };
       };
 
       # Web UI on the LAN (http://192.168.101.94:8384), login from sops
@@ -492,7 +503,7 @@
     managed = false;
   };
 
-  # Headless (dummy plug on the 5090's DP-1); the session exists only to host
+  # Monitor on the 5090's DP-1, usually unattended; the session exists to host
   # Steam Remote Play, which cannot start a session of its own from the
   # client. So SDDM auto-logs-in at boot -- into Plasma, NOT the gamescope
   # session: gamescope's "Desktop PipeWire" capture publishes zeroed
@@ -548,6 +559,46 @@
     "1080"
     "-r"
     "60"
+  ];
+
+  # ---------------------------------------------------------- virtual 4K
+  # A 4K output for streaming with no monitor attached: the 5090's unused
+  # HDMI-A-1 is forced on with a generated EDID. nvidia-drm ignores the
+  # runtime debugfs force, so this only takes effect at boot.
+  #
+  # Connector names are numbered across both GPUs in driver-registration
+  # order, which races in stage 2. The softdep makes the 5090 register first
+  # so HDMI-A-1 (and the monitor's DP-1) always name its connectors.
+  boot.extraModprobeConfig = ''
+    softdep amdgpu pre: nvidia-drm
+  '';
+  hardware.display = {
+    edid.packages = [
+      (pkgs.runCommand "virtual-4k-edid" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+        mkdir -p $out/lib/firmware/edid
+        python3 ${./virtual-display/make-edid.py} $out/lib/firmware/edid/virtual-4k.bin
+      '')
+    ];
+    outputs."HDMI-A-1" = {
+      edid = "virtual-4k.bin";
+      mode = "e";
+    };
+  };
+
+  environment.systemPackages = [
+    (pkgs.writeShellApplication {
+      name = "stream-display";
+      runtimeInputs = [
+        pkgs.jq
+        pkgs.kdePackages.libkscreen
+      ];
+      runtimeEnv = {
+        VIRTUAL_OUTPUT = "HDMI-A-1";
+        # Tried in order after an explicit or client-requested mode.
+        MODES = "3840x2160@120 3840x2160@60";
+      };
+      text = builtins.readFile ./virtual-display/stream-display.sh;
+    })
   ];
 
   # --------------------------------------------------------------- storage
