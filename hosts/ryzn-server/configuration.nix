@@ -95,7 +95,18 @@
         # Moonlight has no Guide button of its own, and this session is Big
         # Picture, where it is the way back out of a game. Holding
         # Back/Select for two seconds stands in for it.
-        settings.back_button_timeout = 2000;
+        settings = {
+          back_button_timeout = 2000;
+
+          # Stream from the virtual 4K output at the client's mode, and
+          # hand the desk back to the monitor afterwards.
+          global_prep_cmd = builtins.toJSON [
+            {
+              do = "/run/current-system/sw/bin/stream-display on";
+              undo = "/run/current-system/sw/bin/stream-display off";
+            }
+          ];
+        };
       };
 
       # Web UI on the LAN (http://192.168.101.94:8384), login from sops
@@ -492,43 +503,34 @@
     managed = false;
   };
 
-  # Headless (dummy plug on the 5090's DP-1); the session exists only to host
+  # Monitor on the 5090's DP-1, usually unattended; the session exists to host
   # Steam Remote Play, which cannot start a session of its own from the
-  # client. So SDDM auto-logs-in at boot -- but into the gamescope session
-  # from features.gaming, NOT Plasma: idle Plasma held ~4-5GiB of the VRAM
-  # the models need, gamescope plus Big Picture costs a few hundred MiB.
-  # That is why graphical.target is the default unit again (it hard-Wants
-  # display-manager); `systemctl stop display-manager` still frees the card.
-  #
-  # Consequences of dropping Plasma from the boot path:
-  #   - Sunshine's user unit is wantedBy graphical-session.target, which the
-  #     bare steam-gamescope script never reaches, so it is rebound to the
-  #     user manager's default.target below.
-  #   - "Switch to Desktop" is SteamOS-only. Plasma means flipping
-  #     defaultSession back, or starting it by hand from a VT.
+  # client. So SDDM auto-logs-in at boot -- into Plasma, NOT the gamescope
+  # session: gamescope's "Desktop PipeWire" capture publishes zeroed
+  # (solid-green) frames on this NVIDIA host while KWin's compositor capture
+  # carries real ones, so Remote Play only works under a real compositor.
+  # The ~4-5GiB of VRAM idle Plasma holds on the 32GiB 5090 is accepted;
+  # `systemctl stop display-manager` still frees the card for the models.
+  # The Big Picture gamescope session stays installed (features.gaming) for
+  # anyone who still wants it from the greeter.
   services.displayManager = {
     autoLogin = {
       enable = true;
       user = config.cyberfighter.system.username;
     };
-    defaultSession = "steam"; # gamescope + Steam Big Picture, Wayland
+    defaultSession = "plasma"; # KWin, Wayland
   };
 
-  # Moonlight is the streaming path, not Steam Remote Play: gamescope's NV12
-  # PipeWire capture publishes zeroed (solid green) frames on this NVIDIA
-  # host, while Sunshine's KMS capture reads the scanout framebuffer and so
-  # is unaffected -- and it gets real NVENC on the 5090, which the 32-bit
-  # Steam client cannot (no 32-bit CUDA).
-  #
-  # The unit ships wantedBy graphical-session.target, which only Plasma ever
-  # reached. KMS capture needs no compositor socket, so the user manager's
-  # default.target is the right anchor: autologin starts user@1000, which
-  # starts Sunshine, whatever session is on the seat. The sunshine module's
-  # ConditionUser keeps other lingering managers from starting it.
+  # Alternative streaming path: Sunshine's KMS capture reads the scanout
+  # framebuffer (unaffected by the compositing stack) and gets real NVENC,
+  # which the 32-bit Steam client cannot. The unit ships wantedBy
+  # graphical-session.target, which Plasma reaches; it is rebound to the
+  # user manager's default.target so a manually started gamescope session
+  # (no graphical-session.target) also gets it.
   #
   # `wants` is cleared with it: the unit pulls graphical-session.target in
-  # otherwise, and that target owns the DankMaterialShell units (dcal), which
-  # crash-loop on a gamescope seat with no niri -- each crash feeding a
+  # otherwise, and that target owns the DankMaterialShell units (dcal,
+  # niri-only), which crash-loop on this seat -- each crash feeding a
   # drkonqi launcher that also crashes. `partOf` goes for the same reason:
   # nothing here should stop Sunshine when that target does.
   systemd.user.services.sunshine = {
@@ -557,6 +559,46 @@
     "1080"
     "-r"
     "60"
+  ];
+
+  # ---------------------------------------------------------- virtual 4K
+  # A 4K output for streaming with no monitor attached: the 5090's unused
+  # HDMI-A-1 is forced on with a generated EDID. nvidia-drm ignores the
+  # runtime debugfs force, so this only takes effect at boot.
+  #
+  # Connector names are numbered across both GPUs in driver-registration
+  # order, which races in stage 2. The softdep makes the 5090 register first
+  # so HDMI-A-1 (and the monitor's DP-1) always name its connectors.
+  boot.extraModprobeConfig = ''
+    softdep amdgpu pre: nvidia-drm
+  '';
+  hardware.display = {
+    edid.packages = [
+      (pkgs.runCommand "virtual-4k-edid" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+        mkdir -p $out/lib/firmware/edid
+        python3 ${./virtual-display/make-edid.py} $out/lib/firmware/edid/virtual-4k.bin
+      '')
+    ];
+    outputs."HDMI-A-1" = {
+      edid = "virtual-4k.bin";
+      mode = "e";
+    };
+  };
+
+  environment.systemPackages = [
+    (pkgs.writeShellApplication {
+      name = "stream-display";
+      runtimeInputs = [
+        pkgs.jq
+        pkgs.kdePackages.libkscreen
+      ];
+      runtimeEnv = {
+        VIRTUAL_OUTPUT = "HDMI-A-1";
+        # Tried in order after an explicit or client-requested mode.
+        MODES = "3840x2160@120 3840x2160@60";
+      };
+      text = builtins.readFile ./virtual-display/stream-display.sh;
+    })
   ];
 
   # --------------------------------------------------------------- storage
