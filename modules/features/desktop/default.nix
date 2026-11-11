@@ -243,9 +243,10 @@ in
         };
         services.upower.enable = true;
         services.udisks2.enable = true;
-        # The shells themselves (noctalia, DMS) come from Home Manager.
+        # The shells themselves (noctalia, DMS) come from Home Manager. Each
+        # runs its own notification server, so no standalone daemon (mako)
+        # here: its BusName= claim stops dms.service from loading.
         environment.systemPackages = with pkgs; [
-          mako
           quickshell
           nemo
           xwayland-satellite
