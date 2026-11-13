@@ -5,8 +5,8 @@
 #   stream-display off           every other connected output, virtual off
 #   stream-display status
 #
-# `on` without a mode uses the Moonlight client's (Sunshine prep-cmd env),
-# then falls back through $MODES to the first one the output offers.
+# `on` without a mode takes the first of $MODES the output offers. The
+# Moonlight client's mode is ignored: Sunshine scales to it when encoding.
 
 virtual=$VIRTUAL_OUTPUT
 
@@ -37,8 +37,6 @@ case "${1:-status}" in
     read -ra modes <<<"$MODES"
     if [[ -n ${2:-} ]]; then
       modes=("$2" "${modes[@]}")
-    elif [[ -n ${SUNSHINE_CLIENT_WIDTH:-} ]]; then
-      modes=("${SUNSHINE_CLIENT_WIDTH}x${SUNSHINE_CLIENT_HEIGHT}@${SUNSHINE_CLIENT_FPS}" "${modes[@]}")
     fi
     id=
     for mode in "${modes[@]}"; do
@@ -49,7 +47,10 @@ case "${1:-status}" in
       echo "stream-display: $virtual offers none of: ${modes[*]}" >&2
       exit 1
     fi
-    args=("output.$virtual.enable" "output.$virtual.mode.$id" "output.$virtual.priority.1")
+    # Origin at 0,0: Sunshine maps absolute input (touch, pen, a VR laser)
+    # from offset 0, but KWin keeps the slot it had beside the monitor.
+    args=("output.$virtual.enable" "output.$virtual.mode.$id" "output.$virtual.priority.1"
+      "output.$virtual.position.0,0")
     for o in $others; do args+=("output.$o.disable"); done
     kscreen-doctor "${args[@]}"
     ;;

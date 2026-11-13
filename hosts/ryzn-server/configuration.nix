@@ -98,13 +98,10 @@
         settings = {
           back_button_timeout = 2000;
 
-          # Stream from the virtual 4K output at the client's mode, and
-          # hand the desk back to the monitor afterwards.
+          # Re-enter stream mode at full 4K on connect. No undo: stream mode
+          # outlives the session until `stream-display off`.
           global_prep_cmd = builtins.toJSON [
-            {
-              do = "/run/current-system/sw/bin/stream-display on";
-              undo = "/run/current-system/sw/bin/stream-display off";
-            }
+            { do = "/run/current-system/sw/bin/stream-display on"; }
           ];
         };
       };
@@ -600,6 +597,21 @@
       text = builtins.readFile ./virtual-display/stream-display.sh;
     })
   ];
+
+  # Boot into stream mode; only `stream-display off` hands the desk back.
+  # Retried because KWin's output management can lag the unit's start.
+  systemd.user.services.stream-display = {
+    description = "Switch the Plasma session to the virtual 4K output";
+    wantedBy = [ "plasma-workspace.target" ];
+    after = [ "plasma-kwin_wayland.service" ];
+    unitConfig.ConditionUser = config.cyberfighter.system.username;
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "/run/current-system/sw/bin/stream-display on";
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+  };
 
   # --------------------------------------------------------------- storage
   # btrfs mount options are per-filesystem, so per-directory exceptions go on
