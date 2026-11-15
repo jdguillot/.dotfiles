@@ -536,6 +536,14 @@
     partOf = lib.mkForce [ ];
   };
 
+  # rtkit's default of 25 realtime threads per user is spent by PipeWire,
+  # KWin and Sunshine before SteamVR starts, so the compositor and the
+  # vrlink threads were denied realtime priority (visible as judder).
+  security.rtkit.args = [
+    "--threads-per-user-max=128"
+    "--processes-per-user-max=64"
+  ];
+
   # Steam's fossilize pre-caching is a poor trade here: it is CPU work, and
   # No Man's Sky alone carries a 9.7GB pipeline cache that five workers chew
   # through on six cores while the 5090 sits idle. With it off, the NVIDIA
