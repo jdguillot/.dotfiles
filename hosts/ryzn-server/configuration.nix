@@ -494,9 +494,10 @@
   # every boot, which held startup-complete and timed out
   # NetworkManager-wait-online -- and docker.service and cloudflared-tunnel
   # order after network-online.target. Unmanaged, not blacklisted: the card
-  # stays available via `nmcli device set wlp12s0 managed yes`.
+  # stays available via `nmcli device set wlp12s0 managed yes`. Matched by
+  # name so the Steam Frame's USB dongle (also rtw89) stays managed.
   networking.networkmanager.settings."device-wifi" = {
-    match-device = "type:wifi";
+    match-device = "interface-name:wlp12s0";
     managed = false;
   };
 
@@ -574,8 +575,12 @@
   # Connector names are numbered across both GPUs in driver-registration
   # order, which races in stage 2. The softdep makes the 5090 register first
   # so HDMI-A-1 (and the monitor's DP-1) always name its connectors.
+  #
+  # cfg80211 regdom: under the default world domain (00) 6 GHz is disabled,
+  # which the Steam Frame's USB Wi-Fi dongle needs.
   boot.extraModprobeConfig = ''
     softdep amdgpu pre: nvidia-drm
+    options cfg80211 ieee80211_regdom=US
   '';
   hardware.display = {
     edid.packages = [
@@ -604,7 +609,13 @@
       };
       text = builtins.readFile ./virtual-display/stream-display.sh;
     })
+    pkgs.iw
   ];
+
+  # ------------------------------------------------------ Steam Frame dongle
+  # The dongle (RTL8852CU, USB 28de:2432) uses the in-tree rtw89_8852cu
+  # driver, which needs Linux 7.0+; 6.18 has no driver for it.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Boot into stream mode; only `stream-display off` hands the desk back.
   # Retried because KWin's output management can lag the unit's start.
