@@ -95,8 +95,8 @@ Module wiring, for reference:
 rest of the suite, the way `features.noctalia` owns Noctalia. It is enabled
 on desktop-profile hosts. `features.niri.shells` only deploys the niri-side
 layer; the packages come from here. Upstream versions the whole suite
-together — DMS, dgop, dsearch and dcal are all 1.6.0 — so each has its own
-flake input rather than coming from nixpkgs.
+together, but only DMS publishes a `stable` branch to pin to — so each has
+its own flake input rather than coming from nixpkgs.
 
 | `apps.*`   | Binary    | What it is                                        |
 | ---------- | --------- | ------------------------------------------------- |
@@ -195,7 +195,7 @@ so the style is unchallenged. (Verified by feeding niri a deliberately broken
 
 ### Screenshots
 
-DMS 1.6 has its own capture tool built into the `dms` binary — region select
+DMS has its own capture tool built into the `dms` binary — region select
 with confirmation, window and output modes, and a scrolling capture that
 stitches a tall image, which niri has no equivalent for. It is not wired to
 anything by default (upstream's keymap leaves screenshots to the
