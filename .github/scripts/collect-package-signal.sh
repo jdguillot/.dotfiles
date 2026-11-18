@@ -68,8 +68,12 @@ fi
 # nixosConfigurations: a package pinned by an overlay (a workaround) would
 # otherwise report its pinned version forever and never show the upstream
 # moving past the breakage that pinned it.
+#
+# nix's stderr goes to the job log, inside the package's group: the first
+# evaluation fetches a nixpkgs tarball, and a step that takes ten minutes
+# instead of two has to be able to say which fetch it was waiting on.
 version_at() {
-  nix eval --raw "github:NixOS/nixpkgs/$1#$2.version" 2>/dev/null || true
+  nix eval --raw "github:NixOS/nixpkgs/$1#$2.version" || true
 }
 
 # ...which leaves the opposite question unanswered: what does this flake
@@ -83,7 +87,7 @@ first_host=$(nix eval .#nixosConfigurations --apply builtins.attrNames --json 2>
   | tr -d '[]" ' | tr ',' '\n' | grep . | head -1)
 installed_version() {
   [ -n "$first_host" ] || return 0
-  nix eval --raw ".#nixosConfigurations.$first_host.pkgs.$1.version" 2>/dev/null || true
+  nix eval --raw ".#nixosConfigurations.$first_host.pkgs.$1.version" || true
 }
 
 VER='def ver: ltrimstr("v") | split(".") | map(tonumber? // 0);'
@@ -120,9 +124,11 @@ while read -r attr repo why; do
   fi
   echo "::group::$attr ($slug)"
 
+  t0=$SECONDS
   have=$(version_at "$rev" "$attr")
   want=$(version_at "$ref" "$attr")
   installed=$(installed_version "$attr")
+  echo "$attr: pinned nixpkgs ${have:-?}, $ref ${want:-?}, installed ${installed:-?} ($((SECONDS - t0))s to evaluate)"
 
   if [ -z "$have" ] || [ -z "$want" ]; then
     {
@@ -239,12 +245,13 @@ done < <(jq -r '.[] | [.attr, .repo, .why] | @tsv' "$WATCHED")
 
 printf '%s\n' "$results" > "$out"
 
-# The compact form. `installed` is only worth a column when it differs from
-# what nixpkgs ships, which is exactly the pinned case.
+# The compact form. The last column is what these machines run today: the
+# pinned nixpkgs' version unless an overlay here pins the package, which is
+# the case the column exists to flag.
 {
   echo "### Watched packages"
   echo ""
-  echo "| Package | pinned nixpkgs | incoming | installed here |"
+  echo "| Package | pinned nixpkgs | incoming | installed now |"
   echo "|---|---|---|---|"
   jq -r '.[]
     | "| `\(.attr)` "
@@ -252,9 +259,9 @@ printf '%s\n' "$results" > "$out"
     + "| " + (if .state == "unchanged" then "_unchanged_"
               elif .state == "changed" then (.want // "?")
               else "_" + .state + "_" end) + " "
-    + "| " + (if (.installed // null) == null then "—"
-              elif .installed == .have then "—"
-              else .installed + " ⚠ pinned" end)
+    + "| " + (if (.installed // null) == null then "_not evaluated_"
+              elif .installed == .have then .installed
+              else .installed + " ⚠ pinned here" end)
     + " |"' "$out"
   echo ""
   if jq -e 'any(.[]; (.installed // null) != null and .installed != .have)' "$out" >/dev/null; then

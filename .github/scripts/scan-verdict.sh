@@ -22,6 +22,7 @@ digest="$OUT_DIR/digest.md"
 sources="$OUT_DIR/sources.json"
 ledger="$OUT_DIR/ledger.json"
 staged="${STAGED_REPORT:-staging-report}/staged-commits.txt"
+staged_diff="${STAGED_REPORT:-staging-report}/staged-diff.txt"
 verdict="$OUT_DIR/verdict.json"
 
 fail_open() {
@@ -41,6 +42,7 @@ fail_open() {
 if [ ! -f "$staged" ]; then
   : > "$staged"
 fi
+[ -f "$staged_diff" ] || : > "$staged_diff"
 curl -fsS --max-time 10 "$OLLAMA_URL/api/tags" >/dev/null 2>&1 || fail_open "ollama unreachable at $OLLAMA_URL"
 
 # Named inputs only: an enum keeps the model from inventing a source name
@@ -99,6 +101,7 @@ request=$(jq -n \
   --arg hosts "$(cat hosts/default.nix)" \
   --rawfile digest "$digest" \
   --rawfile staged "$staged" \
+  --rawfile sdiff "$staged_diff" \
   --arg standing "$standing" \
   --argjson schema "$schema" \
   --argjson num_ctx "$NUM_CTX" '{
@@ -115,6 +118,9 @@ request=$(jq -n \
                       + "No staged work was merged into this tree this week.\n\n"
                       else "## Staged branches (already merged into this tree)\n"
                            + $staged + "\n\n"
+                           + "## What the staged commits change\n\n"
+                           + "The file list, then the patch (lock files left out).\n\n"
+                           + "```diff\n" + $sdiff + "\n```\n\n"
                       end)
            + "## Standing holds from previous runs\n\n" + $standing + "\n\n"
            + "## Upstream changes\n\n" + $digest) }
