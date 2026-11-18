@@ -29,19 +29,28 @@
 #                  on a no-bump week.
 #   staged-commits.txt   the oneline subjects of every commit the merged
 #                  branches contributed, newest first. Empty if nothing
-#                  merged. This is what the scan LLM reads to judge the
-#                  staged work against this week's upstream changes; giving
-#                  it the subjects (not the diff) keeps the call bounded and
-#                  the model honest about what it can actually verify.
+#                  merged.
+#   staged-diff.txt      what those commits change: the diffstat, then the
+#                  patch up to STAGED_DIFF_CAP bytes, lock files and
+#                  secrets left out. Empty if nothing merged. The scan LLM
+#                  reads both: a subject is a title, not evidence of what
+#                  the commit touches.
 set -euo pipefail
+
+STAGED_DIFF_CAP="${STAGED_DIFF_CAP:-60000}"
 
 OUT_DIR="${OUT_DIR:-staging-report}"
 md="$OUT_DIR/staging.md"
 result="$OUT_DIR/result.json"
 marker="$OUT_DIR/merged.any"
 staged_commits="$OUT_DIR/staged-commits.txt"
+staged_diff="$OUT_DIR/staged-diff.txt"
 mkdir -p "$OUT_DIR"
 : > "$staged_commits"
+: > "$staged_diff"
+
+# The tree before any merge, to diff the staged work against.
+base=$(git rev-parse HEAD)
 
 # -t fetches the remote's branch refs (not just HEAD); --prune drops
 # tracking refs whose remote branch is gone, so a deleted branch is not
@@ -106,6 +115,28 @@ if [ ${#merged[@]} -gt 0 ]; then
   git log --oneline --no-merges "origin/main..HEAD" >> "$staged_commits"
 fi
 
+# What the merges changed, as a file list for the reader and a bounded patch
+# for the model. The lock files are the bump's business and secrets/ is
+# ciphertext in this checkout; neither says anything about the staged work.
+staged_paths=(. ':(exclude)flake.lock' ':(exclude)npins/sources.json' ':(exclude)secrets')
+stat=""
+if [ ${#merged[@]} -gt 0 ]; then
+  stat=$(git --no-pager diff --stat=100 "$base" HEAD -- "${staged_paths[@]}")
+  {
+    echo "$stat"
+    echo ""
+    git --no-pager diff "$base" HEAD -- "${staged_paths[@]}" > "$staged_diff.full"
+    if [ "$(wc -c < "$staged_diff.full")" -gt "$STAGED_DIFF_CAP" ]; then
+      head -c "$STAGED_DIFF_CAP" "$staged_diff.full"
+      printf '\n\n[... patch trimmed at %s of %s bytes; the file list above is complete ...]\n' \
+        "$STAGED_DIFF_CAP" "$(wc -c < "$staged_diff.full")"
+    else
+      cat "$staged_diff.full"
+    fi
+  } > "$staged_diff"
+  rm -f "$staged_diff.full"
+fi
+
 # Markdown report, for the pull request reader.
 {
   echo "## Staged branches"
@@ -118,6 +149,14 @@ fi
       echo ""
       for b in "${merged[@]}"; do printf -- '- `%s`' "$b"; echo; done
       echo ""
+      if [ -n "$stat" ]; then
+        echo "What they change, lock files aside:"
+        echo ""
+        echo '```'
+        echo "$stat"
+        echo '```'
+        echo ""
+      fi
     fi
     if [ ${#skipped[@]} -gt 0 ]; then
       echo "### Left out of this pull request"

@@ -6,7 +6,8 @@ before it is applied. You are given:
   upstream since the currently pinned revision plus the issues and pull
   requests touched in that window
 - the staged commits the user is working on in `staging/*` branches,
-  which have already been merged into the tree being built this week
+  which have already been merged into the tree being built this week,
+  and what they change: the list of files and the patch
 - a short list of watched nixpkgs *packages*: what version the pinned
   nixpkgs has, what the tracked branch would bring in, and what people
   have filed upstream about the versions in between
@@ -131,25 +132,28 @@ say so and note anything worth watching next week.
 
 `staged_notes`: a short paragraph (three to five sentences) on how the
 staged work from the user's `staging/*` branches interacts with this
-week's upstream changes, covering:
+week's upstream changes:
 
 - whether any upstream change in the digest would likely break or
   materially change the staged work (a module the staged work touches
-  changed, an option the staged work uses was removed, a service default
-  flipped, etc.) — say so plainly, name the upstream commit or PR that
-  does it, and name the staged commit subject (or file in the staged diff)
-  that would be affected
-- whether the staged work is likely to require `deploy .#<host> --boot`
-  (i.e. it changes `boot.kernel`, `boot.initrd`, or the modules tree)
-  rather than a plain `switch` on the affected hosts, and which hosts.
-  The deterministic `boot-requirement.sh` check in the update job
-  covers the kernel/initrd/modules trees itself, so you only need to
-  call out anything in the staged diff that is not in those trees and
-  still needs a boot for some other reason (e.g. a systemd unit change
-  that the modules' activation path does not handle)
+  changed, an option the staged work sets was removed, a service default
+  flipped) — say so plainly, name the upstream commit or PR that does it,
+  and name the file and the line in the staged patch that it affects
 - if the staged work is unrelated to whatever landed upstream this week,
   say so in one sentence. This is the most common answer and is a good
   one. Do not invent relationships.
+
+Describe the staged work only from the patch you are given. Every claim
+about what it changes must be something a line of the patch shows; name
+the file. If the patch was trimmed, say that you saw only part of it. A
+commit subject is a title, not evidence of what the commit touches.
+
+Do not say whether the staged work needs a reboot, `--boot` or a plain
+`switch`, and do not say that it does or does not touch the kernel, the
+initrd or kernel modules. A script evaluates the kernel, the initrd, the
+modules tree and the out-of-tree driver versions of every host before and
+after, and the pull request prints that result; a sentence from you on
+the same question can only contradict it.
 
 `staged_notes` is advisory; it goes into the pull request body verbatim, so
 write it for a human who has not read the staged branch yet. If no staged

@@ -37,6 +37,17 @@ Do NOT:
   change, say so once.
 - invent anything that is not in the digest. If an input's window is
   empty, do not mention it.
+- report an open pull request or an open issue as a change. Open means it
+  has not landed. It may appear in the final `> Watch:` line and nowhere
+  else.
+- write a `nixpkgs` bullet from pull request titles. The digest cannot
+  list what a week of nixpkgs changes, and the pull request prints the
+  exact version change of every package these machines install in its own
+  table. Mention nixpkgs only for a merged change that removes or renames
+  an option.
+- tell the reader to edit their configuration. You are given the machines,
+  not the configuration, so you cannot know whether an option or a package
+  name is used here. Say what changed upstream and stop.
 
 If nothing in the digest is worth a bullet for this setup, say exactly
 one sentence: "Nothing in this week's upstream changes affects this

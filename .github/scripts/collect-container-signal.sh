@@ -47,7 +47,11 @@ OUT_DIR="${OUT_DIR:-upstream-signal}"
 MIN_AGE_DAYS="${CONTAINER_MIN_AGE_DAYS:-3}"
 RELEASE_FETCH="${CONTAINER_RELEASE_FETCH:-100}"
 RELEASE_SHOW="${CONTAINER_RELEASE_SHOW:-15}"
-RELEASE_BODY_CAP="${CONTAINER_RELEASE_BODY_CAP:-5000}"
+RELEASE_BODY_CAP="${CONTAINER_RELEASE_BODY_CAP:-16000}"
+# The headings a project uses for what the reader has to do or will lose.
+# A section under one is quoted whole, whatever the cap above cut.
+REQUIRED_RE="${CONTAINER_REQUIRED_RE:-action required|breaking|deprecat|upgrade (notes?|guide|instructions|steps)|migration (notes?|guide|steps)|before (you )?upgrad}"
+REQUIRED_CAP="${CONTAINER_REQUIRED_CAP:-4000}"
 ISSUE_SHOW="${CONTAINER_ISSUE_SHOW:-15}"
 LOUD_SHOW="${CONTAINER_LOUD_SHOW:-10}"
 FALLBACK_DAYS="${CONTAINER_FALLBACK_DAYS:-21}"
@@ -96,7 +100,8 @@ inventory() {
 #   service=<name>         and service in the followed project's repository
 #   pattern=<regex>        the tags a bump may take, instead of the derived one
 #   repo=github:owner/repo the project to read, instead of the image's label
-#   notes-start=<text>     drop release-note text before this (a preamble)
+#   notes-start=<regex>    drop release-note text before this (a preamble);
+#                          a release without it keeps its body and is flagged
 #   context=<path,...>     extra files to show the model
 #   min-age=<days>         this image's own MIN_AGE_DAYS
 #   skip                   never bump or report this image
@@ -207,21 +212,30 @@ inspect_tag() {
 
 # Which host runs each compose project, so the digest can say "traefik on
 # thkpd-pve1 and ryzn-server" instead of leaving the model and the reader to
-# guess. One evaluation over every host; unknown if it fails. A compose file
-# belongs to the projects named after its directory (`immich/` is `immich`
-# and `immich-ml`).
+# guess. One evaluation over every host; unknown if it fails.
+#
+# A compose file belongs to the projects that pass it to `-f`: the modules
+# install it as /etc/<dir>/<file>, so that suffix in a project's `files` is
+# the match. `immich/compose.yaml` is then the `immich` project and not
+# `immich-ml`, which a host can run on its own. Only a file no project
+# names that way falls back to the projects named after its directory.
 echo "::group::which hosts run which compose projects"
 hosts_json=$(nix eval --json .#nixosConfigurations \
-  --apply 'cs: builtins.mapAttrs (_: c: builtins.attrNames c.config.cyberfighter.features.compose.projects) cs' \
+  --apply 'cs: builtins.mapAttrs (_: c: builtins.mapAttrs (_: p: map builtins.unsafeDiscardStringContext p.files) c.config.cyberfighter.features.compose.projects) cs' \
   2>/dev/null || echo '{}')
 echo "$hosts_json"
 echo "::endgroup::"
-projects_for() {
-  jq -r --arg b "$1" '[.[][] | select(. == $b or startswith($b + "-"))] | unique | join(", ")' <<<"$hosts_json"
-}
-hosts_for() {
-  jq -r --arg b "$1" '
-    to_entries | map(select(.value | any(. == $b or startswith($b + "-")))) | map(.key) | join(", ")' <<<"$hosts_json"
+# Prints "<projects>\t<hosts>" for a compose file, each comma separated.
+owners_for() {
+  jq -r --arg d "$(basename "$(dirname "$1")")" --arg f "$(basename "$1")" '
+    ("/" + $d + "/" + $f) as $suffix
+    | def by_file: any(.[]; endswith($suffix));
+      def by_name: . == $d or startswith($d + "-");
+      [ to_entries[] | .key as $h | .value | to_entries[]
+        | { host: $h, project: .key, file: (.value | by_file), name: (.key | by_name) } ] as $all
+    | ( if any($all[]; .file) then $all | map(select(.file)) else $all | map(select(.name)) end ) as $own
+    | [ ($own | map(.project) | unique | join(", ")), ($own | map(.host) | unique | join(", ")) ] | @tsv
+  ' <<<"$hosts_json"
 }
 
 # A fenced copy of a file for the model: this repo's config for the image,
@@ -262,8 +276,7 @@ while IFS=$'\t' read -r file lineno service ref hint; do
   [ "$image" != "$ref" ] || { image="$ref"; tag="latest"; }
   dir=$(basename "$(dirname "$file")")
   name="$dir/$service"
-  projects=$(projects_for "$dir")
-  hosts=$(hosts_for "$dir")
+  IFS=$'\t' read -r projects hosts <<<"$(owners_for "$file")"
   echo "::group::$name ($ref)"
 
   rec=$(jq -n --arg n "$name" --arg i "$image" --arg f "$file" --argjson l "$lineno" --arg s "$service" \
@@ -484,29 +497,83 @@ while IFS=$'\t' read -r file lineno service ref hint; do
           | select(((.tag_name | key)[0:$k]) <= (($t | key)[0:$k])) ]
     | sort_by(.tag_name | key)' <<<"$releases")
   n_window=$(jq 'length' <<<"$window")
+  # Per release: the notes as the model reads them, what was cut to get
+  # there, and the sections upstream marks as needing the reader, taken
+  # from the whole body before any cap and quoted in the pull request.
+  #
+  # `notes-start` (a regex) drops a preamble repeated on every release. A
+  # release it does not match keeps its whole body and is flagged: a
+  # renamed heading must not read as "no release notes".
+  notes_json=$(jq -c --argjson n "$RELEASE_SHOW" --argjson cap "$RELEASE_BODY_CAP" \
+    --argjson rcap "$REQUIRED_CAP" --arg start "$notes_start" --arg re "$REQUIRED_RE" '
+    def strip: gsub("^\\s+|\\s+$"; "");
+    def required:
+      (.body // "") | gsub("\r"; "") | split("\n")
+      | reduce .[] as $l ({ fence: false, cur: null, quote: null, out: [] };
+          if ($l | test("^\\s*(```|~~~)")) then
+            .fence = (.fence | not) | (if .cur then .cur.lines += [$l] else . end)
+          elif .fence then (if .cur then .cur.lines += [$l] else . end)
+          elif ($l | test("^#{1,6}\\s")) then
+            ($l | capture("^(?<h>#+)").h | length) as $lvl
+            | (if .quote then .out += [.quote] | .quote = null else . end)
+            | (if .cur and $lvl <= .cur.level then .out += [.cur] | .cur = null else . end)
+            | (if .cur then .cur.lines += [$l]
+               elif ($l | test($re; "i")) then
+                 .cur = { level: $lvl, heading: ($l | sub("^#+\\s*"; "") | strip), lines: [] }
+               else . end)
+          elif .cur then .cur.lines += [$l]
+          elif .quote then
+            (if ($l | test("^\\s*>")) then .quote.lines += [$l | sub("^\\s*>\\s?"; "")]
+             else .out += [.quote] | .quote = null end)
+          elif ($l | test("^\\s*>\\s*\\[!(WARNING|CAUTION|IMPORTANT)\\]"; "i")) then
+            .quote = { heading: ($l | capture("\\[!(?<k>[A-Za-z]+)\\]").k | ascii_upcase), lines: [] }
+          else . end)
+      | .out + [.cur, .quote | select(. != null)]
+      | map({ heading, text: (.lines | join("\n") | strip) } | select(.text != "")
+            | if (.text | length) > $rcap
+              then .text = .text[0:$rcap] + "\n\n[... trimmed at \($rcap) of \(.text | length) characters ...]"
+              else . end);
+    length as $total
+    | to_entries | map(
+        .key as $i | .value
+        | (.body // "" | gsub("\r"; "")) as $raw
+        | ($start != "" and ($raw | test($start))) as $found
+        | ( (if $found then $raw[($raw | match($start).offset):] else $raw end)
+            | split("\n") | map(if startswith("#") then "###" + . else . end) | join("\n") | strip ) as $text
+        | { tag: .tag_name, date: .published_at[0:10],
+            name: (if .name and .name != .tag_name then .name else "" end),
+            shown: ($i >= $total - $n),
+            empty: ($text == ""),
+            marker_missing: ($start != "" and ($found | not) and $text != ""),
+            chars: ($text | length), trimmed: (($text | length) > $cap),
+            text: (if ($text | length) > $cap
+                   then $text[0:$cap] + "\n\n[... trimmed at \($cap) of \($text | length) characters ...]"
+                   else $text end),
+            required: required })' <<<"$window")
   if [ "$n_window" -gt 0 ]; then
     {
+      echo "### what upstream marks as needing action (verbatim, from the untrimmed notes)"
+      echo ""
+      if [ "$(jq '[.[].required[]] | length' <<<"$notes_json")" -gt 0 ]; then
+        jq -r '.[] | .tag as $t | .required[]
+          | "#### \($t): \(.heading)\n\n"
+            + (.text | split("\n") | map(if startswith("#") then "####" + . else . end) | join("\n")) + "\n"' <<<"$notes_json"
+      else
+        echo "_No release in this window has a heading or an alert block that marks something as action required, breaking, deprecated or an upgrade step. That is not the same as nothing breaking: read the notes below._"
+        echo ""
+      fi
       echo "### releases stepped through ($n_window, oldest first)"
       echo ""
       if [ "$n_window" -gt "$RELEASE_SHOW" ]; then
-        echo "_Notes shown for the newest $RELEASE_SHOW; the rest by name:_ $(jq -r --argjson n "$RELEASE_SHOW" '.[0:(length - $n)] | map(.tag_name) | join(", ")' <<<"$window")"
+        echo "_Notes shown for the newest $RELEASE_SHOW; the rest by name:_ $(jq -r 'map(select(.shown | not) | .tag) | join(", ")' <<<"$notes_json")"
         echo ""
       fi
-      # Body from `notes-start` on when the hint names one (a signing
-      # preamble repeated on every release is not notes), headings pushed
-      # below this digest's own, then the cap.
-      jq -r --argjson n "$RELEASE_SHOW" --argjson cap "$RELEASE_BODY_CAP" --arg start "$notes_start" '
-        def body:
-          (.body // "")
-          | (if $start == "" then . elif test($start) then .[match($start).offset:] else "" end)
-          | split("\n") | map(if startswith("#") then "###" + . else . end) | join("\n")
-          | gsub("^\\s+|\\s+$"; "");
-        .[-($n):][] |
-        "#### \(.tag_name) (\(.published_at[0:10]))\(if .name and .name != .tag_name then " -- " + .name else "" end)\n\n"
-        + (body | if . == "" then "_No release notes._"
-                  elif length > $cap then .[0:$cap] + "\n\n[... trimmed at \($cap) characters ...]"
-                  else . end)
-        + "\n"' <<<"$window"
+      jq -r '.[] | select(.shown)
+        | "#### \(.tag) (\(.date))\(if .name != "" then " -- " + .name else "" end)\n\n"
+        + (if .empty then "_No release notes._"
+           elif .marker_missing then "_The `notes-start` marker is not in this release; its whole body follows._\n\n" + .text
+           else .text end)
+        + "\n"' <<<"$notes_json"
       echo ""
     } >> "$digest"
   elif [ -n "$slug" ]; then
@@ -576,10 +643,20 @@ while IFS=$'\t' read -r file lineno service ref hint; do
   rec=$(jq --arg t "$target" --arg pub "$target_published" --arg age "$target_age" \
     --arg pl "$platforms" --argjson ok "$ok" --argjson y "$young" \
     --argjson rel "$n_window" --argjson iss "$n_issues" --argjson loud "$n_loud" \
+    --argjson notes "${notes_json:-[]}" --arg slug "$slug" \
     '.state = "changed" | .target = $t | .platforms = $pl | .platform_ok = $ok | .young = $y
      | .release_date = (if $pub == "" then null else $pub[0:10] end)
      | .age_days = (if $age == "" then null else ($age | tonumber) end)
-     | .releases = $rel | .issues = $iss | .busy_threads = $loud' <<<"$rec")
+     | .releases = $rel | .issues = $iss | .busy_threads = $loud
+     # What the pull request quotes, and what the evidence could not show.
+     | .required = [ $notes[] | .tag as $tag | .required[] | { tag: $tag, heading, text } ]
+     | .gaps = {
+         no_source: ($slug == ""),
+         no_releases: ($slug != "" and $rel == 0),
+         empty: [ $notes[] | select(.shown and .empty) | .tag ],
+         trimmed: [ $notes[] | select(.shown and .trimmed) | { tag, chars } ],
+         marker_missing: [ $notes[] | select(.marker_missing) | .tag ],
+         unshown: [ $notes[] | select(.shown | not) | .tag ] }' <<<"$rec")
   results=$(jq --argjson r "$rec" '. + [$r]' <<<"$results")
   echo "::endgroup::"
 done < <(inventory)
@@ -597,6 +674,7 @@ printf '%s\n' "$results" > "$out"
     + (if .state == "changed" then "**-> \(.target)**"
          + (if .release_date then " (\(.release_date))" else "" end)
          + (if .platform_ok == false then " ⚠ no linux/amd64" else "" end)
+         + (if (.required // [] | length) > 0 then " ⚠ upstream marks \(.required | length) section(s)" else "" end)
        elif .state == "unchanged" then "_unchanged_"
          + (if (.young // [] | length) > 0 then " (\(.young[0].tag) is \(.young[0].age)d old)" else "" end)
        elif .state == "floating" then "_floating alias_"

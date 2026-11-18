@@ -20,6 +20,16 @@ request is merged and deployed. The merge deploys automatically. So your
 judgement and the reader's are the gate, and the pull request body is
 where the reader finds out what they are about to deploy.
 
+For an image that moves, the digest opens its notes with the sections
+upstream itself marks as needing the reader -- action required, breaking,
+deprecated, upgrade steps -- taken whole from the untrimmed release notes.
+The reader is shown those sections verbatim, so do not restate them. Your
+part is the one a quote cannot do: for each item, say whether this
+repository's files set the thing it names, citing the file and the key,
+or that nothing here uses it. A release whose notes read as trimmed or
+missing is flagged to the reader separately; say what you could not see
+and do not guess at it.
+
 Judge every image that moves, and only those. Return three things.
 
 ## `holds`

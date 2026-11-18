@@ -37,17 +37,58 @@ else
   fi
 fi
 
-# One block per moving container the model wrote notes for, in the
-# collector's order. Only the ones that were bumped when the applied list
-# is given: a held image's notes are the hold's reason, printed above.
+# One block per moving container, in the collector's order. Only the ones
+# that were bumped when the applied list is given: a held image's notes are
+# the hold's reason, printed above.
+#
+# Each block opens with what needs no judgement: the sections upstream
+# itself marks as needing the reader, quoted whole from the release notes,
+# and what the evidence behind the model's notes could not show. The
+# model's three notes follow, labelled as its reading.
 while IFS=$'\t' read -r name from to; do
   if [ -n "$applied" ] && [ -s "$applied" ] \
      && ! jq -e --arg n "$name" 'any(.[]; .name == $n and .outcome == "bumped")' "$applied" >/dev/null; then
     continue
   fi
-  note=$(jq -c --arg n "$name" '[.containers[] | select(.name == $n)] | first // empty' "$verdict")
-  [ -n "$note" ] || continue
   echo "### \`$name\`: $from → $to"
+  echo ""
+
+  rec=$(jq -c --arg n "$name" '[.[] | select(.name == $n)] | first' "$containers")
+  if [ "$(jq '.required // [] | length' <<<"$rec")" -gt 0 ]; then
+    echo "**Marked by upstream as needing action** — quoted from the release notes, not summarised:"
+    echo ""
+    # Headings inside a quoted section would outrank this block's own.
+    jq -r '.required[] | "_\(.tag) · \(.heading)_\n\n"
+      + (.text | split("\n") | map(if startswith("#") then "**" + sub("^#+\\s*"; "") + "**" else . end) | join("\n"))
+      + "\n"' <<<"$rec"
+  fi
+  gaps=$(jq -r '
+    (.gaps // {}) as $g
+    | [ (if $g.no_source then "the image names no GitHub repository, so no release notes or issues were read" else empty end),
+        (if $g.no_releases then "no GitHub release maps to the tags in this window" else empty end),
+        (if ($g.empty // [] | length) > 0 then "no release notes at all for " + ($g.empty | join(", ")) else empty end),
+        (if ($g.trimmed // [] | length) > 0
+         then "the model read only the first part of " + ($g.trimmed | map("\(.tag) (\(.chars) characters)") | join(", "))
+         else empty end),
+        (if ($g.unshown // [] | length) > 0 then "the model was given no notes for the oldest releases: " + ($g.unshown | join(", ")) else empty end),
+        (if ($g.marker_missing // [] | length) > 0
+         then "the `notes-start` hint matched nothing in " + ($g.marker_missing | join(", ")) + ", so the preamble it should drop is still there; fix the hint in `" + .file + "`"
+         else empty end) ]
+    | map("- " + .) | join("\n")' <<<"$rec")
+  if [ -n "$gaps" ]; then
+    echo "**What the evidence does not cover**"
+    echo ""
+    echo "$gaps"
+    echo ""
+  fi
+
+  note=$(jq -c --arg n "$name" '[.containers[] | select(.name == $n)] | first // empty' "$verdict")
+  if [ -z "$note" ]; then
+    echo "_The model wrote no notes for this image._"
+    echo ""
+    continue
+  fi
+  echo "_The notes below are the local model's reading of those release notes and of this repository's files for the image._"
   echo ""
   for field in watch_for before_deploying highlights; do
     text=$(jq -r --arg f "$field" '.[$f] // "" | gsub("^\\s+|\\s+$"; "")' <<<"$note")

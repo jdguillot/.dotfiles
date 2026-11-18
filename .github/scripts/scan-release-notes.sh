@@ -33,11 +33,23 @@ curl -fsS --max-time 10 "$OLLAMA_URL/api/tags" >/dev/null 2>&1 \
 
 system_prompt="$(cat .github/opencode/release-notes-prompt.md)"
 
+# Only the sources the bump can move. A source with no new commits lands
+# nothing, yet its section lists every issue and pull request touched since
+# it was pinned, which is not news. Dropped whole, by the line the
+# collector writes; the triage call keeps the full digest.
+landed="$OUT_DIR/digest-landed.md"
+awk '
+  function flush() { if (buf != "" && !drop) printf "%s", buf; buf = ""; drop = 0 }
+  /^## / { flush() }
+  { buf = buf $0 "\n" }
+  /^- new commits upstream: 0$/ { drop = 1 }
+  END { flush() }' "$digest" > "$landed"
+
 request=$(jq -n \
   --arg model "$NOTES_MODEL" \
   --arg system "$system_prompt" \
   --arg hosts "$(cat hosts/default.nix)" \
-  --rawfile digest "$digest" \
+  --rawfile digest "$landed" \
   --argjson num_ctx "$NUM_CTX" '{
     model: $model,
     stream: false,
