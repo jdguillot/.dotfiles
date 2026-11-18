@@ -284,6 +284,8 @@ jobs:
           rc=0
           .github/scripts/opencode-smoke.sh > smoke.log 2>&1 || rc=$?
           cat smoke.log
+          # For the pull request body, which says when this was not a clean pass.
+          echo "$rc" > smoke-status.txt
           case "$rc" in
             0)
               echo "ok=true" >> "$GITHUB_OUTPUT"
@@ -337,7 +339,29 @@ jobs:
           /workarounds.json
           /changed-inputs.txt
           /containers-applied.json
+          /reboot.json
+          /package-summary.json
+          /smoke-status.txt
+          /unreachable-pins.txt
           EOF
+
+      # Both records are taken from the tree as checked out -- what the
+      # machines run -- before the staging merges as well as before the bump.
+      # The pull request carries both, so a kernel or driver a staged branch
+      # changes has to land in the "after", not in the baseline.
+      - name: Record boot inputs before the staging merges and the bump
+        # Pure evaluation of kernel/initrd/modules per host, so the step
+        # after the bump can say which hosts a plain `switch` cannot fully
+        # apply.
+        run: .github/scripts/boot-requirement.sh record boot-pre.json
+
+      # Same before/after shape, for the packages this flake installs. The
+      # upstream digest can only show 40 of nixpkgs' several thousand weekly
+      # commits, nearly all for things these machines do not install; this is
+      # the exact set that does. Evaluation only; 2m15s over 14 targets.
+      - name: Record package versions before the staging merges and the bump
+        continue-on-error: true
+        run: .github/scripts/package-versions.sh record packages-pre.json
 
       # Re-run the merge here, not on the `scan` job's tree: the scan's
       # working tree died with the job. Same starting commit, same branches,
@@ -347,20 +371,6 @@ jobs:
       # saw.
       - name: Merge `staging/*` branches (reproduce the scan's tree)
         run: .github/scripts/merge-staging.sh
-
-      - name: Record boot inputs before the bump
-        # Pure evaluation of kernel/initrd/modules per host, so the step
-        # after the bump can say which hosts a plain `switch` cannot fully
-        # apply. Has to run before apply-updates.sh moves the lock.
-        run: .github/scripts/boot-requirement.sh record boot-pre.json
-
-      # Same before/after shape, for the packages this flake installs. The
-      # upstream digest can only show 40 of nixpkgs' several thousand weekly
-      # commits, nearly all for things these machines do not install; this is
-      # the exact set that does. Evaluation only; 2m15s over 14 targets.
-      - name: Record package versions before the bump
-        continue-on-error: true
-        run: .github/scripts/package-versions.sh record packages-pre.json
 
       # The lock files first, then the image tags: the latter are edits to
       # compose files and the immich module, minus the container verdict's
@@ -573,12 +583,13 @@ jobs:
         if: steps.verify.outputs.green == 'true' || steps.reverify.outputs.green == 'true'
         run: |
           .github/scripts/boot-requirement.sh record boot-post.json
-          .github/scripts/boot-requirement.sh compare boot-pre.json boot-post.json > reboot-notes.md
+          .github/scripts/boot-requirement.sh compare boot-pre.json boot-post.json reboot.json > reboot-notes.md
           cat reboot-notes.md >> "$GITHUB_STEP_SUMMARY"
 
-      # After the fix step, so the agent's own changes are in the diff: this
-      # reports what the pull request does to these machines, not what the
-      # lock move alone would have done. Only on a green week -- a bump that
+      # After the fix step, so the agent's own changes are in the diff, and
+      # against a record taken before the staging merges: this reports what
+      # the pull request does to these machines, not what the lock move
+      # alone would have done. Only on a green week -- a bump that
       # opens no pull request has nobody to read this.
       - name: Diff the package versions this bump changes
         continue-on-error: true
@@ -593,7 +604,7 @@ jobs:
           fi
           .github/scripts/package-versions.sh record packages-post.json
           .github/scripts/package-versions.sh compare \
-            packages-pre.json packages-post.json > package-notes.md
+            packages-pre.json packages-post.json package-summary.json > package-notes.md
           {
             echo "## Package versions"
             echo ""
@@ -639,6 +650,15 @@ jobs:
           path: |
             staging-report/staging.md
             staging-report/staged-commits.txt
+            staging-report/result.json
+            boot-pre.json
+            boot-post.json
+            reboot.json
+            packages-pre.json
+            packages-post.json
+            package-summary.json
+            smoke-status.txt
+            unreachable-pins.txt
             build-failure.log
             fix-notes.md
             late-holds.json
@@ -693,141 +713,22 @@ jobs:
           HOSTS: ${{ needs.update.outputs.hosts }}
           CACHED: ${{ needs.cache.result }}
         run: |
-          n=$(tr -d '[]" ' <<<"$HOSTS" | tr ',' '\n' | grep -c .)
+          # Assembled by a script so the body can be rebuilt from a
+          # downloaded run. Every upstream reference in it -- the triage
+          # evidence, the release notes, the agent's notes, the held table --
+          # is then wrapped so GitHub does not cross-reference it onto the
+          # other project's tracker. This repo is public; its bump notes are
+          # nobody else's notifications. One filter over the whole body
+          # rather than each writer remembering.
           body=pr-body.md
-          {
-            echo "Weekly update: the week's upstream bump plus any \`staging/*\` work that merged cleanly."
-            echo ""
-            echo "\`nix flake check\` passed and all $n hosts built on \`ryzn-server\`."
-            if [ "$CACHED" = "success" ]; then
-              echo "The closure is already in \`attic:main\` and \`cachix:jdguillot\`, so switching pulls rather than builds."
-            else
-              echo "> The cache push did not succeed ($CACHED) &mdash; switching will build locally."
-            fi
-            echo ""
-
-            # Nested, not flat: upload-artifact roots a multi-path artifact at
-            # the paths' common ancestor, so `staging-report/` survives into
-            # the download.
-            if [ -s update-report/staging-report/staging.md ]; then
-              cat update-report/staging-report/staging.md
-              echo ""
-              if [ -s update-report/staging-report/staged-commits.txt ]; then
-                echo "### Commits landed"
-                echo ""
-                echo '```'
-                cat update-report/staging-report/staged-commits.txt
-                echo '```'
-                echo ""
-              fi
-            fi
-
-            echo "## Pre-update triage"
-            echo ""
-            jq -r .summary upstream-signal/verdict.json
-            echo ""
-            staged_notes=$(jq -r '.staged_notes // ""' upstream-signal/verdict.json)
-            if [ -n "$staged_notes" ] && [ "$staged_notes" != "N/A: no staged work merged." ]; then
-              echo "### The staged work"
-              echo ""
-              echo "$staged_notes"
-              echo ""
-            fi
-            if [ "$(jq '.holds | length' upstream-signal/verdict.json)" -gt 0 ]; then
-              echo "### Held at their current revision"
-              echo ""
-              echo "| Input | Reason | Evidence |"
-              echo "|---|---|---|"
-              jq -r '.holds[] | "| `\(.name)` | \(.reason) | \(.evidence) |"' upstream-signal/verdict.json
-              echo ""
-            fi
-
-            # The scan's verdict artifact is the one the scan uploaded, so
-            # these do not double up with the table above: a hold the fix
-            # agent added exists only in the update job's copy.
-            if [ -s update-report/late-holds.json ] && [ "$(jq 'length' update-report/late-holds.json)" -gt 0 ]; then
-              echo "### Held back after the build failed"
-              echo ""
-              echo "The bump broke the build and the breakage was in the input's own tree, not in this repository. These keep the revision \`main\` has; the rest of the bump was replayed on top, and the next run picks up the upstream fix."
-              echo ""
-              echo "| Input | Why |"
-              echo "|---|---|"
-              jq -r '.[] | "| `\(.name)` | \(.reason) |"' update-report/late-holds.json
-              echo ""
-            fi
-
-            if [ -s update-report/hold-report.md ]; then
-              cat update-report/hold-report.md
-              echo ""
-            fi
-
-            if [ -s upstream-signal/release-notes.md ]; then
-              echo "## What landed upstream"
-              echo ""
-              cat upstream-signal/release-notes.md
-              echo ""
-            fi
-
-            if [ -s upstream-signal/packages.md ]; then
-              cat upstream-signal/packages.md
-              echo ""
-            fi
-
-            # What moved, what was held, and per bumped image what to watch
-            # for, what to do on the host first, and what is new. Nothing
-            # builds against an image tag, so this is the review material.
-            if [ -s upstream-signal/containers.md ]; then
-              echo "## Containers"
-              echo ""
-              cat upstream-signal/containers.md
-              .github/scripts/container-notes.sh \
-                upstream-signal/containers.json \
-                upstream-signal/containers-verdict.json \
-                update-report/containers-applied.json
-              echo ""
-            fi
-
-            if [ -s update-report/reboot-notes.md ]; then
-              echo "## Applying this bump"
-              echo ""
-              cat update-report/reboot-notes.md
-              echo ""
-            fi
-
-            if [ -s update-report/package-notes.md ]; then
-              echo "## Package versions"
-              echo ""
-              echo "What this bump changes about the programs these machines"
-              echo "actually install."
-              echo ""
-              cat update-report/package-notes.md
-              echo ""
-            fi
-
-            # Carries upstream URLs by design; the sanitizer below wraps
-            # them like everything else in this body.
-            if [ -s update-report/workarounds-report.md ]; then
-              cat update-report/workarounds-report.md
-              echo ""
-            fi
-
-            if [ -s update-report/fix-notes.md ]; then
-              echo "## What the fix agent did"
-              echo ""
-              cat update-report/fix-notes.md
-              echo ""
-              echo "> Written by the agent that made the change. Read the diff outside the lock files carefully."
-              echo ""
-            fi
-
-            echo "<sub>Opened by \`.github/workflows/weekly-update.yml\`, run [\`${{ github.run_id }}\`](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).</sub>"
-          # Every upstream reference in this body -- the triage evidence, the
-          # release notes, the agent's notes, the held table -- is wrapped so
-          # GitHub does not cross-reference it onto the other project's
-          # tracker. This repo is public; its bump notes are nobody else's
-          # notifications. One filter over the whole body rather than each
-          # writer remembering.
-          } | .github/scripts/sanitize-refs.sh > "$body"
+          .github/scripts/pr-body.sh upstream-signal update-report \
+            | .github/scripts/sanitize-refs.sh > "$body" || true
+          # A body that could not be built must not cost the week its pull
+          # request: the branch is pushed and green either way.
+          if [ ! -s "$body" ]; then
+            echo "The body of this pull request could not be assembled. The branch built; the run's summary and artifacts have the detail." > "$body"
+            echo "::warning::the pull request body could not be assembled"
+          fi
 
           # Edit only an open pull request: `gh pr edit <branch>` also matches
           # last week's merged one and would rewrite its history.
