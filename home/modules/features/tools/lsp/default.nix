@@ -8,11 +8,9 @@ let
   cfg = config.cyberfighter.features.tools.lsp;
 
   # One server table feeds both Claude Code and opencode. Commands are
-  # bare names resolved from PATH: config-language servers (including
-  # rust-analyzer) ship in devPackages (shared with LazyVim); the
-  # typescript server comes from each project's dev shell to match its
-  # pinned toolchain. A missing binary just means no diagnostics for
-  # that language.
+  # bare names resolved from PATH: the config-language servers ship in
+  # devPackages (shared with LazyVim); a missing binary just means no
+  # diagnostics for that language.
   servers = {
     nix = {
       command = "nixd";

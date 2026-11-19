@@ -76,6 +76,7 @@ let
     lua-language-server
     bash-language-server
     rust-analyzer
+    typescript-language-server
   ];
 
   desktopPackages = with pkgs; [
