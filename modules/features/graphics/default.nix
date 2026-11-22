@@ -90,11 +90,11 @@ in
 
         environment.sessionVariables = {
           CUDA_PATH = "${pkgs.cudatoolkit}";
-          EXTRA_LDFLAGS = "-L/lib -L${pkgs.linuxPackages.nvidia_x11}/lib";
+          EXTRA_LDFLAGS = "-L/lib -L${config.hardware.nvidia.package}/lib";
           EXTRA_CCFLAGS = "-I/usr/include";
           LD_LIBRARY_PATH = [
             "/usr/lib/wsl/lib"
-            "${pkgs.linuxPackages.nvidia_x11}/lib"
+            "${config.hardware.nvidia.package}/lib"
             "${pkgs.ncurses5}/lib"
           ];
           MESA_D3D12_DEFAULT_ADAPTER_NAME = "NVIDIA";
