@@ -576,10 +576,10 @@
     "60"
   ];
 
-  # ---------------------------------------------------------- virtual 4K
-  # A 4K output for streaming with no monitor attached: the 5090's unused
-  # HDMI-A-1 is forced on with a generated EDID. nvidia-drm ignores the
-  # runtime debugfs force, so this only takes effect at boot.
+  # ------------------------------------------------------- streaming output
+  # A 4K output for streaming with no monitor attached: an HDMI dummy plug
+  # in the 5090's HDMI-A-1. It replaced a kernel-forced EDID on that
+  # connector, the suspected cause of Star Citizen's Vulkan Device Lost.
   #
   # Connector names are numbered across both GPUs in driver-registration
   # order, which races in stage 2. The softdep makes the 5090 register first
@@ -591,18 +591,6 @@
     softdep amdgpu pre: nvidia-drm
     options cfg80211 ieee80211_regdom=US
   '';
-  hardware.display = {
-    edid.packages = [
-      (pkgs.runCommand "virtual-4k-edid" { nativeBuildInputs = [ pkgs.python3 ]; } ''
-        mkdir -p $out/lib/firmware/edid
-        python3 ${./virtual-display/make-edid.py} $out/lib/firmware/edid/virtual-4k.bin
-      '')
-    ];
-    outputs."HDMI-A-1" = {
-      edid = "virtual-4k.bin";
-      mode = "e";
-    };
-  };
 
   environment.systemPackages = [
     (pkgs.writeShellApplication {
@@ -629,7 +617,7 @@
   # Boot into stream mode; only `stream-display off` hands the desk back.
   # Retried because KWin's output management can lag the unit's start.
   systemd.user.services.stream-display = {
-    description = "Switch the Plasma session to the virtual 4K output";
+    description = "Switch the Plasma session to the streaming output";
     wantedBy = [ "plasma-workspace.target" ];
     after = [ "plasma-kwin_wayland.service" ];
     unitConfig.ConditionUser = config.cyberfighter.system.username;
