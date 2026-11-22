@@ -41,6 +41,13 @@ in
         description = "Use open source Nvidia kernel module";
       };
 
+      driverBranch = lib.mkOption {
+        type = lib.types.str;
+        default = "stable";
+        example = "latest";
+        description = "Attribute of `boot.kernelPackages.nvidiaPackages` to use as the driver.";
+      };
+
       containerToolkit = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -99,7 +106,7 @@ in
           powerManagement.finegrained = false;
           open = cfg.nvidia.openDriver;
           nvidiaSettings = true;
-          package = config.boot.kernelPackages.nvidiaPackages.stable;
+          package = config.boot.kernelPackages.nvidiaPackages.${cfg.nvidia.driverBranch};
         };
       })
 

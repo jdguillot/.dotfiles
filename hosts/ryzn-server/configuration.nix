@@ -63,6 +63,9 @@
           # them a resume kills UVM and Ollama silently degrades to CPU.
           # Sleep is also refused outright below.
           powerManagement = true;
+          # Star Citizen's Vulkan renderer hits Device Lost within a minute
+          # of the main menu on 595 (stable).
+          driverBranch = "latest";
         };
       };
 
