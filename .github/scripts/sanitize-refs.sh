@@ -36,8 +36,14 @@ case "${1:-}" in
   *) echo "usage: sanitize-refs.sh [--commit] < text" >&2; exit 2 ;;
 esac
 
-exec jq -R -s -j --arg mode "$mode" '
-  def wrap:
+# This repository's own URLs are left as they are: a link to this repo's
+# Actions run or a file here references nobody else, and wrapping one inside
+# a markdown link target breaks the link.
+exec jq -R -s -j --arg mode "$mode" --arg self "${GITHUB_REPOSITORY:-}" '
+  # A lookahead that refuses this repository, empty when it is not known.
+  (if $self == "" then ""
+   else "(?!" + ($self | gsub("(?<c>[^A-Za-z0-9_/-])"; "\\\(.c)")) + "(/|$))" end) as $own
+  | def wrap:
     # A link to a specific issue or PR carries the whole reference; keep it
     # readable as owner/repo#N rather than a URL nobody reads anyway.
     gsub("https?://github\\.com/(?<o>[\\w.-]+)/(?<r>[\\w.-]+)/(?<k>issues|pull)/(?<n>[0-9]+)";
@@ -45,7 +51,7 @@ exec jq -R -s -j --arg mode "$mode" '
     # Any other github.com URL: a commit, a compare, a file. These raise no
     # issue event, but a commit URL does show up on the commit, so wrap them
     # too.
-    | gsub("(?<!`)(?<u>https?://github\\.com/[^\\s<>()\\[\\]`]+)"; "`\(.u)`")
+    | gsub("(?<!`)(?<u>https?://github\\.com/" + $own + "[^\\s<>()\\[\\]`]+)"; "`\(.u)`")
     # owner/repo#123 written out longhand.
     | gsub("(?<![`\\w/.-])(?<x>[\\w.-]+/[\\w.-]+#[0-9]+)(?![`\\w])"; "`\(.x)`")
     # Bare #123, which would reference this repository. The &-guard keeps

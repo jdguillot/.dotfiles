@@ -9,9 +9,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
-      "url": "https://github.com/anthropics/skills/archive/2c5958ecac7cee2b583967a2c4981d0f4a75c579.tar.gz",
-      "hash": "sha256-dRCZrNarCCJFuvATgfW6qmwwVS5HGFXNVGOhbVZd7LA="
+      "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+      "url": "https://github.com/anthropics/skills/archive/e4bb5d960d87126ff3b3a8af1a104b7db67560ba.tar.gz",
+      "hash": "sha256-Gr9LatjawHHK9uKpoclWoiDHZ0NTpP3/4Pmeatl8p/Q="
     },
     "astrotuxlauncher": {
       "type": "GitRelease",
@@ -38,9 +38,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "077b6ea6d747b3f392314bc47e7bb5285f1159b1",
-      "url": "https://github.com/midudev/autoskills/archive/077b6ea6d747b3f392314bc47e7bb5285f1159b1.tar.gz",
-      "hash": "sha256-5C4Y2tZIfYg+l4gaMbmRJS2whEOvdGR+VyF/ehlWDk8="
+      "revision": "46f50bab19243618547c46ae085ba30906332e0b",
+      "url": "https://github.com/midudev/autoskills/archive/46f50bab19243618547c46ae085ba30906332e0b.tar.gz",
+      "hash": "sha256-9gSoAXcSSoO1yZEHH3q/IKXYtDgRioNN3OISUR6AOPI="
     },
     "claude-code-extensions": {
       "type": "Git",
@@ -103,9 +103,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "97cfc9dfac4bbe5faad477d1542678ad03bb9aaa",
-      "url": "https://github.com/xxyangyoulin/dms-plugin-hass/archive/97cfc9dfac4bbe5faad477d1542678ad03bb9aaa.tar.gz",
-      "hash": "sha256-Lju4Jzq13uO+cpqGxBKLFVLf/hZi7TkFm1N9zz18DLY="
+      "revision": "fe291a995dc4c6933d1bde0ba6f6ec862959bd69",
+      "url": "https://github.com/xxyangyoulin/dms-plugin-hass/archive/fe291a995dc4c6933d1bde0ba6f6ec862959bd69.tar.gz",
+      "hash": "sha256-O8NgKtW5fCVf6XacwteimZ9mpJjImg3nZr77UM5/EZM="
     },
     "dms-plugin-nix-monitor": {
       "type": "Git",
@@ -194,9 +194,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "e7bcf524095c0a7d78df92e720eb1bb9944fa4de",
-      "url": "https://github.com/hyperb1iss/hyperskills/archive/e7bcf524095c0a7d78df92e720eb1bb9944fa4de.tar.gz",
-      "hash": "sha256-PpsJ68+ESik2p163FG514bYLI6q9yPRYT47M3L4SKnQ="
+      "revision": "d9d7f46806ea7c0a8b6c45b92a3904542700dae3",
+      "url": "https://github.com/hyperb1iss/hyperskills/archive/d9d7f46806ea7c0a8b6c45b92a3904542700dae3.tar.gz",
+      "hash": "sha256-aunUqfisoDiYYhLnNt/lhlmAVYkL+o6eUK30kxg5Lcc="
     },
     "mattpocock-skills": {
       "type": "Git",
@@ -207,9 +207,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
-      "url": "https://github.com/mattpocock/skills/archive/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d.tar.gz",
-      "hash": "sha256-3vhd77xfZjKUYJsIwPFevIZPUAzUgZXr0RYj5NQrBwk="
+      "revision": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "url": "https://github.com/mattpocock/skills/archive/5863806dd4e15c63174bee4e7515a4256792ecfa.tar.gz",
+      "hash": "sha256-AYSRCvBL8TDDdW3rgKu2T7gl4YYDoDId0jYbabEFyfs="
     },
     "nix-skills": {
       "type": "Git",
@@ -220,9 +220,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "78aae9a0465e51e2913749b68297f23235a86aeb",
-      "url": "https://github.com/nhooey/nix-skills/archive/78aae9a0465e51e2913749b68297f23235a86aeb.tar.gz",
-      "hash": "sha256-zQkGD8FKRkvSnofKBo/5E4FCwauDT6u9thnFnnD/VnA="
+      "revision": "f24ca602137baaef9ce6b8e776471e06bc5f849b",
+      "url": "https://github.com/nhooey/nix-skills/archive/f24ca602137baaef9ce6b8e776471e06bc5f849b.tar.gz",
+      "hash": "sha256-uGiDlejV35tQpvTBpduI13Cw6fDL8Zm2WgMKsj5aupE="
     },
     "nixos-management-skill": {
       "type": "Git",
@@ -246,9 +246,9 @@
       },
       "branch": "dev",
       "submodules": false,
-      "revision": "0276e15f6e2e7a4a692d130243f2a02c3f57ffe0",
-      "url": "https://github.com/odysseus-dev/odysseus/archive/0276e15f6e2e7a4a692d130243f2a02c3f57ffe0.tar.gz",
-      "hash": "sha256-xW9n464pvh6pEcr1y74p1onrBK12VV4hR5pY55Z7jRM="
+      "revision": "6e47bfd293956d39ca4616e637b27c7075a0d914",
+      "url": "https://github.com/odysseus-dev/odysseus/archive/6e47bfd293956d39ca4616e637b27c7075a0d914.tar.gz",
+      "hash": "sha256-eE65+dG+y+hHqbD+i+00/ShnEc66vBT2AIyNSJ5AJlE="
     },
     "tmux-sessionx": {
       "type": "Git",

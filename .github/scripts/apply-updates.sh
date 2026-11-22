@@ -66,6 +66,8 @@ if [ ${#pins[@]} -gt 0 ]; then
       echo "they already had, and the next run will pick them up."
     } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
     echo "::warning::pins left unchanged, unreachable: ${unreachable[*]}"
+    # For the pull request, which the job summary does not reach.
+    printf '%s\n' "${unreachable[@]}" > unreachable-pins.txt
   fi
 else
   echo "every pin was held back"

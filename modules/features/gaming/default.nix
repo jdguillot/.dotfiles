@@ -70,7 +70,9 @@ in
         programs.steam = lib.mkIf cfg.steam.enable {
           enable = true;
           package = pkgs.steam.override {
-            extraArgs = "-system-composer";
+            # -pipewire: on Wayland, Steam's desktop capture (SteamVR desktop
+            # view, Remote Play) yields empty green frames without it.
+            extraArgs = "-system-composer -pipewire";
           };
           remotePlay.openFirewall = cfg.steam.remotePlay;
           localNetworkGameTransfers.openFirewall = cfg.steam.localNetworkGameTransfers;

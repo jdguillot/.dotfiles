@@ -334,28 +334,42 @@ The long form goes into `digest.md` for the model; a compact table goes to
 print. The digest is an artifact nobody downloads, and a check whose result
 is only in an artifact is not a check anyone reads.
 
-`.github/scripts/scan-verdict.sh` hands the digest and the list of staged
-commits to the local model on this host's loopback Ollama and gets back a
-list of inputs to hold at their current revision, plus a short paragraph
-on how the staged work interacts with the week's upstream changes — for
-example, whether an upstream change in the digest is likely to break
-something in the staged diff, or whether the staged work is likely to need
-`deploy .#<host> --boot` rather than a plain `switch` on the affected
-hosts. It is a plain `curl`, not an agent: the job is one judgement over
-one bounded document, and Ollama's JSON-schema constrained decoding makes
-the answer parseable by construction. The prompt is
+`.github/scripts/scan-verdict.sh` hands the digest and the staged work to
+the local model on this host's loopback Ollama and gets back a list of
+inputs to hold at their current revision, plus a short paragraph on how
+the staged work interacts with the week's upstream changes — whether an
+upstream change in the digest is likely to break something the staged
+patch touches. The staged work is given as the commit subjects *and* what
+they change (`staged-diff.txt` from `merge-staging.sh`: the file list,
+then the patch up to 60 kB, lock files and `secrets/` left out). Subjects
+alone invite a guess, and the model is told to claim only what a line of
+the patch shows.
+
+It is deliberately not asked whether the staged work needs a reboot or
+`--boot`. `boot-requirement.sh` evaluates that, and a sentence from the
+model on the same question can only contradict it: asked from subjects
+alone, it once reported that a branch setting `boot.kernelPackages` did not
+touch the kernel. It is a plain `curl`, not an agent: the job is one
+judgement over one bounded document, and Ollama's JSON-schema constrained
+decoding makes the answer parseable by construction. The prompt is
 `.github/opencode/scan-prompt.md`.
 
 `.github/scripts/scan-release-notes.sh` makes a second Ollama call with a
-different prompt (`.github/opencode/release-notes-prompt.md`) and a
-bounded digest of the week's upstream changes, and gets back a short
-markdown overview of what landed, grouped by this repo's own module
-families. Two calls rather than extending the verdict: the verdict is
-constrained-decoded to a schema whose `holds.name` is an enum over the
-update-target source names, and the release notes have no such shape.
-Keeping them independent means a degraded model degrades one side and not
-the other; the failure mode is the same either way (notes advisory, holds
-advice, build gate real).
+different prompt (`.github/opencode/release-notes-prompt.md`) and a bounded
+digest of the week's upstream changes, and gets back a short markdown
+overview of what landed, grouped by this repo's own module families. It
+reads `digest-landed.md`: the digest minus every source with no new commits.
+Such a source lands nothing, but its section still lists every issue and
+pull request touched since it was pinned — ten months of them for an input
+that tracks a release tag — and the notes reported that as news. The prompt
+also keeps open pull requests out of everything but the closing `> Watch:`
+line, and asks for no `nixpkgs` bullet: the package table further down is
+the exact record of what nixpkgs changes here. Two calls rather than
+extending the verdict: the verdict is constrained-decoded to a schema whose
+`holds.name` is an enum over the update-target source names, and the release
+notes have no such shape. Keeping them independent means a degraded model
+degrades one side and not the other; the failure mode is the same either way
+(notes advisory, holds advice, build gate real).
 
 The verdict and the notes both **fail open**. A hold list is advice; the
 flake check and the per-host builds are the actual gate, so an unreachable
@@ -411,22 +425,26 @@ the rest is derived:
   image's, say) is named and not read.
 - **The files the model is shown** are the compose file and every tracked
   `.nix`, `.toml`, `.yaml`, `.json` or `.conf` beside it.
-- **The hosts** are the ones enabling a compose project named after the
-  compose file's directory (`immich/` is `immich` and `immich-ml`).
+- **The hosts** are the ones whose compose projects pass the file to
+  `-f`. The modules install it as `/etc/<dir>/<file>`, so that suffix in a
+  project's `files` is the match: `immich/compose.yaml` belongs to the
+  `immich` project and not to `immich-ml`, which a host can run on its
+  own. A file no project names that way falls back to the projects named
+  after its directory.
 - **A placeholder tag** (`@ML_IMAGE_TAG@`) is rendered by the module from
   another pin and is listed as derived, with nothing to read.
 
-Exceptions are declared where they apply, as a `# bump:` comment on the
-line above the image. `follows=<image> source=<path> service=<name>` says
-the tag is whatever upstream's compose file names beside the followed
-image's release: Immich's Postgres build carries extension versions the
-server checks at start and updates one way, so the right tag is what
+Exceptions are declared where they apply, as a `# bump:` comment on the line
+above the image. `follows=<image> source=<path> service=<name>` says the tag
+is whatever upstream's compose file names beside the followed image's
+release: Immich's Postgres build carries extension versions the server
+checks at start and updates one way, so the right tag is what
 `docker/docker-compose.yml` says at the server release being taken, never
 the registry's newest. `pattern=`, `repo=`, `min-age=` override the derived
 values (paperclip's CalVer tag widens `pattern=`, since its first number is
-the year); `notes-start=` drops a preamble from the release notes (litellm's
-signing instructions); `context=` adds files, such as a host's own config
-for the service; `skip` excludes the line.
+the year); `notes-start=` is a regex that drops a preamble from the release
+notes (litellm's signing instructions); `context=` adds files, such as a
+host's own config for the service; `skip` excludes the line.
 
 The newest matching tag wins unless it is younger than three days
 (`CONTAINER_MIN_AGE_DAYS`, or `min-age=` per image), in which case the next
@@ -453,7 +471,29 @@ release between the two tags, ordered by version so a backport to an
 older line does not land between two releases of the line being taken,
 the loudest and the most recently touched threads since the current
 release — the same two reads as the watched packages — and this
-repository's own files for the image. The files are the part the nix scan
+repository's own files for the image.
+
+Two things about those notes are worked out without a model, because they
+are where a bump with no build gate is decided:
+
+- **What upstream marks as needing the reader.** Any section under a
+  heading that says action required, breaking, deprecated, or an upgrade
+  or migration step, and any GitHub alert block of the warning kinds, is
+  lifted out of the *untrimmed* body of every release in the window. It
+  goes to the model as its own block and into the pull request verbatim,
+  above the model's notes and labelled apart from them. "Action required"
+  is not something to read from a summary.
+- **What the evidence did not cover.** Notes are capped per release
+  (16,000 characters), a long window shows only its newest releases, and
+  an image may name no repository at all. Each of those is recorded on
+  the image (`gaps` in `containers.json`) and printed beside its notes.
+
+A release that `notes-start` does not match keeps its whole body and is
+flagged, in the digest and at the top of the pull request. It used to
+become an empty body: when LiteLLM renamed its release heading, nine of
+ten releases read "No release notes", one of them carrying five
+action-required items, and the pull request reported that nothing
+breaking was visible. The files are the part the nix scan
 does without. There is no build gate behind an image tag: a new tag
 renders into a compose file that evaluates and builds exactly as before,
 and the first thing that can fail is the container on the host after the
@@ -491,7 +531,16 @@ pull request; `containers.json` is what the update job applies.
 
 ### update — apply, prove, and adapt
 
-First the job re-runs `.github/scripts/merge-staging.sh` against the same
+Before anything changes, the job records the two "before" snapshots —
+`boot-requirement.sh` and `package-versions.sh`, both below — from the tree
+as checked out, which is what the machines run. They are taken ahead of
+the `staging/*` merges on purpose. The pull request carries the staged
+work and the bump together, so both belong in the "after": recorded after
+the merge, a kernel that a staged branch selects sat in the baseline and
+was reported as no change, and a staged driver change would not have
+raised the `--boot` warning at all.
+
+Then the job re-runs `.github/scripts/merge-staging.sh` against the same
 starting tree and the same branch list the scan job used, so it reproduces
 the same `staging/*` merge result before doing anything else (the scan
 job's working tree died with it). Then
@@ -776,7 +825,9 @@ notes, the held table — goes through `.github/scripts/sanitize-refs.sh`
 before `gh pr create`. It wraps every reference in a code span, which
 GitHub does not link and does not raise an event for, leaving the text
 readable and copy-pasteable. One filter over the finished body rather than
-each writer being trusted to have remembered.
+each writer being trusted to have remembered. URLs under this repository
+(`GITHUB_REPOSITORY`) are left alone: they reference nobody else, and
+wrapping the body's link to its own Actions run broke it.
 
 Commit messages need the same care, and they are where it has actually
 leaked: a workaround's commit message named its upstream issue, and the push
@@ -850,16 +901,21 @@ is the opposite case: it truncates its own trace by default and tells you to
 pass the flag, and its errors reach you through a module chain that the
 untraced output never names.
 
-`.github/scripts/boot-requirement.sh` records `kernel`, `initrd`, the modules
-tree and the out-of-tree driver versions for every host before the bump and
-again after it. It is pure evaluation — no building — and the result goes in
-the pull request body. This is a deterministic check on purpose, not
-something the triage model is asked to judge.
+`.github/scripts/boot-requirement.sh` records `kernel`, `initrd`, the
+modules tree, the kernel version and the out-of-tree driver versions for
+every host before the staging merges and the bump, and again after both. It
+is pure evaluation — no building — and the result goes in the pull request
+body. This is a deterministic check on purpose, not something the triage
+model is asked to judge.
 
 It reports two different things, and keeping them apart matters because
 conflating them makes almost every week look like it needs manual work:
 
 - **Reboot when convenient.** `kernel`, `initrd` or the modules tree moved.
+  The table gives the kernel version on each side, and marks a move to a
+  new series (6.18 to 7.3, as opposed to 6.18.58 to 6.18.63): still a
+  pending reboot, but a different kernel rather than a patched one, and
+  the one case where something in the change works only after the reboot.
   The new kernel is installed and the bootloader points at it; the machine
   keeps running the old one until it reboots. `switch` is right here, and
   `--boot` would not help — both install the kernel, and only the reboot
@@ -910,10 +966,16 @@ every package on that host as added would bury the real diff.
 
 The `Where` column reads `all` when a package moved everywhere it is
 installed, and names the targets otherwise — which is how a package held at
-a different version on one host shows up. The table is capped (80 rows by
-default, `PACKAGE_ROW_CAP`) with the remainder collapsed into a count; a
+a different version on one host shows up. Packages that made the same move
+on the same machines share a row: a desktop's forty components going from
+6.8.2 to 6.8.3 is one fact, and the one-per-package list sits under a fold
+below the table. A move in the leading version number (the minor, under
+0.x) is in bold and sorted first, since that is where a release is allowed
+to break things. The table is capped (80 rows by default,
+`PACKAGE_ROW_CAP`) with the remainder collapsed into a count; a
 toolchain-wide nixpkgs bump moves hundreds of versions and a pull request
-body has a size limit.
+body has a size limit. A target that evaluated on only one side is named
+under the table instead of being compared.
 
 Evaluation only, no building: measured at 2m15s across the fourteen targets,
 twice, against a job that already builds fourteen closures. Both steps are
@@ -936,7 +998,29 @@ otherwise still reach it. It edits only an *open* pull request on the
 branch — `gh pr edit <branch>` also matches last week's merged one, and once
 rewrote its description.
 
-The PR body, when one opens, is assembled from: the staged-branch report
+The PR body, when one opens, is assembled by `.github/scripts/pr-body.sh`,
+a script rather than a workflow step so that it can be rebuilt from a
+downloaded run (`gh run download <run> -D run`, then
+`pr-body.sh run/upstream-signal run/update-report`).
+
+It opens with **Before you merge**, written by
+`.github/scripts/needs-attention.sh` from what the other scripts recorded
+as JSON, with no model involved. *Needs you* lists a host that must be
+deployed with `--boot`, a host moving to a new kernel series, a bumped
+image whose release notes carry a section upstream marks as needing
+action, a step the container model lists before deploying, every hold, a
+workaround fixed upstream and still in the tree, a staged branch that did
+not merge, a change made by the fix agent. *Not checked this week* lists
+what a check could not see: a model that did not answer, a registry or an
+upstream that could not be read, an image with no notes, a `notes-start`
+hint that stopped matching, an evaluation that failed on one side, an
+opencode smoke test that did not pass. Every model call and most
+collectors fail open, so without the second list a week of missing
+evidence reads exactly like a clean one. When both lists are empty the
+block says so and names what was checked; that is the state in which the
+rest of the body is optional reading.
+
+Below it: the staged-branch report, the files the staged work changes,
 and the list of commits that landed; the triage summary and its `staged_notes`
 paragraph; the held-back table, if anything was held; a second table for
 anything the fix agent held *after* the build failed; the ledger's standing
@@ -949,7 +1033,10 @@ the scan's preview, so the two cannot drift); the "how to apply" section
 from `boot-requirement.sh`; the table of package versions this bump
 changes; and the fix agent's note, if the bump needed an in-repo change.
 Each section is omitted when it has nothing to say, so a clean week reads
-clean.
+clean. Past 58,000 bytes the one-per-package list is dropped, and past
+that again the body is cut with a pointer to the artifacts: GitHub refuses
+a body over 65,536 characters, and a refused body is a week with no pull
+request.
 
 The PR is opened with `PERSONAL_ACCESS_TOKEN` where it exists. A pull
 request opened with the default `GITHUB_TOKEN` does not trigger other
