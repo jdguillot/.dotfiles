@@ -11,6 +11,7 @@
   imports = [
     ../../modules
     inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-citizen.nixosModules.default
 
     ./hardware-configuration.nix
     ./disk-config.nix
@@ -682,10 +683,30 @@
     ];
   };
 
+  # ------------------------------------------------------------ Star Citizen
+  # nix-citizen is the LUG wiki's recommended NixOS install. The module also
+  # sets vm.max_map_count, fs.file-max, the nofile limit, ntsync and the
+  # joystick udev rules from the wiki's prerequisites.
+  programs.rsi-launcher = {
+    enable = true;
+    # Off: rsi-launcher/wine-astral then come from the flake's own package
+    # set, which its cachix serves; the overlay rebuilds wine locally.
+    includeOverlay = false;
+  };
+
+  nix.settings = {
+    substituters = [ "https://nix-citizen.cachix.org" ];
+    trusted-public-keys = [
+      "nix-citizen.cachix.org-1:lPMkWc2X8XD4/7YPEEwXKKBg+SVbYTVrAaLA2wQTKCo="
+    ];
+  };
+
   # Absorbs spikes in RAM; the 16G swapfile stays as last-resort overflow.
+  # 100% (zram-size = ram, zstd) is the LUG wiki's figure for 32GB running
+  # Star Citizen; it is a cap on compressed swap, not a reservation.
   zramSwap = {
     enable = true;
-    memoryPercent = 50;
+    memoryPercent = 100;
   };
 
   # Aggressive on purpose: swapping to zram is cheap.
