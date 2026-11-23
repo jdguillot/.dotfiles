@@ -719,6 +719,9 @@
     # Off: rsi-launcher/wine-astral then come from the flake's own package
     # set, which its cachix serves; the overlay rebuilds wine locally.
     includeOverlay = false;
+    # LUG Wine (the LUG wiki's recommended runner) instead of the default
+    # wine-astral, which loses the Vulkan device at the main menu here.
+    wine = inputs.nix-citizen.packages.${pkgs.stdenv.hostPlatform.system}.lug-wine-bin;
   };
 
   nix.settings = {
