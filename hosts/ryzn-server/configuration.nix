@@ -722,6 +722,10 @@
     # LUG Wine (the LUG wiki's recommended runner) instead of the default
     # wine-astral, which loses the Vulkan device at the main menu here.
     wine = inputs.nix-citizen.packages.${pkgs.stdenv.hostPlatform.system}.lug-wine-bin;
+    # winex11 via XWayland: under the enforced Wayland driver no submitted
+    # Vulkan work ever starts on the 5090, and SC reports Device Lost at the
+    # main menu.
+    enforceWaylandDrv = false;
   };
 
   nix.settings = {
