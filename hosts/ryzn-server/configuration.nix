@@ -750,6 +750,11 @@
     # Vulkan work ever starts on the 5090, and SC reports Device Lost at the
     # main menu.
     enforceWaylandDrv = false;
+    # VR: Wine's wineopenxr.so loads the host libopenxr_loader.so.1, which
+    # the launcher's FHS sandbox does not ship, so the game finds no runtime.
+    package = inputs.nix-citizen.packages.${pkgs.stdenv.hostPlatform.system}.rsi-launcher.override {
+      extraLibs = p: [ p.openxr-loader ];
+    };
   };
 
   nix.settings = {
