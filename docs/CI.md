@@ -399,7 +399,7 @@ can positively disprove.
 
 The two collectors above see what the lock files pin and what nixpkgs
 ships. An image tag in a compose file is neither: `traefik:v3.7` and
-`ghcr.io/berriai/litellm:v1.99.0` are pinned by hand and move only when
+`ghcr.io/berriai/litellm:v1.109.1` are pinned by hand and move only when
 somebody edits the file, which is how a service sits a dozen releases
 behind without anything saying so. `.github/scripts/collect-container-signal.sh`
 closes that for every `image:` line in a tracked compose file under
@@ -413,7 +413,7 @@ the rest is derived:
 - **The tags a bump may take** come from the shape of the pinned tag: the
   first number stays, every later one is free, the text is literal. `v3.7`
   gives `^v3\.[0-9]+$`, so traefik moves along its v3 minor line and never
-  to v4; `v1.99.0` gives `^v1\.[0-9]+\.[0-9]+$`, which keeps litellm inside
+  to v4; `v1.109.1` gives `^v1\.[0-9]+\.[0-9]+$`, which keeps litellm inside
   v1 and off its `-rc` and `-dev` tags. A tag with no free number, such as
   `postgres:17-alpine` or `valkey:9`, matches only itself: a moving alias,
   reported as floating and left alone (the host takes the newer build on
