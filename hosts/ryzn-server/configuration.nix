@@ -629,6 +629,30 @@
     };
   };
 
+  # Streaming clients point with absolute positions. Steam's desktop stream
+  # sends them as X11 warps that never reach KWin's cursor, and neither it
+  # nor Moonlight's laser produces the relative motion that drag UIs (Star
+  # Citizen's face editor) read; the bridge supplies both through uinput.
+  systemd.user.services.pointer-bridge = {
+    description = "Make streamed absolute pointers drive the Plasma cursor";
+    wantedBy = [ "plasma-workspace.target" ];
+    after = [ "plasma-kwin_wayland.service" ];
+    unitConfig.ConditionUser = config.cyberfighter.system.username;
+    serviceConfig = {
+      ExecStart = lib.getExe (
+        pkgs.writers.writePython3Bin "pointer-bridge" {
+          libraries = with pkgs.python3Packages; [
+            evdev
+            xlib
+          ];
+          flakeIgnore = [ "E501" ];
+        } (builtins.readFile ./pointer-bridge.py)
+      );
+      Restart = "always";
+      RestartSec = 5;
+    };
+  };
+
   # --------------------------------------------------------------- storage
   # btrfs mount options are per-filesystem, so per-directory exceptions go on
   # the inode instead: `h` sets chattr flags that new files underneath inherit.
