@@ -1,11 +1,11 @@
-# Disk layout for ryzn-server: 1TB SSD (hot) + 1TB HDD (bulk).
+# Disk layout for ryzn-server: 1TB SSD (hot) + 500G SSD (games) + 1TB HDD (bulk).
 #
 # DANGER: two of the four drives belong to Windows, and disko wipes whatever
 # it is pointed at -- devices MUST be /dev/disk/by-id/* (enumeration order is
 # not stable across boots). Find them:
 #   ls -l /dev/disk/by-id/ | grep -v -- '-part'
 #
-# Two separate btrfs filesystems, not one pool: btrfs has no SSD/HDD tiering.
+# Separate btrfs filesystems, not one pool: btrfs has no SSD/HDD tiering.
 let
   # Mount options are per-superblock (first mount wins), so every subvolume
   # on a disk shares one list; exceptions are chattr'd in configuration.nix.
@@ -95,6 +95,37 @@ in
                   "/swap" = {
                     mountpoint = "/.swapvol";
                     swap.swapfile.size = "16G";
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+
+      # ------------------------------------------------------ puddlejumper
+      # 500G SATA SSD, a second Steam library. nofail: games only, so a dead
+      # drive must not hold up boot.
+      puddlejumper = {
+        type = "disk";
+        device = "/dev/disk/by-id/ata-Samsung_SSD_860_EVO_500GB_S3Z1NB1KA02239D";
+        content = {
+          type = "gpt";
+          partitions = {
+            games = {
+              size = "100%";
+              name = "games";
+              content = {
+                type = "btrfs";
+                extraArgs = [
+                  "-f"
+                  "-L"
+                  "puddlejumper"
+                ];
+                subvolumes = {
+                  "/games" = {
+                    mountpoint = "/mnt/puddlejumper";
+                    mountOptions = ssdOpts ++ [ "nofail" ];
                   };
                 };
               };

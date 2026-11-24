@@ -108,4 +108,34 @@
   };
   # END WORKAROUND(opencode-v2-no-lsp)
 
+  # WORKAROUND(truenas-mcp-go-version)
+  truenas-mcp-go-version = {
+    title = "truenas-mcp built with Go 1.27.4; nixpkgs ships 1.27.3";
+    added = "2026-11-24";
+    hosts = [ "work-nix-wsl" ];
+    problem = ''
+      truenas-mcp v1.0.1 sets `go 1.27.4` in go.mod, and its test suite
+      fails below that for the stdlib security fix GO-2026-6859. nixpkgs'
+      `go` is still 1.27.3, so buildGoModule refuses the module, and
+      lowering go.mod would ship a binary without that fix.
+    '';
+    workaround = ''
+      home/modules/features/tools/mcp/truenas-mcp.nix overrides `go` to the
+      upstream 1.27.4 source tarball for this one package (it compiles Go
+      locally, a few minutes, once per change).
+    '';
+    files = [ "home/modules/features/tools/mcp/truenas-mcp.nix" ];
+    upstream = { };
+    resolved = {
+      kind = "package";
+      attr = "go";
+      minVersion = "1.27.4";
+    };
+    retire = "auto";
+    removal = ''
+      Delete the fenced `.override { ... }` in truenas-mcp.nix, leaving
+      `buildGoModule = pkgs.buildGoModule;`, and build the package.
+    '';
+  };
+  # END WORKAROUND(truenas-mcp-go-version)
 }

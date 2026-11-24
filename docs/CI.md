@@ -33,6 +33,15 @@ what to run:
 deploy .#ryzn-server.system --remote-build
 ```
 
+Preflight also fails when the store's or the workspace's filesystem has
+less than `PREFLIGHT_MIN_FREE_GB` (default 15) GiB free. A job that runs
+the disk out mid-build crashes the runner worker: GitHub gets no job log,
+and none of the failure-path steps run. Failing early keeps the log and
+names the full mount. During builds, ryzn-server's `cyberfighter.nix.minFree`
+/ `maxFree` (20G / 60G) make the daemon collect dead store paths. Neither
+can free space held by something outside the store, such as game installs
+in `/home`.
+
 ### `hashFiles()` is unavailable
 
 Do not use the `hashFiles()` expression function in these workflows. The

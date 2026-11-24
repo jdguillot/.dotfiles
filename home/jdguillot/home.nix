@@ -69,6 +69,18 @@
         opencode.remoteProvider.enable = true;
         crush.remoteProvider.enable = true;
         tmuxai.remoteProvider.enable = true;
+
+        # Read/write key scoped to the TrueNAS bucket, also secrets.yaml.
+        # Write is deliberate: clearing unfinished large-file uploads.
+        backblaze = {
+          region = "us-west-000";
+          credentials.enable = true;
+        };
+        # TrueNAS host, key owner and key from secrets.yaml; read-only.
+        mcp.use = {
+          backblaze = true;
+          truenas = true;
+        };
       };
     };
   };

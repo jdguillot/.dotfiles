@@ -28,6 +28,13 @@
       };
     };
 
+    # CI builds every host into this store; collect mid-build rather than
+    # run the disk out.
+    nix = {
+      minFree = "20G";
+      maxFree = "60G";
+    };
+
     packages = {
       extraPackages = [
         # `hf`, for gated GGUF repos `ollama pull` cannot reach (separate
@@ -639,8 +646,9 @@
     # overlay2 fragments badly under CoW.
     "h /var/lib/docker - - - - +C"
 
-    # Steam library and bulk data, owned by the interactive user.
+    # Steam libraries and bulk data, owned by the interactive user.
     "d /mnt/bulk/games 0755 cyberfighter users -"
+    "d /mnt/puddlejumper 0755 cyberfighter users -"
     "d /mnt/bulk/data 0755 cyberfighter users -"
 
     # /var/lib/models and the ComfyUI mounts are owned by their modules.
@@ -654,16 +662,6 @@
   fileSystems = {
     "/mnt/windows" = {
       device = "/dev/disk/by-uuid/10181624181608FC";
-      fsType = "ntfs3";
-      options = [
-        "nofail"
-        "uid=1000"
-        "gid=100"
-        "windows_names"
-      ];
-    };
-    "/mnt/puddlejumper" = {
-      device = "/dev/disk/by-uuid/48F82300F822EC3E";
       fsType = "ntfs3";
       options = [
         "nofail"
