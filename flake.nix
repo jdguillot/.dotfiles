@@ -76,6 +76,10 @@
     # the module builds its package from its own uv2nix/pyproject-nix lock
     # against its own pinned nixpkgs, and repointing it invites build breakage.
     hermes-agent.url = "github:NousResearch/hermes-agent";
+
+    # Star Citizen: the LUG wiki's recommended NixOS route. Not `follows`-ing
+    # nixpkgs so its wine-astral builds stay hits on nix-citizen.cachix.org.
+    nix-citizen.url = "github:LovingMelody/nix-citizen";
   };
 
   outputs =

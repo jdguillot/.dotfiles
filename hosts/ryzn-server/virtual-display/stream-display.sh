@@ -1,5 +1,5 @@
-# Swap the Plasma session between the physical monitor(s) and the virtual 4K
-# output (an EDID-forced HDMI connector), so games and captures land on it.
+# Swap the Plasma session between the physical monitor(s) and the streaming
+# output (an HDMI dummy plug), so games and captures land on it.
 #
 #   stream-display on [WxH@Hz]   virtual output only
 #   stream-display off           every other connected output, virtual off
