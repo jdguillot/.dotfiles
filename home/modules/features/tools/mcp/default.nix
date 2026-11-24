@@ -107,6 +107,19 @@ let
   };
 
   wanted = name: cfg.use.${name} or catalog.${name}.default;
+
+  # programs.mcp servers with file-ref env values moved into a launcher that
+  # reads the files, for clients that only take literal env (Claude, tmuxai).
+  wrappedMcpJson = (pkgs.formats.json { }).generate "wrapped-mcp.json" {
+    mcpServers = lib.mapAttrs (
+      name: server:
+      lib.hm.mcp.transformMcpServer {
+        inherit server;
+        exclude = [ "enabled" ];
+        extraTransforms = [ (lib.hm.mcp.wrapEnvFilesCommand { inherit pkgs name; }) ];
+      }
+    ) config.programs.mcp.servers;
+  };
   # github and backblaze additionally need their credentials wired.
   active =
     name:
@@ -189,23 +202,15 @@ in
     # mcpServers shape as Claude's) from programs.mcp. File-ref env values
     # get a launcher-script wrapper -- tmuxai only expands env vars.
     xdg.configFile."tmuxai/mcp.json" = lib.mkIf config.cyberfighter.features.tools.tmuxai.enable {
-      source = (pkgs.formats.json { }).generate "tmuxai-mcp.json" {
-        mcpServers = lib.mapAttrs (
-          name: server:
-          lib.hm.mcp.transformMcpServer {
-            inherit server;
-            exclude = [ "enabled" ];
-            extraTransforms = [ (lib.hm.mcp.wrapEnvFilesCommand { inherit pkgs name; }) ];
-          }
-        ) config.programs.mcp.servers;
-      };
+      source = wrappedMcpJson;
     };
 
     # Claude Code only reads user-scope servers from mutable ~/.claude.json;
-    # merge at activation (declared servers win, manual ones preserved).
+    # merge at activation (declared servers win, manual ones preserved). The
+    # wrapped form: Claude passes `{file:...}` env values through literally.
     home.activation.claudeMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       claudeJson="${config.home.homeDirectory}/.claude.json"
-      mcpJson="${config.xdg.configHome}/mcp/mcp.json"
+      mcpJson="${wrappedMcpJson}"
       if [ -f "$mcpJson" ]; then
         if [ -v DRY_RUN ]; then
           verboseEcho "Would merge MCP servers from $mcpJson into $claudeJson"
