@@ -17,6 +17,7 @@
     ./tools/default.nix
     ./tools/btop/default.nix
     ./tools/mcp/default.nix
+    ./tools/backblaze/default.nix
     ./tools/agent-browser/default.nix
     ./tools/lsp/default.nix
     ./tools/skills/default.nix

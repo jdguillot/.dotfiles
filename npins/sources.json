@@ -42,6 +42,23 @@
       "url": "https://github.com/midudev/autoskills/archive/46f50bab19243618547c46ae085ba30906332e0b.tar.gz",
       "hash": "sha256-9gSoAXcSSoO1yZEHH3q/IKXYtDgRioNN3OISUR6AOPI="
     },
+    "b2-mcp": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "GitHub",
+        "owner": "backblaze-labs",
+        "repo": "b2-mcp"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "v0.2.2",
+      "revision": "e33561adc5cd735ff366ddabfcdcda9f0da85b82",
+      "url": "https://api.github.com/repos/backblaze-labs/b2-mcp/tarball/refs/tags/v0.2.2",
+      "hash": "sha256-wpKg6oDDeYwDt8AZxEgF9+XXvKvE2LabW05ph5Y5Odc=",
+      "frozen": true
+    },
     "claude-code-extensions": {
       "type": "Git",
       "repository": {

@@ -17,6 +17,8 @@ let
   # Only wire the token when sops is on for this home: declaring a secret
   # without a key source trips sops-nix's assertion.
   githubReady = wanted "github" && secretsYamlExists && config.cyberfighter.features.sops.enable;
+  bb = config.cyberfighter.features.tools.backblaze;
+  backblazeReady = wanted "backblaze" && bb.enable && bb.credentials.enable;
 
   # One catalog drives everything; per-entry `default` decides whether a
   # server ships globally, and cfg.use.<name> overrides it per home.
@@ -72,6 +74,23 @@ let
       };
     };
 
+    # Backblaze's official server. Tools register per the key's capabilities,
+    # so a read-only key gets the read-only set. Secret sink off: on, it logs
+    # keys it creates to a plaintext ~/.b2-mcp/secrets.jsonl.
+    backblaze = {
+      default = false;
+      server = {
+        command = "${bb.mcpPackage}/bin/b2-mcp";
+        args = [ "stdio" ];
+        env = {
+          B2_APPLICATION_KEY_ID.file = config.sops.secrets.${bb.credentials.keyIdSecret}.path;
+          B2_APPLICATION_KEY.file = config.sops.secrets.${bb.credentials.keySecret}.path;
+          B2_SECRET_SINK = "off";
+        }
+        // lib.optionalAttrs (bb.region != null) { B2_REGION = bb.region; };
+      };
+    };
+
     # curl covers most retrieval from Bash.
     fetch = {
       default = false;
@@ -88,8 +107,15 @@ let
   };
 
   wanted = name: cfg.use.${name} or catalog.${name}.default;
-  # github additionally needs the sops guard above.
-  active = name: if name == "github" then githubReady else wanted name;
+  # github and backblaze additionally need their credentials wired.
+  active =
+    name:
+    if name == "github" then
+      githubReady
+    else if name == "backblaze" then
+      backblazeReady
+    else
+      wanted name;
 in
 {
   options.cyberfighter.features.tools.mcp = {
@@ -124,6 +150,10 @@ in
       {
         assertion = cfg.use == { } || lib.all (n: catalog ? ${n}) (lib.attrNames cfg.use);
         message = "cyberfighter.features.tools.mcp.use names unknown servers: ${lib.concatStringsSep ", " (lib.filter (n: !(catalog ? ${n})) (lib.attrNames cfg.use))}. Known: ${lib.concatStringsSep ", " (lib.attrNames catalog)}.";
+      }
+      {
+        assertion = !(wanted "backblaze") || (bb.enable && bb.credentials.enable);
+        message = "cyberfighter.features.tools.mcp.use.backblaze needs cyberfighter.features.tools.backblaze.credentials.enable (the key comes from sops).";
       }
     ];
 
