@@ -17,6 +17,12 @@ let
   # Only wire the token when sops is on for this home: declaring a secret
   # without a key source trips sops-nix's assertion.
   githubReady = wanted "github" && secretsYamlExists && config.cyberfighter.features.sops.enable;
+  bb = config.cyberfighter.features.tools.backblaze;
+  backblazeReady = wanted "backblaze" && bb.enable && bb.credentials.enable;
+  tn = cfg.truenas;
+  truenasReady = wanted "truenas" && config.cyberfighter.features.sops.enable;
+  truenasPackage = import ./truenas-mcp.nix { inherit pkgs; };
+  tnSecret = name: config.sops.secrets.${name}.path;
 
   # One catalog drives everything; per-entry `default` decides whether a
   # server ships globally, and cfg.use.<name> overrides it per home.
@@ -72,6 +78,45 @@ let
       };
     };
 
+    # Backblaze's official server. Tools register per the key's capabilities,
+    # so a read-only key gets the read-only set. Secret sink off: on, it logs
+    # keys it creates to a plaintext ~/.b2-mcp/secrets.jsonl.
+    backblaze = {
+      default = false;
+      server = {
+        command = "${bb.mcpPackage}/bin/b2-mcp";
+        args = [ "stdio" ];
+        env = {
+          B2_APPLICATION_KEY_ID.file = config.sops.secrets.${bb.credentials.keyIdSecret}.path;
+          B2_APPLICATION_KEY.file = config.sops.secrets.${bb.credentials.keySecret}.path;
+          B2_SECRET_SINK = "off";
+        }
+        // lib.optionalAttrs (bb.region != null) { B2_REGION = bb.region; };
+      };
+    };
+
+    # TrueNAS's own server, read-only: write tools are hidden, and a key
+    # owned by a Read-Only Administrator makes TrueNAS refuse writes too.
+    # Cloud sync and rsync runs show up as jobs (query_jobs).
+    truenas = {
+      default = false;
+      server = {
+        command = "${truenasPackage}/bin/truenas-mcp";
+        args = [ "--read-only" ];
+        env = {
+          TRUENAS_MCP_READ_ONLY = "1";
+          # Private host and owner: read from sops at launch.
+          TRUENAS_URL.file = tnSecret tn.urlSecret;
+          TRUENAS_API_USER.file = tnSecret tn.userSecret;
+          # Read by the server itself, which requires a 0600/0400 file.
+          TRUENAS_API_KEY_FILE = tnSecret tn.keySecret;
+        }
+        // lib.optionalAttrs (tn.tlsCaSecret != null) {
+          TRUENAS_TLS_CA = tnSecret tn.tlsCaSecret;
+        };
+      };
+    };
+
     # curl covers most retrieval from Bash.
     fetch = {
       default = false;
@@ -88,8 +133,30 @@ let
   };
 
   wanted = name: cfg.use.${name} or catalog.${name}.default;
-  # github additionally needs the sops guard above.
-  active = name: if name == "github" then githubReady else wanted name;
+
+  # programs.mcp servers with file-ref env values moved into a launcher that
+  # reads the files, for clients that only take literal env (Claude, tmuxai).
+  wrappedMcpJson = (pkgs.formats.json { }).generate "wrapped-mcp.json" {
+    mcpServers = lib.mapAttrs (
+      name: server:
+      lib.hm.mcp.transformMcpServer {
+        inherit server;
+        exclude = [ "enabled" ];
+        extraTransforms = [ (lib.hm.mcp.wrapEnvFilesCommand { inherit pkgs name; }) ];
+      }
+    ) config.programs.mcp.servers;
+  };
+  # github, backblaze and truenas additionally need their credentials wired.
+  active =
+    name:
+    if name == "github" then
+      githubReady
+    else if name == "backblaze" then
+      backblazeReady
+    else if name == "truenas" then
+      truenasReady
+    else
+      wanted name;
 in
 {
   options.cyberfighter.features.tools.mcp = {
@@ -111,6 +178,30 @@ in
       description = "Name of the sops secret holding the GitHub token, expected in secrets/secrets.yaml. Only usable on hosts whose user age key is a recipient of that file.";
     };
 
+    truenas = {
+      urlSecret = lib.mkOption {
+        type = lib.types.str;
+        default = "truenas/url";
+        description = "sops secret (secrets/secrets.yaml) with the TrueNAS host or wss:// URL.";
+      };
+      userSecret = lib.mkOption {
+        type = lib.types.str;
+        default = "truenas/api-user";
+        description = "sops secret with the user that owns the API key.";
+      };
+      keySecret = lib.mkOption {
+        type = lib.types.str;
+        default = "truenas/api-key";
+        description = "sops secret with the API key (give its user the Read-Only Administrator role).";
+      };
+      tlsCaSecret = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "truenas/tls-ca";
+        description = "Optional sops secret with the PEM certificate to trust (TrueNAS's self-signed one).";
+      };
+    };
+
     context7ApiKey = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -125,13 +216,35 @@ in
         assertion = cfg.use == { } || lib.all (n: catalog ? ${n}) (lib.attrNames cfg.use);
         message = "cyberfighter.features.tools.mcp.use names unknown servers: ${lib.concatStringsSep ", " (lib.filter (n: !(catalog ? ${n})) (lib.attrNames cfg.use))}. Known: ${lib.concatStringsSep ", " (lib.attrNames catalog)}.";
       }
+      {
+        assertion = !(wanted "backblaze") || (bb.enable && bb.credentials.enable);
+        message = "cyberfighter.features.tools.mcp.use.backblaze needs cyberfighter.features.tools.backblaze.credentials.enable (the key comes from sops).";
+      }
+      {
+        assertion = !(wanted "truenas") || config.cyberfighter.features.sops.enable;
+        message = "cyberfighter.features.tools.mcp.use.truenas needs cyberfighter.features.sops.enable (the URL and key come from sops).";
+      }
     ];
 
     # sopsFile override; only works where the user age key is a recipient
-    # of secrets/secrets.yaml -- gate use.github per host.
-    sops.secrets.${cfg.githubTokenSecret} = lib.mkIf githubReady {
-      sopsFile = secretsYaml;
-    };
+    # of secrets/secrets.yaml -- gate use.github and use.truenas per host.
+    sops.secrets = lib.mkMerge [
+      {
+        ${cfg.githubTokenSecret} = lib.mkIf githubReady {
+          sopsFile = secretsYaml;
+        };
+      }
+      (lib.mkIf truenasReady (
+        lib.genAttrs (
+          [
+            tn.urlSecret
+            tn.userSecret
+            tn.keySecret
+          ]
+          ++ lib.optional (tn.tlsCaSecret != null) tn.tlsCaSecret
+        ) (_: { sopsFile = secretsYaml; })
+      ))
+    ];
     # Single source of truth for MCP servers; consumers below pick these up.
     programs.mcp = {
       enable = true;
@@ -159,23 +272,15 @@ in
     # mcpServers shape as Claude's) from programs.mcp. File-ref env values
     # get a launcher-script wrapper -- tmuxai only expands env vars.
     xdg.configFile."tmuxai/mcp.json" = lib.mkIf config.cyberfighter.features.tools.tmuxai.enable {
-      source = (pkgs.formats.json { }).generate "tmuxai-mcp.json" {
-        mcpServers = lib.mapAttrs (
-          name: server:
-          lib.hm.mcp.transformMcpServer {
-            inherit server;
-            exclude = [ "enabled" ];
-            extraTransforms = [ (lib.hm.mcp.wrapEnvFilesCommand { inherit pkgs name; }) ];
-          }
-        ) config.programs.mcp.servers;
-      };
+      source = wrappedMcpJson;
     };
 
     # Claude Code only reads user-scope servers from mutable ~/.claude.json;
-    # merge at activation (declared servers win, manual ones preserved).
+    # merge at activation (declared servers win, manual ones preserved). The
+    # wrapped form: Claude passes `{file:...}` env values through literally.
     home.activation.claudeMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       claudeJson="${config.home.homeDirectory}/.claude.json"
-      mcpJson="${config.xdg.configHome}/mcp/mcp.json"
+      mcpJson="${wrappedMcpJson}"
       if [ -f "$mcpJson" ]; then
         if [ -v DRY_RUN ]; then
           verboseEcho "Would merge MCP servers from $mcpJson into $claudeJson"

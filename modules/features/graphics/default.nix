@@ -41,6 +41,13 @@ in
         description = "Use open source Nvidia kernel module";
       };
 
+      driverBranch = lib.mkOption {
+        type = lib.types.str;
+        default = "stable";
+        example = "latest";
+        description = "Attribute of `boot.kernelPackages.nvidiaPackages` to use as the driver.";
+      };
+
       containerToolkit = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -83,11 +90,11 @@ in
 
         environment.sessionVariables = {
           CUDA_PATH = "${pkgs.cudatoolkit}";
-          EXTRA_LDFLAGS = "-L/lib -L${pkgs.linuxPackages.nvidia_x11}/lib";
+          EXTRA_LDFLAGS = "-L/lib -L${config.hardware.nvidia.package}/lib";
           EXTRA_CCFLAGS = "-I/usr/include";
           LD_LIBRARY_PATH = [
             "/usr/lib/wsl/lib"
-            "${pkgs.linuxPackages.nvidia_x11}/lib"
+            "${config.hardware.nvidia.package}/lib"
             "${pkgs.ncurses5}/lib"
           ];
           MESA_D3D12_DEFAULT_ADAPTER_NAME = "NVIDIA";
@@ -99,7 +106,7 @@ in
           powerManagement.finegrained = false;
           open = cfg.nvidia.openDriver;
           nvidiaSettings = true;
-          package = config.boot.kernelPackages.nvidiaPackages.stable;
+          package = config.boot.kernelPackages.nvidiaPackages.${cfg.nvidia.driverBranch};
         };
       })
 

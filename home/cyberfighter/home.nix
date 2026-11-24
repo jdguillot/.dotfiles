@@ -158,4 +158,35 @@
   programs.git.includes = [
     { path = "${config.xdg.configHome}/git/identities/personal.gitconfig"; }
   ];
+
+  # Saves from every library land in ~/ludusavi-backup ahead of btrbk's
+  # midnight /home snapshot.
+  services.ludusavi = lib.mkIf (hostMeta.system.hostname == "ryzn-server") {
+    enable = true;
+    configFile = ./ludusavi/config.yaml;
+    # The module asserts settings and configFile are not both set.
+    settings = { };
+    frequency = "*-*-* 23:30:00";
+  };
+
+  # A btrbk snapshot stops at a nested subvolume, so game installs live in
+  # their own and stay out of the /home snapshots. Creates them when absent;
+  # an existing plain directory is only reported (conversion needs Steam shut).
+  home.activation.gameSubvolumes = lib.mkIf (hostMeta.system.hostname == "ryzn-server") (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      for p in \
+        "$HOME/.local/share/Steam/steamapps/common" \
+        "$HOME/.local/share/Steam/steamapps/shadercache" \
+        "$HOME/.local/share/Steam/steamapps/downloading" \
+        "$HOME/Games/rsi-launcher/drive_c/Program Files/Roberts Space Industries/StarCitizen"; do
+        [ -d "$(dirname "$p")" ] || continue
+        if [ ! -e "$p" ]; then
+          run ${pkgs.btrfs-progs}/bin/btrfs subvolume create "$p"
+        elif [ "$(stat -c %i "$p")" != 256 ]; then
+          # Inode 256 is the root of a btrfs subvolume.
+          warnEcho "$p is a plain directory, so /home snapshots include it"
+        fi
+      done
+    ''
+  );
 }

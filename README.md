@@ -61,7 +61,7 @@ Use the README for the quick map, then jump into the focused docs:
 | `thkpd-pve1` | `minimal` | — | `hosts/thkpd-pve1/` | `cyberfighter@thkpd-pve1` | yes | Proxmox VE host with bridge networking, Docker, traefik, attic, Immich (originals on TrueNAS NFS), Tailscale, and SOPS |
 | `simple-vm` | `minimal` | — | `hosts/simple-vm/` | `cyberfighter@simple-vm` | yes (system only) | generic VM/server target with SSH, Docker, Tailscale, and SOPS |
 | `vm-gameserver-nix` | `minimal` | — | `hosts/vm-gameserver-nix/` | `cyberfighter@vm-gameserver-nix` | yes | Astroneer game server with Ludusavi, Playit, Tailscale, and SOPS |
-| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | RTX 5090 with a usually unattended monitor, auto-logging into a Plasma (Wayland) session to host Steam Remote Play, with Sunshine as an alternative Moonlight path that streams from an EDID-forced virtual 4K output the session boots into, Steam Frame VR over its USB Wi-Fi dongle (latest kernel), and local inference (Ollama + the Hermes Agent gateway, Paperclip as the agent control plane), ComfyUI, Waydroid, Docker, Tailscale, SOPS, and Immich's GPU machine-learning server |
+| `ryzn-server` | `desktop` | `dev` | `hosts/ryzn-server/` | `cyberfighter@ryzn-server` | yes | RTX 5090 with a usually unattended monitor, auto-logging into a Plasma (Wayland) session to host Steam Remote Play, with Sunshine as an alternative Moonlight path that streams from a 4K HDMI dummy plug the session boots into, Steam Frame VR over its USB Wi-Fi dongle (latest kernel), and local inference (Ollama + the Hermes Agent gateway, Paperclip as the agent control plane), ComfyUI, Waydroid, Docker, Tailscale, SOPS, and Immich's GPU machine-learning server |
 
 For more host detail and templates, see [`docs/HOSTS.md`](docs/HOSTS.md).
 
@@ -147,7 +147,8 @@ Home modules live in `home/modules/` and mirror the same `cyberfighter.*` style.
 - Editor submodules: `editor.lazyvim`, `editor.zed`, `editor.micro`
 - Tool submodules: `tmux`, `zellij`, `yazi`, `btop`, `lazygit`,
   `jujutsu`, `carapace`, `direnv`, `cargoSweep`, `rofi`, `sesh`, `fastfetch`,
-  `opencode`, `crush`, `tmuxai`, `mc`, `mcp`, `skills`, `lsp`
+  `opencode`, `crush`, `tmuxai`, `mc`, `mcp`, `skills`, `lsp`,
+  `backblaze`
 
 Common home shape:
 

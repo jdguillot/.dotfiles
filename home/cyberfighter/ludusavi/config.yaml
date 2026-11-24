@@ -1,0 +1,88 @@
+# ryzn-server's game-save backup. The backup path sits inside /home, so the
+# btrbk /home snapshots (and their HDD copies) carry the saves of every
+# library, including the ones on /mnt/puddlejumper and /mnt/bulk.
+# Read-only once deployed: GUI changes go here instead.
+runtime:
+  threads: ~
+  networkSecurity: safe
+release:
+  check: false
+manifest:
+  enable: true
+language: en-US
+theme: light
+roots:
+  - store: steam
+    path: /home/cyberfighter/.local/share/Steam
+  - store: steam
+    path: /mnt/bulk/games/SteamLibrary
+  - store: steam
+    path: /mnt/puddlejumper/SteamLibrary
+redirects:
+  - kind: restore
+    source: "C:/Users/jdgui"
+    target: /mnt/bulk/games/SteamLibrary/steamapps/compatdata/973810/pfx/drive_c/users/steamuser
+  - kind: restore
+    source: /home/cyberfighter/.local/share/Steam/steamapps/compatdata/973810
+    target: /mnt/bulk/games/SteamLibrary/steamapps/compatdata/973810
+backup:
+  path: /home/cyberfighter/ludusavi-backup
+  ignoredGames: []
+  filter:
+    excludeStoreScreenshots: false
+    cloud:
+      exclude: false
+      epic: false
+      gog: false
+      origin: false
+      steam: false
+      uplay: false
+    ignoredPaths: []
+    ignoredRegistry: []
+  toggledPaths: {}
+  toggledRegistry: {}
+  sort:
+    key: status
+    reversed: false
+  retention:
+    full: 3
+    differential: 6
+  format:
+    chosen: simple
+    zip:
+      compression: deflate
+    compression:
+      deflate:
+        level: 6
+      bzip2:
+        level: 6
+      zstd:
+        level: 10
+  onlyConstructive: false
+restore:
+  path: /home/cyberfighter/ludusavi-backup
+  ignoredGames: []
+  toggledPaths: {}
+  toggledRegistry: {}
+  sort:
+    key: status
+    reversed: false
+  reverseRedirects: false
+scan:
+  showDeselectedGames: true
+  showUnchangedGames: true
+  showUnscannedGames: true
+cloud:
+  remote: ~
+  path: ludusavi-backup
+  synchronize: true
+# Not in the manifest under the RSI launcher's prefix. Characters are
+# server-side; this is settings and keybinds, inside the StarCitizen
+# subvolume that the /home snapshots skip.
+customGames:
+  - name: Star Citizen (settings and keybinds)
+    integration: override
+    files:
+      - "/home/cyberfighter/Games/rsi-launcher/drive_c/Program Files/Roberts Space Industries/StarCitizen/*/user"
+    registry: []
+    installDir: []

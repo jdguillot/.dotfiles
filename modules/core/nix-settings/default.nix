@@ -77,6 +77,25 @@ in
       '';
     };
 
+    minFree = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "20G";
+      description = ''
+        `min-free`: when free space on the store's filesystem drops below
+        this during a build, the daemon garbage-collects until `maxFree` is
+        free. Only dead store paths are reclaimable, so it cannot save a disk
+        filled by something else. Leave null to rely on the timer alone.
+      '';
+    };
+
+    maxFree = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "60G";
+      description = "`max-free`: where a `minFree`-triggered collection stops.";
+    };
+
     remoteBuilders = lib.mkOption {
       type = lib.types.listOf lib.types.attrs;
       default = [ ];
@@ -159,6 +178,8 @@ in
       };
 
       nix.settings.max-jobs = lib.mkIf (cfg.maxJobs != null) cfg.maxJobs;
+      nix.settings.min-free = lib.mkIf (cfg.minFree != null) cfg.minFree;
+      nix.settings.max-free = lib.mkIf (cfg.maxFree != null) cfg.maxFree;
 
       nix.buildMachines = cfg.remoteBuilders;
       nix.distributedBuilds = cfg.remoteBuilders != [ ];

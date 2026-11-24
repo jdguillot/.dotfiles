@@ -11,6 +11,7 @@
   imports = [
     ../../modules
     inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-citizen.nixosModules.default
 
     ./hardware-configuration.nix
     ./disk-config.nix
@@ -26,6 +27,13 @@
         # Secure Boot stays on for the Windows dual-boot; implies secureBoot.
         type = "lanzaboote";
       };
+    };
+
+    # CI builds every host into this store; collect mid-build rather than
+    # run the disk out.
+    nix = {
+      minFree = "20G";
+      maxFree = "60G";
     };
 
     packages = {
@@ -62,6 +70,9 @@
           # them a resume kills UVM and Ollama silently degrades to CPU.
           # Sleep is also refused outright below.
           powerManagement = true;
+          # Star Citizen's Vulkan renderer hits Device Lost within a minute
+          # of the main menu on 595 (stable).
+          driverBranch = "latest";
         };
       };
 
@@ -97,6 +108,11 @@
         # Back/Select for two seconds stands in for it.
         settings = {
           back_button_timeout = 2000;
+
+          # The Steam Frame's Moonlight sends left clicks as touchscreen
+          # taps, which Wine apps (the RSI Launcher) ignore. Disabled, Sunshine
+          # turns pen/touch into ordinary mouse input for every client.
+          native_pen_touch = "disabled";
 
           # Re-enter stream mode at full 4K on connect. No undo: stream mode
           # outlives the session until `stream-display off`.
@@ -567,10 +583,10 @@
     "60"
   ];
 
-  # ---------------------------------------------------------- virtual 4K
-  # A 4K output for streaming with no monitor attached: the 5090's unused
-  # HDMI-A-1 is forced on with a generated EDID. nvidia-drm ignores the
-  # runtime debugfs force, so this only takes effect at boot.
+  # ------------------------------------------------------- streaming output
+  # A 4K output for streaming with no monitor attached: an HDMI dummy plug
+  # in the 5090's HDMI-A-1. It replaced a kernel-forced EDID on that
+  # connector, the suspected cause of Star Citizen's Vulkan Device Lost.
   #
   # Connector names are numbered across both GPUs in driver-registration
   # order, which races in stage 2. The softdep makes the 5090 register first
@@ -582,18 +598,6 @@
     softdep amdgpu pre: nvidia-drm
     options cfg80211 ieee80211_regdom=US
   '';
-  hardware.display = {
-    edid.packages = [
-      (pkgs.runCommand "virtual-4k-edid" { nativeBuildInputs = [ pkgs.python3 ]; } ''
-        mkdir -p $out/lib/firmware/edid
-        python3 ${./virtual-display/make-edid.py} $out/lib/firmware/edid/virtual-4k.bin
-      '')
-    ];
-    outputs."HDMI-A-1" = {
-      edid = "virtual-4k.bin";
-      mode = "e";
-    };
-  };
 
   environment.systemPackages = [
     (pkgs.writeShellApplication {
@@ -620,7 +624,7 @@
   # Boot into stream mode; only `stream-display off` hands the desk back.
   # Retried because KWin's output management can lag the unit's start.
   systemd.user.services.stream-display = {
-    description = "Switch the Plasma session to the virtual 4K output";
+    description = "Switch the Plasma session to the streaming output";
     wantedBy = [ "plasma-workspace.target" ];
     after = [ "plasma-kwin_wayland.service" ];
     unitConfig.ConditionUser = config.cyberfighter.system.username;
@@ -639,8 +643,9 @@
     # overlay2 fragments badly under CoW.
     "h /var/lib/docker - - - - +C"
 
-    # Steam library and bulk data, owned by the interactive user.
+    # Steam libraries and bulk data, owned by the interactive user.
     "d /mnt/bulk/games 0755 cyberfighter users -"
+    "d /mnt/puddlejumper 0755 cyberfighter users -"
     "d /mnt/bulk/data 0755 cyberfighter users -"
 
     # /var/lib/models and the ComfyUI mounts are owned by their modules.
@@ -654,16 +659,6 @@
   fileSystems = {
     "/mnt/windows" = {
       device = "/dev/disk/by-uuid/10181624181608FC";
-      fsType = "ntfs3";
-      options = [
-        "nofail"
-        "uid=1000"
-        "gid=100"
-        "windows_names"
-      ];
-    };
-    "/mnt/puddlejumper" = {
-      device = "/dev/disk/by-uuid/48F82300F822EC3E";
       fsType = "ntfs3";
       options = [
         "nofail"
@@ -713,10 +708,42 @@
     ];
   };
 
+  # ------------------------------------------------------------ Star Citizen
+  # nix-citizen is the LUG wiki's recommended NixOS install. The module also
+  # sets vm.max_map_count, fs.file-max, the nofile limit, ntsync and the
+  # joystick udev rules from the wiki's prerequisites.
+  programs.rsi-launcher = {
+    enable = true;
+    # Off: rsi-launcher/wine-astral then come from the flake's own package
+    # set, which its cachix serves; the overlay rebuilds wine locally.
+    includeOverlay = false;
+    # LUG Wine (the LUG wiki's recommended runner) instead of the default
+    # wine-astral, which loses the Vulkan device at the main menu here.
+    wine = inputs.nix-citizen.packages.${pkgs.stdenv.hostPlatform.system}.lug-wine-bin;
+    # winex11 via XWayland: under the enforced Wayland driver no submitted
+    # Vulkan work ever starts on the 5090, and SC reports Device Lost at the
+    # main menu.
+    enforceWaylandDrv = false;
+    # VR: Wine's wineopenxr.so loads the host libopenxr_loader.so.1, which
+    # the launcher's FHS sandbox does not ship, so the game finds no runtime.
+    package = inputs.nix-citizen.packages.${pkgs.stdenv.hostPlatform.system}.rsi-launcher.override {
+      extraLibs = p: [ p.openxr-loader ];
+    };
+  };
+
+  nix.settings = {
+    substituters = [ "https://nix-citizen.cachix.org" ];
+    trusted-public-keys = [
+      "nix-citizen.cachix.org-1:lPMkWc2X8XD4/7YPEEwXKKBg+SVbYTVrAaLA2wQTKCo="
+    ];
+  };
+
   # Absorbs spikes in RAM; the 16G swapfile stays as last-resort overflow.
+  # 100% (zram-size = ram, zstd) is the LUG wiki's figure for 32GB running
+  # Star Citizen; it is a cap on compressed swap, not a reservation.
   zramSwap = {
     enable = true;
-    memoryPercent = 50;
+    memoryPercent = 100;
   };
 
   # Aggressive on purpose: swapping to zram is cheap.
