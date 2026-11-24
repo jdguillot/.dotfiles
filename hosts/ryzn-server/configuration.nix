@@ -102,6 +102,11 @@
         settings = {
           back_button_timeout = 2000;
 
+          # The Steam Frame's Moonlight sends left clicks as touchscreen
+          # taps, which Wine apps (the RSI Launcher) ignore. Disabled, Sunshine
+          # turns pen/touch into ordinary mouse input for every client.
+          native_pen_touch = "disabled";
+
           # Re-enter stream mode at full 4K on connect. No undo: stream mode
           # outlives the session until `stream-display off`.
           global_prep_cmd = builtins.toJSON [
