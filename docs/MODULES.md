@@ -157,6 +157,9 @@ Key options:
   the desktop out
 - `cyberfighter.nix.daemonMemoryHigh` — `MemoryHigh` for nix-daemon so the
   kernel reclaims build memory before the user session's
+- `cyberfighter.nix.minFree` / `maxFree` — `min-free` / `max-free`: the
+  daemon garbage-collects mid-build when the store's disk runs low. Reclaims
+  dead store paths only
 - `cyberfighter.nix.remoteBuilders` — `nix.buildMachines` entries; also flips
   on `distributedBuilds` and `builders-use-substitutes`. Builders are
   preferred, not required: unreachable ones fall back to local builds. See

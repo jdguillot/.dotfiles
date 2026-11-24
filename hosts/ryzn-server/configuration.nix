@@ -28,6 +28,13 @@
       };
     };
 
+    # CI builds every host into this store; collect mid-build rather than
+    # run the disk out.
+    nix = {
+      minFree = "20G";
+      maxFree = "60G";
+    };
+
     packages = {
       extraPackages = [
         # `hf`, for gated GGUF repos `ollama pull` cannot reach (separate
