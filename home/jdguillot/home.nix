@@ -76,7 +76,11 @@
           region = "us-west-000";
           credentials.enable = true;
         };
-        mcp.use.backblaze = true;
+        # TrueNAS host, key owner and key from secrets.yaml; read-only.
+        mcp.use = {
+          backblaze = true;
+          truenas = true;
+        };
       };
     };
   };

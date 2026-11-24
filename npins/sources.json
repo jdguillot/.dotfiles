@@ -279,6 +279,23 @@
       "revision": "8df6df56639acedb5343a6db02cf58120ff09ef7",
       "url": "https://github.com/omerxx/tmux-sessionx/archive/8df6df56639acedb5343a6db02cf58120ff09ef7.tar.gz",
       "hash": "sha256-5uQsI6I5ITadT5wBVtdWTV5PNBYtqPS4Xf3EVTSzRiY="
+    },
+    "truenas-mcp": {
+      "type": "GitRelease",
+      "repository": {
+        "type": "GitHub",
+        "owner": "truenas",
+        "repo": "truenas-mcp"
+      },
+      "pre_releases": false,
+      "version_upper_bound": null,
+      "release_prefix": null,
+      "submodules": false,
+      "version": "v1.0.1",
+      "revision": "b01f69021991d587bc4ff46a30eb6fe6d3797c40",
+      "url": "https://api.github.com/repos/truenas/truenas-mcp/tarball/refs/tags/v1.0.1",
+      "hash": "sha256-GgZ8I4kRxJNrctqSg/PxAaksgdekQPL3bD4+eK2wCIU=",
+      "frozen": true
     }
   },
   "version": 8
