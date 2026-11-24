@@ -38,9 +38,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "46f50bab19243618547c46ae085ba30906332e0b",
-      "url": "https://github.com/midudev/autoskills/archive/46f50bab19243618547c46ae085ba30906332e0b.tar.gz",
-      "hash": "sha256-9gSoAXcSSoO1yZEHH3q/IKXYtDgRioNN3OISUR6AOPI="
+      "revision": "579bc98259b0ba5f8ce0d9702c7d761a8fbd451a",
+      "url": "https://github.com/midudev/autoskills/archive/579bc98259b0ba5f8ce0d9702c7d761a8fbd451a.tar.gz",
+      "hash": "sha256-KHPxLpwFYpYhYw25b594wfEbuMw7y8voE48MXuEOXtQ="
     },
     "b2-mcp": {
       "type": "GitRelease",
@@ -94,9 +94,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "b115dcbbe0d82c80190f4fcc255a935e33889f4a",
-      "url": "https://github.com/xxyangyoulin/dms-plugin-developer-utilities/archive/b115dcbbe0d82c80190f4fcc255a935e33889f4a.tar.gz",
-      "hash": "sha256-bpsE5x26Ou7Sfzgv/ttIxfqK3w51x+kSP2dKOIGakTA="
+      "revision": "3e8543f5876648bfcf346253e61221cbb200dd0e",
+      "url": "https://github.com/xxyangyoulin/dms-plugin-developer-utilities/archive/3e8543f5876648bfcf346253e61221cbb200dd0e.tar.gz",
+      "hash": "sha256-/tnSvudpgTq0c7EPoTP3CRNzfPiIJssCDzGkv5R8/5o="
     },
     "dms-plugin-gaze-auth": {
       "type": "Git",
@@ -146,9 +146,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "829ad93c15b7c0ec82a6d7483728029037442601",
-      "url": "https://github.com/iahccc/NixPackageRunner/archive/829ad93c15b7c0ec82a6d7483728029037442601.tar.gz",
-      "hash": "sha256-ur+1oN+QmTu7p5ZMpL3rCd4JGYbkerko4twa+tH6uvg="
+      "revision": "77deeb702e77c5eae61f1fcf011bf9e42f3d51b1",
+      "url": "https://github.com/iahccc/NixPackageRunner/archive/77deeb702e77c5eae61f1fcf011bf9e42f3d51b1.tar.gz",
+      "hash": "sha256-U6t2Nu5X/Bx9+gPBeDWSnae9OtsIIaK5BxjM7Dml0GU="
     },
     "dms-plugin-quick-capture": {
       "type": "Git",
@@ -198,9 +198,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "7a964dad725964550734e43dbbcf88c72829d847",
-      "url": "https://github.com/AvengeMedia/dms-plugins/archive/7a964dad725964550734e43dbbcf88c72829d847.tar.gz",
-      "hash": "sha256-4eovkpiyP92kHNgFNxNhsXzRiVZ8uQ/uLOSg2gDM5ds="
+      "revision": "a486ffcf15f81d578710fae31d6129b3a210d3f5",
+      "url": "https://github.com/AvengeMedia/dms-plugins/archive/a486ffcf15f81d578710fae31d6129b3a210d3f5.tar.gz",
+      "hash": "sha256-9JQCQBKdGr+t1lzYttda/NUXdyGA2oq7CSE/3nHkWdE="
     },
     "hyperskills": {
       "type": "Git",
@@ -211,9 +211,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "d9d7f46806ea7c0a8b6c45b92a3904542700dae3",
-      "url": "https://github.com/hyperb1iss/hyperskills/archive/d9d7f46806ea7c0a8b6c45b92a3904542700dae3.tar.gz",
-      "hash": "sha256-aunUqfisoDiYYhLnNt/lhlmAVYkL+o6eUK30kxg5Lcc="
+      "revision": "8fe9ceb124c3aeaf5050b9ddcc5cd14f8795151b",
+      "url": "https://github.com/hyperb1iss/hyperskills/archive/8fe9ceb124c3aeaf5050b9ddcc5cd14f8795151b.tar.gz",
+      "hash": "sha256-DvT64OXqVmE2pcYztSTO+TZ8o+9EqtMcaTJrNxV2eE4="
     },
     "mattpocock-skills": {
       "type": "Git",
@@ -224,9 +224,9 @@
       },
       "branch": "main",
       "submodules": false,
-      "revision": "5863806dd4e15c63174bee4e7515a4256792ecfa",
-      "url": "https://github.com/mattpocock/skills/archive/5863806dd4e15c63174bee4e7515a4256792ecfa.tar.gz",
-      "hash": "sha256-AYSRCvBL8TDDdW3rgKu2T7gl4YYDoDId0jYbabEFyfs="
+      "revision": "d65391149dbb5fe76478e76fa8d5122b2aa5a70e",
+      "url": "https://github.com/mattpocock/skills/archive/d65391149dbb5fe76478e76fa8d5122b2aa5a70e.tar.gz",
+      "hash": "sha256-kn99yoU6xzp3FydMJtiPdKz1uvUMkuIugr6xwJd1lwg="
     },
     "nix-skills": {
       "type": "Git",
@@ -237,9 +237,9 @@
       },
       "branch": "master",
       "submodules": false,
-      "revision": "f24ca602137baaef9ce6b8e776471e06bc5f849b",
-      "url": "https://github.com/nhooey/nix-skills/archive/f24ca602137baaef9ce6b8e776471e06bc5f849b.tar.gz",
-      "hash": "sha256-uGiDlejV35tQpvTBpduI13Cw6fDL8Zm2WgMKsj5aupE="
+      "revision": "f4501464b01735380cbfeee8dd920c56be4bd864",
+      "url": "https://github.com/nhooey/nix-skills/archive/f4501464b01735380cbfeee8dd920c56be4bd864.tar.gz",
+      "hash": "sha256-Lagc/kOcdt9j5AfqSYXIOPhvZEidfkAbvUnoJLDBuks="
     },
     "nixos-management-skill": {
       "type": "Git",
@@ -263,9 +263,9 @@
       },
       "branch": "dev",
       "submodules": false,
-      "revision": "6e47bfd293956d39ca4616e637b27c7075a0d914",
-      "url": "https://github.com/odysseus-dev/odysseus/archive/6e47bfd293956d39ca4616e637b27c7075a0d914.tar.gz",
-      "hash": "sha256-eE65+dG+y+hHqbD+i+00/ShnEc66vBT2AIyNSJ5AJlE="
+      "revision": "7e46dfa9c6bce2a701e673d81342fbd98b5b82a5",
+      "url": "https://github.com/odysseus-dev/odysseus/archive/7e46dfa9c6bce2a701e673d81342fbd98b5b82a5.tar.gz",
+      "hash": "sha256-6TD9dfEnYW/LTayrS4kIYh/IZ9ca/50gppktvorQLvI="
     },
     "tmux-sessionx": {
       "type": "Git",
