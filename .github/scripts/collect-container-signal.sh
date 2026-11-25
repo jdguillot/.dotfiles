@@ -89,7 +89,8 @@ inventory() {
             else if ($0 ~ /#[[:space:]]*bump:/) { hint = $0; sub(/^.*#[[:space:]]*bump:[[:space:]]*/, "", hint) }
             printf "%s\t%d\t%s\t%s\t%s\n", file, NR, svc, ref, hint
           }
-          { prev = $0 }' "$f"
+          # Fence lines are transparent, so a hint can be a fenced workaround.
+          $0 !~ /^[[:space:]]*#[[:space:]]*(END )?WORKAROUND\(/ { prev = $0 }' "$f"
       done
 }
 

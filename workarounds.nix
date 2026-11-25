@@ -138,4 +138,35 @@
     '';
   };
   # END WORKAROUND(truenas-mcp-go-version)
+
+  # WORKAROUND(immich-ml-openvino-v3-4-2)
+  immich-ml-openvino-v3-4-2 = {
+    title = "Immich held at v3.4.1: v3.4.2 has no -openvino ML image";
+    added = "2026-11-24";
+    hosts = [ "thkpd-pve1" ];
+    problem = ''
+      Upstream's v3.4.2 Docker build failed for the openvino ML variant, so
+      `immich-machine-learning:v3.4.2-openvino` was never published. The ML
+      tag is derived from the server's, so thkpd-pve1 cannot start Immich
+      at v3.4.2 and its deploy rolls back.
+    '';
+    workaround = ''
+      modules/features/immich/compose.yaml keeps the server at v3.4.1 with a
+      fenced `# bump: skip` hint, so the weekly bump leaves it there.
+    '';
+    files = [ "modules/features/immich/compose.yaml" ];
+    upstream = { };
+    resolved = {
+      kind = "release";
+      repo = "immich-app/immich";
+      minVersion = "3.4.3";
+    };
+    retire = "auto";
+    removal = ''
+      Delete the fenced `# bump: skip` above the immich-server image; the
+      next bump moves the server on. Check that release's `-openvino` ML
+      tag exists before deploying thkpd-pve1.
+    '';
+  };
+  # END WORKAROUND(immich-ml-openvino-v3-4-2)
 }

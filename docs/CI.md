@@ -453,7 +453,9 @@ the registry's newest. `pattern=`, `repo=`, `min-age=` override the derived
 values (paperclip's CalVer tag widens `pattern=`, since its first number is
 the year); `notes-start=` is a regex that drops a preamble from the release
 notes (litellm's signing instructions); `context=` adds files, such as a
-host's own config for the service; `skip` excludes the line.
+host's own config for the service; `skip` excludes the line. `WORKAROUND` fence lines between a hint and its image are
+skipped, so a temporary hold (a `skip` waiting on an upstream image) is a
+fenced register entry like any other.
 
 The newest matching tag wins unless it is younger than three days
 (`CONTAINER_MIN_AGE_DAYS`, or `min-age=` per image), in which case the next
