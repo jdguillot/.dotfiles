@@ -27,6 +27,9 @@ low_disk=()
 seen_mounts=" "
 for path in /nix/store "$PWD" ${RUNNER_TEMP:+"$RUNNER_TEMP"}; do
   [ -d "$path" ] || continue
+  # The runners' work dir is on /run: RAM, sized well under the floor and
+  # wiped per job, and it cannot fill the disk.
+  [ "$(stat -f -c %T "$path")" = tmpfs ] && continue
   read -r avail_kb mount < <(df -Pk "$path" | awk 'NR==2 {print $4, $6}')
   case "$seen_mounts" in *" $mount "*) continue ;; esac
   seen_mounts+="$mount "
