@@ -168,6 +168,10 @@
     settings = { };
     frequency = "*-*-* 23:30:00";
   };
+  # The GUI writes its own config.yaml there; this file is a port of it.
+  xdg.configFile."ludusavi/config.yaml" = lib.mkIf (hostMeta.system.hostname == "ryzn-server") {
+    force = true;
+  };
 
   # A btrbk snapshot stops at a nested subvolume, so game installs live in
   # their own and stay out of the /home snapshots. Creates them when absent;
